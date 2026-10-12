@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import vector from '../../samples/graphs/vector.json' with { type: 'json' };
 import subsystem from '../../samples/graphs/subsystem.json' with { type: 'json' };
 import { GRAPH_STORAGE_KEY } from '../src/graph-model';
-async function open(page:Page){await page.goto('/');await expect(page.locator('#status')).toContainText('完了');await page.getByRole('tab',{name:'ブロック図エディタ'}).click();await expect(page.locator('#graph-status')).toContainText('完了');}
+async function open(page:Page){page.on('dialog',dialog=>dialog.accept());await page.goto('/');await expect(page.locator('#status')).toContainText('完了');await page.getByRole('tab',{name:'ブロック図エディタ'}).click();await expect(page.locator('#graph-status')).toContainText('完了');}
 async function add(page:Page,kind:string){await page.getByLabel('ブロック種類').selectOption(kind);await page.getByRole('button',{name:'ブロックを追加',exact:true}).click();}
 async function connect(page:Page,from:string,to:string,toPort='0',fromPort='0'){
   await page.getByRole('combobox',{name:'接続元',exact:true}).selectOption(from);await page.getByRole('combobox',{name:'接続先',exact:true}).selectOption(to);
@@ -59,7 +59,7 @@ test('sample models run real WASM, vectors toggle traces, mixed clocks and neste
 });
 test('saves drafts, restores positions, rejects invalid import and connection, cancels work',async({page})=>{
   await chain(page);
-  const block=page.locator('[data-block="constant-1"]'),box=(await block.boundingBox())!;
+  const block=page.locator('[data-block="constant-1"]');await block.scrollIntoViewIfNeeded();const box=(await block.boundingBox())!;
   await page.mouse.move(box.x+45,box.y+40);await page.mouse.down();await page.mouse.move(box.x+90,box.y+70,{steps:5});await page.mouse.up();
   await page.getByRole('button',{name:'モデルを保存',exact:true}).click();
   const saved=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!),GRAPH_STORAGE_KEY);expect(saved.graph.blocks[0].position).toEqual([95,130]);

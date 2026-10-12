@@ -1,4 +1,4 @@
-import { inputCount, outputCount, outputWidth, interfaceBlocks, type GraphBlock, type GraphModel, type Edge } from './graph-model';
+import { inputCount, outputCount, outputWidth, interfaceBlocks, setClock, type GraphBlock, type GraphModel, type Edge } from './graph-model';
 
 export function inputWidth(block: GraphBlock, port: number): number {
   return block.params.kind === 'subsystem' ? interfaceBlocks(block, 'input')[port].width : block.width;
@@ -34,6 +34,29 @@ function freshId(base: string, used: Set<string>): string {
   let id = stem, n = 2;
   while (used.has(id)) { const suffix = `-${n++}`; id = stem.slice(0, 64 - suffix.length) + suffix; }
   used.add(id); return id;
+}
+/** A detached snapshot: only edges whose two endpoints are selected are copied. */
+export function copySelection(graph: GraphModel, ids: Set<string>): GraphModel {
+  const blocks = graph.blocks.filter(b => ids.has(b.id));
+  if (!blocks.length) throw new Error('コピーするブロックを選択してください');
+  if (blocks.some(b => b.params.kind === 'input' || b.params.kind === 'output')) {
+    throw new Error('境界 Input / Output はコピーできません。内部のブロックを選択してください');
+  }
+  return structuredClone({ ...graph, blocks, edges: graph.edges.filter(e => ids.has(e.from) && ids.has(e.to)) });
+}
+export function pasteSelection(graph: GraphModel, snapshot: GraphModel, offset = 40): string[] {
+  if (snapshot.dt !== graph.dt) throw new Error('コピー元と貼り付け先の刻み幅を一致させてください');
+  if (snapshot.blocks.some(b => b.params.kind === 'input' || b.params.kind === 'output')) throw new Error('境界ポートは貼り付けできません');
+  const used = new Set(graph.blocks.map(b => b.id)), mapping = new Map<string, string>();
+  const copy = structuredClone(snapshot);setClock(copy, graph.dt, graph.duration);
+  for (const b of copy.blocks) mapping.set(b.id, freshId(`copy-${b.id}`, used));
+  // Apply one common translation, retaining layout even near the coordinate limit.
+  const shiftX = Math.min(offset, 10000 - Math.max(0, ...copy.blocks.map(b => b.position[0])));
+  const shiftY = Math.min(offset, 10000 - Math.max(0, ...copy.blocks.map(b => b.position[1])));
+  for (const b of copy.blocks) { b.id = mapping.get(b.id)!;b.position = [b.position[0] + shiftX, b.position[1] + shiftY]; }
+  graph.blocks.push(...copy.blocks);
+  graph.edges.push(...copy.edges.map(e => ({ ...e, from: mapping.get(e.from)!, to: mapping.get(e.to)! })));
+  return copy.blocks.map(b => b.id);
 }
 /** Add a graph without changing existing IDs, edges or the destination clock. */
 export function mergeGraph(graph: GraphModel, incoming: GraphModel): string[] {

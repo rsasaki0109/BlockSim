@@ -27,3 +27,6 @@ summary { color: #9facc5; cursor: pointer; font-size: 12px; margin: 18px 0; } fo
 .node-port { position: absolute; width: 22px; height: 22px; margin: 0; padding: 0; border-radius: 50%; border: 2px solid #8bb5ce; background: #152c43; color: #eaf4ff; font-size: 10px; line-height: 18px; cursor: crosshair; z-index: 2; }
 .port-in { left: -12px; } .port-out { right: -12px; border-color: #63e3bc; } .port-connected { background: #256b58; } .port-pending { background: #ffa96b; border-color: #ffa96b; color: #15202e; box-shadow: 0 0 0 5px #ffa96b33; }
 .wire { pointer-events: stroke; cursor: pointer; stroke-width: 3; } .wire:hover, .wire:focus { stroke: #a6ffe0; opacity: 1; outline: none; } .wire-selected { stroke: #ffa96b; stroke-width: 5; opacity: 1; } .wire-preview { fill: none; stroke: #ffa96b; stroke-width: 2; stroke-dasharray: 8 5; pointer-events: none; }
+
+#graph-surface { position: relative; overflow: hidden; } #graph-board { position: absolute; transform-origin: top left; } #graph-wires { overflow: visible; }
+.graph-view-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; } #graph-zoom { min-width: 50px; text-align: center; } #graph-dirty { color: #f4c16e; font-size: .85rem; }

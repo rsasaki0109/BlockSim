@@ -35,20 +35,23 @@ try {
     .capture-brand{font-size:14px;color:#63e3bc;letter-spacing:2px;font-weight:700}.capture-title{font-size:28px;font-weight:750;letter-spacing:-.8px;line-height:1.25;color:#ecf5ff}.capture-sub{font-size:12px;color:#9fb7cd;margin-top:3px}.capture-chip{border:1px solid #3b6c64;border-radius:30px;padding:8px 12px;color:#63e3bc;font-size:11px;letter-spacing:2px}
     .capture-pointer{position:fixed;z-index:9999;width:14px;height:14px;border-radius:50%;background:#63e3bc;box-shadow:0 0 0 6px #63e3bc33;pointer-events:none;left:-50px;top:-50px;transition:box-shadow .16s}
     .graph-toolbar{padding:9px;margin-bottom:9px;min-height:43px}.graph-toolbar label,.graph-toolbar button{display:none}.graph-toolbar #graph-run,.graph-toolbar #graph-undo,.graph-toolbar #graph-redo,.graph-toolbar #graph-group,.graph-toolbar #graph-ungroup{display:block}.graph-toolbar .primary{margin-top:0!important;font-size:12px;padding:8px 16px}.graph-toolbar button{padding:8px 11px;font-size:11px}
-    .graph-workspace{grid-template-columns:minmax(0,1fr);gap:16px}.graph-center{min-width:0}.graph-workspace aside{display:none}.graph-topline{height:29px}.graph-center>.hint{display:none}
-    .graph-viewport{height:280px;margin:8px 0 12px;overflow:hidden}#graph-board{transform:scale(.72);transform-origin:0 0}.graph-node strong{font-size:17px}.graph-node small{font-size:14px}.graph-node{padding:12px}
+    .graph-workspace{grid-template-columns:minmax(0,1fr);gap:16px}.graph-center{min-width:0}.graph-workspace aside{display:none}.graph-topline{height:29px}.graph-center>.hint,.graph-view-tools{display:none}
+    .graph-viewport{height:280px;margin:8px 0 12px;overflow:hidden}#graph-board{transform-origin:0 0}.graph-node strong{font-size:17px}.graph-node small{font-size:14px}.graph-node{padding:12px}
     #graph-status{font-size:12px;padding-bottom:4px}.graph-results{padding:12px 18px;margin:0}.graph-results h2{font-size:14px;margin:0 0 8px}.graph-results .hint{display:none}#graph-series label{font-size:11px;margin:0}#graph-plot svg{height:190px}#graph-series{gap:6px 16px}#graph-csv{display:none}#graph-values{margin:0;padding-top:6px;font-size:11px;line-height:1.5}
     .graph-results>label{font-size:10px;margin:3px 0}#graph-cursor{margin-top:2px}#graph-breadcrumb button{padding:5px 10px}
     body.capture-inspector .graph-workspace{grid-template-columns:minmax(0,1fr) 218px}body.capture-inspector .graph-workspace aside{display:block}body.capture-inspector .graph-workspace aside>.panel:not(:first-child){display:none}
     body.capture-inspector .graph-workspace aside>.panel{padding:13px}body.capture-inspector .graph-workspace aside h2{font-size:14px;margin-bottom:9px}body.capture-inspector #block-properties label:nth-child(2),body.capture-inspector #block-properties label:nth-child(3),body.capture-inspector #block-properties label:nth-child(4){display:none}body.capture-inspector #block-properties input,body.capture-inspector #block-properties textarea{padding:7px;font-size:12px}
     body.capture-pid #pid-main .workspace{grid-template-columns:1fr}body.capture-pid #pid-main aside,body.capture-pid #status,body.capture-pid .flow,body.capture-pid article>.panel:last-child{display:none}
     body.capture-pid .panel{padding:14px 20px;margin-bottom:10px}body.capture-pid .panel h2{font-size:15px;margin:0 0 8px}body.capture-pid .hint{display:none}body.capture-pid .charts h3{font-size:12px;margin:8px 0 0}body.capture-pid .charts h3:nth-of-type(3),body.capture-pid #integral-chart{display:none}body.capture-pid .charts svg{height:185px}body.capture-pid th,body.capture-pid td{padding:10px 12px}
+    body.capture-workspace .graph-toolbar #graph-select-all,body.capture-workspace .graph-toolbar #graph-copy,body.capture-workspace .graph-toolbar #graph-paste{display:block}body.capture-workspace .graph-view-tools{display:flex}body.capture-workspace #block-properties label:nth-child(4){display:block!important}body.capture-workspace .graph-viewport{height:230px}body.capture-workspace #graph-plot svg{height:165px}
     .capture-reveal{animation:trace-draw 3s ease-in-out both}@keyframes trace-draw{from{stroke-dashoffset:var(--trace-length)}to{stroke-dashoffset:0}}
   `;
   async function ready(page,editor=true) {
+    page.on('dialog',dialog=>dialog.accept());
     await page.goto(URL);await expect(page.locator('#status')).toContainText('完了');
     if(editor){await page.getByRole('tab',{name:'ブロック図エディタ'}).click();await expect(page.locator('#graph-status')).toContainText('完了');}
     await page.addStyleTag({content:CSS});
+    if(editor)await page.evaluate(()=>{for(let i=0;i<3;i++)document.getElementById('graph-zoom-out').click();});
     await page.evaluate(()=>{
       const banner=document.createElement('div');banner.className='capture-banner';banner.innerHTML='<div><div class="capture-brand">▦ BLOCKSIM / RUST × WASM</div><div class="capture-title"></div><div class="capture-sub"></div></div><div class="capture-chip"></div>';
       document.body.prepend(banner);const pointer=document.createElement('div');pointer.className='capture-pointer';document.body.append(pointer);
@@ -121,6 +124,18 @@ try {
   await record('history',async p=>{await ready(p);await sample(p,'subsystem');await p.evaluate(()=>document.body.classList.add('capture-inspector'));await inspect(p,'amplifier');await p.locator('#graph-inspector button').last().evaluate(el=>el.click());await inspect(p,'gain');await title(p,'EDIT WITHOUT REGRET.','ゲインを変更。Undo / Redo で結果も戻せる。','06 / HISTORY');},async p=>{
     await gain(p,5);await run(p);await sleep(1200);await click(p,'graph-undo');await run(p);await sleep(1200);await click(p,'graph-redo');await run(p);await sleep(1200);
     await p.locator('#graph-breadcrumb button').first().evaluate(el=>el.click());await click(p,'graph-save');await sleep(1000);
+  });
+  await record('workspace',async p=>{await ready(p);await sample(p,'subsystem');await p.evaluate(()=>document.body.classList.add('capture-workspace'));await title(p,'COPY. ZOOM. KEEP YOUR IDEAS.','内部設定と接続をコピー。全体表示で見渡し、変更を保存。','07 / WORKSPACE');},async p=>{
+    await click(p,'graph-select-all');await click(p,'graph-copy');await click(p,'graph-paste');
+    await expect(p.locator('#graph-count')).toContainText('6 blocks · 4 wires');
+    await p.evaluate(()=>document.body.classList.add('capture-inspector'));
+    for(const id of ['copy-wave','copy-amplifier','copy-wave-output']){
+      await inspect(p,id);await p.locator('#block-properties [name="y"]').fill('300');await p.locator('#block-properties').evaluate(form=>form.requestSubmit());
+    }
+    await p.evaluate(()=>document.body.classList.remove('capture-inspector'));
+    await click(p,'graph-fit');await run(p);await expect(p.locator('#graph-status')).toContainText('2 Scope');
+    const match=await p.evaluate(async()=>{const path='/src/wasm/blocksim.js',m=await import(path);await m.default();document.getElementById('graph-save').click();const graph=JSON.parse(localStorage.getItem('blocksim.graph.v2')).graph,result=JSON.parse(m.run_graph(JSON.stringify(graph)));return JSON.stringify(result.traces[0].values)===JSON.stringify(result.traces[1].values);});
+    assert.equal(match,true);await expect(p.locator('#graph-dirty')).toHaveText('変更なし');await reveal(p);await cursor(p,.25);
   });
   if(selected.length){const previous=JSON.parse(await readFile(join(MEDIA,'manifest.json'),'utf8'));const updated=new Map(previous.clips.map(clip=>[clip.file,clip]));for(const clip of manifest)updated.set(clip.file,clip);manifest.splice(0,manifest.length,...updated.values());}
   await writeFile(join(MEDIA,'manifest.json'),JSON.stringify({source:'Real BlockSim Chromium/WASM capture; presentation layout and path reveal only.',fps:10,clips:manifest},null,2)+'\n');

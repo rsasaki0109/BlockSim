@@ -1,6 +1,6 @@
 import { normalize_graph, validate_graph } from './wasm/blocksim';
 import { parseNumber } from './document';
-import { connectPorts, mergeGraph, ungroupBlock, inputWidth, nodeHeight, portY, wirePath } from './graph-edit';
+import { copySelection, pasteSelection, connectPorts, mergeGraph, ungroupBlock, inputWidth, nodeHeight, portY, wirePath } from './graph-edit';
 import {
   GraphHistory, graphContext, newBlock, groupBlocks, deleteBlocks, inputCount, outputCount, outputWidth, setClock,
   KIND_NAMES, GRAPH_STORAGE_KEY, decodeGraphDocument, encodeGraphDocument, resultCsv,
@@ -20,14 +20,14 @@ export function mountEditor(host:HTMLElement) {
     <section class="intro"><p class="eyebrow">MODEL WORKSPACE / ブロック図</p><h1>つなげて、動きを確かめる。</h1><p>連続・離散・ベクトルをひとつのモデルに。Scope で結果を記録します。</p></section>
     <div class="graph-toolbar panel">
       <label>ブロック種類<select id="block-kind"></select></label><button id="block-add">ブロックを追加</button>
-      <button id="graph-undo">Undo</button><button id="graph-redo">Redo</button><button id="graph-delete">選択を削除</button><button id="graph-group">サブシステム化</button><button id="graph-ungroup">グループ解除</button><button id="graph-wire-cancel" disabled>配線をキャンセル</button><button id="graph-disconnect" disabled>選択した接続を削除</button>
+      <button id="graph-select-all">すべて選択</button><button id="graph-copy" disabled>コピー</button><button id="graph-paste" disabled>貼り付け</button><button id="graph-duplicate" disabled>複製</button><button id="graph-undo">Undo</button><button id="graph-redo">Redo</button><button id="graph-delete">選択を削除</button><button id="graph-group">サブシステム化</button><button id="graph-ungroup">グループ解除</button><button id="graph-wire-cancel" disabled>配線をキャンセル</button><button id="graph-disconnect" disabled>選択した接続を削除</button>
       <button id="graph-run" class="primary">モデルを実行</button><button id="graph-cancel" disabled>実行を中止</button>
     </div>
     <div id="graph-status" role="status" aria-label="モデル実行状態" aria-live="polite"></div>
     <div class="graph-workspace"><section class="graph-center">
-      <div class="graph-topline"><div id="graph-breadcrumb"></div><span id="graph-count" class="pill"></span></div>
+      <div class="graph-topline"><div id="graph-breadcrumb"></div><span id="graph-count" class="pill"></span><span id="graph-dirty" role="status"></span></div>
       <p class="hint">ブロックはドラッグで移動。チェックで複数選択。出力ポート→入力ポートをクリックして配線。Escape で中止。線を選ぶと削除できます。右のフォームも使えます。</p>
-      <div class="graph-viewport"><div id="graph-board" aria-label="ブロック図キャンバス"><svg id="graph-wires" width="1800" height="1000" aria-label="接続線"></svg><div id="graph-nodes"></div></div></div>
+      <div class="graph-view-tools"><button id="graph-zoom-out" aria-label="縮小">−</button><output id="graph-zoom" aria-label="表示倍率">100%</output><button id="graph-zoom-in" aria-label="拡大">＋</button><button id="graph-zoom-reset">100% 表示</button><button id="graph-fit">全体を表示</button></div><div class="graph-viewport"><div id="graph-surface"><div id="graph-board" aria-label="ブロック図キャンバス"><svg id="graph-wires" width="1800" height="1000" aria-label="接続線"></svg><div id="graph-nodes"></div></div></div></div>
       <section class="panel graph-results"><h2>Scope の結果</h2><div id="graph-series" class="legend"></div><p class="hint">表示は最大16系列。CSV は全 Scope・全記録点を出力します。</p><div id="graph-plot"></div>
         <label>記録点カーソル<input id="graph-cursor" type="range" min="0" max="0" value="0" disabled></label><output id="graph-values" aria-live="polite"></output><button id="graph-csv" disabled>CSV を書き出す</button>
       </section>
@@ -36,7 +36,7 @@ export function mountEditor(host:HTMLElement) {
       <section class="panel"><h2>接続</h2><form id="graph-connect"><label>接続元<select id="edge-from"></select></label><label>出力ポート<select id="edge-from-port"></select></label><label>接続先<select id="edge-to"></select></label><label>入力ポート<select id="edge-to-port"></select></label><button>接続する</button></form><div id="graph-edges"></div></section>
       <section class="panel"><h2>シミュレーション設定</h2><form id="graph-clock"><label>グラフ刻み幅 (s)<input id="graph-dt" type="number" step="any" required></label><label>グラフ終了時刻 (s)<input id="graph-duration" type="number" step="any" required></label><button>時間設定を適用</button></form><p class="hint">離散の周期は刻み幅の整数倍。内部モデルも同じ基準時計を使います。</p></section>
       <section class="panel"><h2>モデルとサンプル</h2><label>モデルサンプル<select id="graph-sample"><option value="continuous">連続 PID の復帰</option><option value="mixed">離散 PID + 連続プラント</option><option value="vector">ベクトル + Saturation</option><option value="subsystem">Sine + Subsystem</option></select></label>
-        <label>読み込み方法<select id="graph-import-mode"><option value="replace">モデルを置き換える</option><option value="merge">既存モデルに追加</option></select></label><div class="buttons"><button id="graph-load-sample">サンプルを読み込む</button><button id="graph-empty">新しいモデル</button><button id="graph-save">モデルを保存</button><button id="graph-restore">モデルを復元</button><button id="graph-export">モデル JSON</button><label class="file-button">モデルを読み込む<input id="graph-import" type="file" accept=".json,application/json"></label></div><p class="hint">未接続の作成途中モデルも保存できます。追加読み込みでは既存の時計・終了時刻を保持し、同じ刻み幅のモデルを取り込めます。既存の PID Lab 設定は別に保持します。</p>
+        <label>読み込み方法<select id="graph-import-mode"><option value="replace">モデルを置き換える</option><option value="merge">既存モデルに追加</option></select></label><div class="buttons"><button id="graph-load-sample">サンプルを読み込む</button><button id="graph-empty">新しいモデル</button><button id="graph-save">モデルを保存</button><button id="graph-restore">モデルを復元</button><button id="graph-export">モデル JSON</button><label class="file-button">モデルを読み込む<input id="graph-import" type="file" accept=".json,application/json"></label></div><p class="hint">未接続の作成途中モデルも保存できます。コピーはこのタブ内の専用クリップボードを使い、外部の接続と境界 Input / Output は含めません。追加読み込みでは既存の時計・終了時刻を保持し、同じ刻み幅のモデルを取り込めます。既存の PID Lab 設定は別に保持します。</p>
       </section>
     </aside></div><footer>成熟度比較：目標は Simulink 比30%。評価は主観的な開発評価で、機能網羅率や客観的なベンチマークではありません。</footer>`;
   const get=<T extends Element = HTMLElement>(id:string)=>host.querySelector<T>(`#${id}`)!;
@@ -47,6 +47,34 @@ export function mountEditor(host:HTMLElement) {
   let path:string[]=[], selected=new Set<string>(), result:GraphResult|null=null, visible=new Set<string>();
   let pendingWire:{from:string,from_port:number,path:string}|null=null, previewPoint:[number,number]|null=null, selectedEdge:number|null=null;
   let worker:Worker|null=null, request=0;
+  let clipboard:GraphModel|null=null, pasteCount=0, zoom=1;
+  let baseline=JSON.stringify(history.graph);
+  const dirty=()=>JSON.stringify(history.graph)!==baseline;
+  function syncDirty(){get('graph-dirty').textContent=dirty()?'未保存の変更あり':'変更なし';}
+  window.addEventListener('beforeunload',event=>{if(dirty()){event.preventDefault();event.returnValue='';}});
+  function syncCopy(){for(const id of ['graph-copy','graph-duplicate'])get<HTMLButtonElement>(id).disabled=!selected.size;get<HTMLButtonElement>('graph-paste').disabled=!clipboard;}
+  function applyZoom(){
+    const board=get('graph-board'),surface=get('graph-surface');board.style.transform=`scale(${zoom})`;
+    board.style.left=32*zoom+'px';board.style.top=32*zoom+'px';
+    surface.style.width=(parseFloat(board.style.width)+64)*zoom+'px';surface.style.height=(parseFloat(board.style.height)+64)*zoom+'px';
+    get('graph-zoom').textContent=`${Math.round(zoom*100)}%`;
+    get<HTMLButtonElement>('graph-zoom-out').disabled=zoom<=.02;get<HTMLButtonElement>('graph-zoom-in').disabled=zoom>=2;
+  }
+  function setZoom(next:number){
+    const viewport=host.querySelector<HTMLElement>('.graph-viewport')!,old=zoom;
+    const center=[(viewport.scrollLeft+viewport.clientWidth/2)/old,(viewport.scrollTop+viewport.clientHeight/2)/old];
+    zoom=Math.max(.02,Math.min(2,next));applyZoom();
+    viewport.scrollLeft=center[0]*zoom-viewport.clientWidth/2;viewport.scrollTop=center[1]*zoom-viewport.clientHeight/2;
+  }
+  function fit(){
+    const blocks=current().blocks,viewport=host.querySelector<HTMLElement>('.graph-viewport')!;
+    if(!blocks.length){setZoom(1);viewport.scrollTo(0,0);return;}
+    const bounds=get<SVGSVGElement>('graph-wires').getBBox();
+    const left=Math.min(...blocks.map(b=>b.position[0]-30),bounds.x),top=Math.min(...blocks.map(b=>b.position[1]-20),bounds.y);
+    const right=Math.max(...blocks.map(b=>b.position[0]+200),bounds.x+bounds.width),bottom=Math.max(...blocks.map(b=>b.position[1]+nodeHeight(b)+20),bounds.y+bounds.height);
+    setZoom(Math.min(1,(viewport.clientWidth-50)/(right-left),(viewport.clientHeight-50)/(bottom-top)));
+    viewport.scrollLeft=Math.max(0,(left+32)*zoom-25);viewport.scrollTop=Math.max(0,(top+32)*zoom-25);
+  }
   const cancel=()=>{request++;worker?.terminate();worker=null;get<HTMLButtonElement>('graph-run').disabled=false;get<HTMLButtonElement>('graph-cancel').disabled=true;};
   const invalidate=()=>{cancel();pendingWire=null;previewPoint=null;selectedEdge=null;result=null;get('graph-plot').replaceChildren();get('graph-series').replaceChildren();get('graph-values').textContent='モデル変更後は再実行してください';get<HTMLInputElement>('graph-cursor').disabled=true;get<HTMLButtonElement>('graph-csv').disabled=true;};
   const current=()=>graphContext(history.graph,path);
@@ -123,7 +151,7 @@ export function mountEditor(host:HTMLElement) {
   function syncSelection() {
     for(const card of get('graph-nodes').children){const id=(card as HTMLElement).dataset.block!;card.classList.toggle('selected',selected.has(id));const check=card.querySelector<HTMLInputElement>('input[type=checkbox]');if(check)check.checked=selected.has(id);}
     for(const line of get('graph-wires').querySelectorAll<SVGPathElement>('.wire'))line.classList.toggle('wire-selected',selectedEdge===Number(line.dataset.edge));
-    get<HTMLButtonElement>('graph-disconnect').disabled=selectedEdge===null;
+    get<HTMLButtonElement>('graph-disconnect').disabled=selectedEdge===null;syncCopy();
   }
   function renderNodes() {
     const nodes=get('graph-nodes');nodes.replaceChildren();const wires=get<SVGSVGElement>('graph-wires');wires.replaceChildren();
@@ -161,14 +189,16 @@ export function mountEditor(host:HTMLElement) {
       node.addEventListener('pointerdown',event=>{
         if(event.button!==0)return;select(event.shiftKey||event.ctrlKey||event.metaKey);renderInspector();
         syncSelection();
-        node.setPointerCapture(event.pointerId);const start=[event.clientX,event.clientY];let position:[number,number]=[...b.position];let moved=false;
+        node.setPointerCapture(event.pointerId);const scale=board.getBoundingClientRect().width/board.clientWidth,start=[event.clientX,event.clientY];let position:[number,number]=[...b.position];let moved=false;
         const move=(e:PointerEvent)=>{if(Math.abs(e.clientX-start[0])+Math.abs(e.clientY-start[1])>3)moved=true;if(!moved)return;
-          position=[Math.max(0,Math.min(10000,b.position[0]+e.clientX-start[0])),Math.max(0,Math.min(10000,b.position[1]+e.clientY-start[1]))];node.style.left=position[0]+'px';node.style.top=position[1]+'px';};
+          position=[Math.max(0,Math.min(10000,b.position[0]+(e.clientX-start[0])/scale)),Math.max(0,Math.min(10000,b.position[1]+(e.clientY-start[1])/scale))];node.style.left=position[0]+'px';node.style.top=position[1]+'px';};
         const finish=()=>{node.removeEventListener('pointermove',move);node.removeEventListener('pointerup',finish);node.removeEventListener('pointercancel',abort);if(moved)edit(g=>{g.blocks.find(n=>n.id===b.id)!.position=position;},'ブロックを移動しました');else syncSelection();};
         const abort=()=>{node.removeEventListener('pointermove',move);node.removeEventListener('pointerup',finish);node.removeEventListener('pointercancel',abort);render();};
         node.addEventListener('pointermove',move);node.addEventListener('pointerup',finish);node.addEventListener('pointercancel',abort);
       });nodes.append(node);
     }paintPreview();
+    const bounds=wires.getBBox(),fullWidth=Math.ceil(Math.max(width,bounds.x+bounds.width+40)),fullHeight=Math.ceil(Math.max(height,bounds.y+bounds.height+40));
+    board.style.width=fullWidth+'px';board.style.height=fullHeight+'px';wires.setAttribute('width',String(fullWidth));wires.setAttribute('height',String(fullHeight));applyZoom();
   }
   function render() {
     // Undoing a group may invalidate navigation; return safely to root.
@@ -183,7 +213,7 @@ export function mountEditor(host:HTMLElement) {
     const kinds=get<HTMLSelectElement>('block-kind');const previous=kinds.value;kinds.replaceChildren();
     for(const kind of Object.keys(KIND_NAMES) as Kind[])if(path.length||!['input','output'].includes(kind))kinds.add(new Option(KIND_NAMES[kind],kind));if([...kinds.options].some(o=>o.value===previous))kinds.value=previous;
     for(const id of ['edge-from','edge-to']){const select=get<HTMLSelectElement>(id),previous=select.value;select.replaceChildren();for(const b of current().blocks)select.add(new Option(`${b.label} (${b.id})`,b.id));if(current().blocks.some(b=>b.id===previous))select.value=previous;}
-    renderPorts();renderNodes();renderInspector();
+    renderPorts();renderNodes();renderInspector();syncCopy();syncDirty();
     const edges=get('graph-edges');edges.replaceChildren();current().edges.forEach((e,i)=>{
       const row=document.createElement('div');row.className='edge-row';const text=document.createElement('span');text.textContent=`${e.from}:${e.from_port} → ${e.to}:${e.to_port}`;
       const remove=button('×',()=>edit(g=>{g.edges.splice(i,1);},'接続を削除しました'));remove.setAttribute('aria-label',`接続を削除 ${e.from} ${e.to} ${e.to_port}`);row.append(text,remove);edges.append(row);
@@ -210,13 +240,21 @@ export function mountEditor(host:HTMLElement) {
   get('graph-ungroup').addEventListener('click',()=>edit(g=>{if(selected.size!==1)throw new Error('解除するサブシステムを1つ選択してください');selected=new Set(ungroupBlock(g,[...selected][0]));},'サブシステムを解除しました'));
   get('graph-group').addEventListener('click',()=>edit(g=>{selected=new Set([groupBlocks(g,selected)]);},'サブシステムを作成しました'));
   const undo=()=>{guard(()=>{history.undo();invalidate();render();say('Undo');});},redo=()=>{guard(()=>{history.redo();invalidate();render();say('Redo');});};
+  const copy=()=>guard(()=>{clipboard=copySelection(current(),selected);pasteCount=0;syncCopy();say(`${clipboard.blocks.length} 個のブロックと内部接続をコピーしました`);});
+  const paste=()=>{if(clipboard&&edit(g=>{selected=new Set(pasteSelection(g,clipboard!,40*(pasteCount+1)));},'ブロックを貼り付けました'))pasteCount++;};
+  const duplicate=()=>{if(edit(g=>{selected=new Set(pasteSelection(g,copySelection(g,selected)));},'選択したブロックを複製しました'))syncCopy();};
+  const selectAll=()=>{selected=new Set(current().blocks.map(b=>b.id));selectedEdge=null;render();};
+  get('graph-select-all').addEventListener('click',selectAll);
+  get('graph-copy').addEventListener('click',copy);get('graph-paste').addEventListener('click',paste);get('graph-duplicate').addEventListener('click',duplicate);
+  get('graph-zoom-in').addEventListener('click',()=>setZoom(zoom+.1));get('graph-zoom-out').addEventListener('click',()=>setZoom(zoom-.1));
+  get('graph-zoom-reset').addEventListener('click',()=>setZoom(1));get('graph-fit').addEventListener('click',fit);
   get('graph-undo').addEventListener('click',undo);get('graph-redo').addEventListener('click',redo);
   const cancelWire=()=>{pendingWire=null;previewPoint=null;render();say('配線をキャンセルしました');};
   get('graph-wire-cancel').addEventListener('click',cancelWire);
   const disconnect=()=>{if(selectedEdge!==null){const index=selectedEdge;edit(g=>{g.edges.splice(index,1);},'接続を削除しました');}};
   get('graph-disconnect').addEventListener('click',disconnect);
   get('graph-board').addEventListener('pointermove',event=>{if(!pendingWire)return;const rect=get('graph-board').getBoundingClientRect(),scale=rect.width/get('graph-board').clientWidth;previewPoint=[(event.clientX-rect.left)/scale,(event.clientY-rect.top)/scale];paintPreview();});
-  document.addEventListener('keydown',event=>{if(host.hidden)return;if(event.key==='Escape'&&pendingWire){event.preventDefault();cancelWire();return;}if(event.target instanceof HTMLElement&&['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName))return;if(event.key==='Delete'||event.key==='Backspace'){if(selectedEdge!==null){event.preventDefault();disconnect();}return;}if(!event.ctrlKey&&!event.metaKey)return;if(event.target instanceof HTMLElement&&['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName))return;if(event.key.toLowerCase()==='z'){event.preventDefault();if(event.shiftKey)redo();else undo();}else if(event.key.toLowerCase()==='y'){event.preventDefault();redo();}});
+  document.addEventListener('keydown',event=>{if(host.hidden)return;if(event.key==='Escape'&&pendingWire){event.preventDefault();cancelWire();return;}if(event.target instanceof HTMLElement&&['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName))return;if(event.key==='Delete'||event.key==='Backspace'){if(selectedEdge!==null){event.preventDefault();disconnect();}return;}if(!event.ctrlKey&&!event.metaKey)return;if(event.target instanceof HTMLElement&&['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName))return;if(event.key.toLowerCase()==='a'){event.preventDefault();selectAll();}else if(event.key.toLowerCase()==='c'){event.preventDefault();copy();}else if(event.key.toLowerCase()==='v'){event.preventDefault();paste();}else if(event.key.toLowerCase()==='d'){event.preventDefault();duplicate();}else if(event.key.toLowerCase()==='z'){event.preventDefault();if(event.shiftKey)redo();else undo();}else if(event.key.toLowerCase()==='y'){event.preventDefault();redo();}});
   get('graph-run').addEventListener('click',run);get('graph-cancel').addEventListener('click',()=>{cancel();say('実行を中止しました');});
   get('edge-from').addEventListener('change',renderPorts);get('edge-to').addEventListener('change',renderPorts);
   get<HTMLFormElement>('graph-connect').addEventListener('submit',event=>{event.preventDefault();edit(g=>{
@@ -225,20 +263,25 @@ export function mountEditor(host:HTMLElement) {
     connectPorts(g,{from,from_port:Number(get<HTMLSelectElement>('edge-from-port').value),to,to_port:Number(get<HTMLSelectElement>('edge-to-port').value)});
   },'接続を追加しました');});
   get<HTMLFormElement>('graph-clock').addEventListener('submit',event=>{event.preventDefault();guard(()=>{history.apply(root=>setClock(root,parseNumber(get<HTMLInputElement>('graph-dt').value,'dt'),parseNumber(get<HTMLInputElement>('graph-duration').value,'duration')));invalidate();render();say('時間設定を適用しました');});});
-  function replace(graph:GraphModel){history.replace(graph);path=[];selected.clear();invalidate();render();}
-  get('graph-load-sample').addEventListener('click',()=>guard(()=>{replace(SAMPLES[get<HTMLSelectElement>('graph-sample').value]);run();}));
-  get('graph-empty').addEventListener('click',()=>guard(()=>{replace({version:1,dt:0.01,duration:5,blocks:[],edges:[]});say('新しいモデルを作成しました');}));
-  get('graph-save').addEventListener('click',()=>guard(()=>{localStorage.setItem(GRAPH_STORAGE_KEY,encodeGraphDocument(history.graph));say('モデルを保存しました');}));
-  get('graph-restore').addEventListener('click',()=>guard(()=>{const text=localStorage.getItem(GRAPH_STORAGE_KEY);if(text===null)throw new Error('保存済みモデルがありません');replace(decodeGraphDocument(text,normalize_graph));say('モデルを復元しました');}));
+  function replace(graph:GraphModel){
+    if(dirty()&&JSON.stringify(graph)!==JSON.stringify(history.graph)&&!window.confirm('未保存の変更があります。変更を破棄してモデルを置き換えますか？')){say('モデルの置き換えを中止しました');return false;}
+    history.replace(graph);path=[];selected.clear();invalidate();render();return true;
+  }
+  get('graph-load-sample').addEventListener('click',()=>guard(()=>{if(replace(SAMPLES[get<HTMLSelectElement>('graph-sample').value]))run();}));
+  get('graph-empty').addEventListener('click',()=>guard(()=>{if(replace({version:1,dt:0.01,duration:5,blocks:[],edges:[]}))say('新しいモデルを作成しました');}));
+  get('graph-save').addEventListener('click',()=>guard(()=>{localStorage.setItem(GRAPH_STORAGE_KEY,encodeGraphDocument(history.graph));baseline=JSON.stringify(history.graph);syncDirty();say('モデルを保存しました');}));
+  get('graph-restore').addEventListener('click',()=>guard(()=>{const text=localStorage.getItem(GRAPH_STORAGE_KEY);if(text===null)throw new Error('保存済みモデルがありません');if(replace(decodeGraphDocument(text,normalize_graph))){baseline=JSON.stringify(history.graph);syncDirty();say('モデルを復元しました');}}));
   get('graph-export').addEventListener('click',()=>download(encodeGraphDocument(history.graph),'blocksim-graph.json','application/json'));
   get('graph-csv').addEventListener('click',()=>{if(result)download(resultCsv(result),'blocksim-signals.csv','text/csv');});
   get<HTMLInputElement>('graph-import').addEventListener('change',async event=>{
     const target=event.target as HTMLInputElement,file=target.files?.[0];if(!file)return;
-    try{if(file.size>1_000_000)throw new Error('モデルは1 MB以下にしてください');const incoming=decodeGraphDocument(await file.text(),normalize_graph);if(get<HTMLSelectElement>('graph-import-mode').value==='merge'){edit(g=>{selected=new Set(mergeGraph(g,incoming));},'モデルを追加しました（既存の時計・終了時刻を保持）');}else{replace(incoming);say('モデル JSON を読み込みました');}}
+    try{if(file.size>1_000_000)throw new Error('モデルは1 MB以下にしてください');const incoming=decodeGraphDocument(await file.text(),normalize_graph);if(get<HTMLSelectElement>('graph-import-mode').value==='merge'){edit(g=>{selected=new Set(mergeGraph(g,incoming));},'モデルを追加しました（既存の時計・終了時刻を保持）');}else if(replace(incoming))say('モデル JSON を読み込みました');}
     catch(error){say(String(error),true);}finally{target.value='';}
   });
   get('graph-cursor').addEventListener('input',cursor);
+  // File reads can finish while PID Lab is visible. Measure wires after revealing the editor.
+  host.addEventListener('graph-visible',renderNodes);
   let savedError:string|null=null;
   try{const text=localStorage.getItem(GRAPH_STORAGE_KEY);if(text!==null)history.replace(decodeGraphDocument(text,normalize_graph));}catch(error){savedError=String(error);}
-  render();if(savedError)say(`保存モデルの読み込みに失敗: ${savedError}`,true);else run();
+  baseline=JSON.stringify(history.graph);render();if(savedError)say(`保存モデルの読み込みに失敗: ${savedError}`,true);else run();
 }

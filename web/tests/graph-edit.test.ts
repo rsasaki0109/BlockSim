@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { connectPorts, mergeGraph, ungroupBlock, wirePath, nodeHeight } from '../src/graph-edit';
+import { copySelection, pasteSelection, connectPorts, mergeGraph, ungroupBlock, wirePath, nodeHeight } from '../src/graph-edit';
 import { GraphHistory, groupBlocks, newBlock, type GraphModel, type GraphBlock } from '../src/graph-model';
 import { seriesFrom } from '../src/graph-chart';
 import sample from '../../samples/graphs/continuous-pid.json';
@@ -69,4 +69,25 @@ it('routes feedback outside block rectangles and grows nodes for multiple ports'
 it('disambiguates duplicate Scope labels by ID while preserving unique labels',()=>{
  const s=seriesFrom({times:[0,1],solver:'test',traces:[{id:'a',label:'Scope',values:[[1],[2]]},{id:'b',label:'Scope',values:[[3],[4]]},{id:'c',label:'Unique',values:[[5],[6]]}]});
  expect(s.map(x=>x.label)).toEqual(['Scope (a) [0]','Scope (b) [0]','Unique [0]']);
+});
+it('copies only internal edges, isolates nested settings, and retains relative layout at the position limit',()=>{
+ const g=fresh(),id=groupBlocks(g,new Set(['controller','plant']));
+ const snapshot=copySelection(g,new Set([id,'control']));
+ expect(snapshot.edges).toHaveLength(1);expect(snapshot.edges[0].to).toBe('control');
+ const sub=g.blocks.find(b=>b.id===id)!;sub.position=[9990,9980];snapshot.blocks.find(b=>b.id===id)!.position=[9990,9980];
+ const added=pasteSelection(g,snapshot),copied=g.blocks.find(b=>b.id===`copy-${id}`)!;
+ expect(copied.position).toEqual([10000,10000]);
+ expect(g.blocks.find(b=>b.id==='copy-control')!.position[0]-copied.position[0]).toBe(snapshot.blocks.find(b=>b.id==='control')!.position[0]-snapshot.blocks.find(b=>b.id===id)!.position[0]);expect(added).toHaveLength(2);
+ const inner=copied.params.model as GraphModel;inner.blocks.find(b=>b.id==='controller')!.params.config={kp:999};
+ expect((sub.params.model as GraphModel).blocks.find(b=>b.id==='controller')!.params.config).toEqual(sample.blocks[2].params.config);
+ expect((snapshot.blocks.find(b=>b.id===id)!.params.model as GraphModel).blocks.find(b=>b.id==='controller')!.params.config).toEqual(sample.blocks[2].params.config);
+});
+it('pastes nested snapshots with the destination duration and unique IDs, rejecting clocks and boundary selections transactionally',()=>{
+ const g=fresh(),id=groupBlocks(g,new Set(['controller','plant'])),snapshot=copySelection(g,new Set([id]));
+ g.duration=3;const a=pasteSelection(g,snapshot),b=pasteSelection(g,snapshot);
+ expect(a).not.toEqual(b);expect((g.blocks.find(n=>n.id===a[0])!.params.model as GraphModel).duration).toBe(3);
+ const h=new GraphHistory(g,json=>json),before=structuredClone(g);
+ expect(()=>h.apply(root=>pasteSelection(root,{...snapshot,dt:.005}))).toThrow('刻み幅');expect(h.graph).toEqual(before);
+ expect(()=>copySelection(snapshot.blocks[0].params.model as GraphModel,new Set(['boundary-in-0']))).toThrow('境界');
+ expect(()=>copySelection(g,new Set())).toThrow('選択');
 });

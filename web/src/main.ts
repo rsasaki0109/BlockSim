@@ -63,6 +63,7 @@ function selectTab(editor: boolean) {
   document.getElementById('pid-tab')!.setAttribute('aria-selected', String(!editor));
   document.getElementById('editor-tab')!.setAttribute('aria-selected', String(editor));
   if (editor && !editorMounted) { mountEditor(document.getElementById('graph-main')!); editorMounted = true; }
+  else if (editor) document.getElementById('graph-main')!.dispatchEvent(new Event('graph-visible'));
 }
 document.getElementById('pid-tab')!.addEventListener('click', () => selectTab(false));
 document.getElementById('editor-tab')!.addEventListener('click', () => selectTab(true));

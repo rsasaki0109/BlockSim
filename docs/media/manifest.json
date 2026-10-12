@@ -14,7 +14,7 @@
       "file": "build.gif",
       "frames": 113,
       "duration_seconds": 11.3,
-      "bytes": 152907,
+      "bytes": 143674,
       "width": 960,
       "height": 737
     },
@@ -55,6 +55,14 @@
       "frames": 106,
       "duration_seconds": 10.6,
       "bytes": 313864,
+      "width": 960,
+      "height": 737
+    },
+    {
+      "file": "workspace.gif",
+      "frames": 98,
+      "duration_seconds": 9.8,
+      "bytes": 234178,
       "width": 960,
       "height": 737
     }

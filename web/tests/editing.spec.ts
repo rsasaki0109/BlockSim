@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import sample from '../../samples/graphs/continuous-pid.json' with { type: 'json' };
 import vector from '../../samples/graphs/vector.json' with { type: 'json' };
 import { GRAPH_STORAGE_KEY } from '../src/graph-model';
-async function open(page:Page){await page.goto('/');await expect(page.locator('#status')).toContainText('完了');await page.getByRole('tab',{name:'ブロック図エディタ'}).click();await expect(page.locator('#graph-status')).toContainText('完了');}
+async function open(page:Page){page.on('dialog',dialog=>dialog.accept());await page.goto('/');await expect(page.locator('#status')).toContainText('完了');await page.getByRole('tab',{name:'ブロック図エディタ'}).click();await expect(page.locator('#graph-status')).toContainText('完了');}
 async function run(page:Page){await page.getByRole('button',{name:'モデルを実行',exact:true}).click();await expect(page.locator('#graph-status')).toContainText('完了');}
 async function saved(page:Page){await page.getByRole('button',{name:'モデルを保存',exact:true}).click();return page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).graph,GRAPH_STORAGE_KEY);}
 async function upload(page:Page,graph:unknown){await page.locator('#graph-import').setInputFiles({name:'model.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(graph))});}
