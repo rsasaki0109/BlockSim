@@ -7,6 +7,7 @@ import {
   type GraphModel, type GraphBlock, type GraphResult, type Kind,
 } from './graph-model';
 import { plotGraph, seriesFrom } from './graph-chart';
+import { autoLayout } from './graph-layout';
 import continuous from '../../samples/graphs/continuous-pid.json';
 import mixed from '../../samples/graphs/mixed-pid.json';
 import vector from '../../samples/graphs/vector.json';
@@ -27,7 +28,7 @@ export function mountEditor(host:HTMLElement) {
     <div class="graph-workspace"><section class="graph-center">
       <div class="graph-topline"><div id="graph-breadcrumb"></div><span id="graph-count" class="pill"></span><span id="graph-dirty" role="status"></span></div>
       <p class="hint">ブロックはドラッグで移動。チェックで複数選択。出力ポート→入力ポートをクリックして配線。Escape で中止。線を選ぶと削除できます。右のフォームも使えます。</p>
-      <div class="graph-view-tools"><button id="graph-zoom-out" aria-label="縮小">−</button><output id="graph-zoom" aria-label="表示倍率">100%</output><button id="graph-zoom-in" aria-label="拡大">＋</button><button id="graph-zoom-reset">100% 表示</button><button id="graph-fit">全体を表示</button></div><div class="graph-viewport"><div id="graph-surface"><div id="graph-board" aria-label="ブロック図キャンバス"><svg id="graph-wires" width="1800" height="1000" aria-label="接続線"></svg><div id="graph-nodes"></div></div></div></div>
+      <div class="graph-view-tools"><button id="graph-layout">自動配置</button><button id="graph-zoom-out" aria-label="縮小">−</button><output id="graph-zoom" aria-label="表示倍率">100%</output><button id="graph-zoom-in" aria-label="拡大">＋</button><button id="graph-zoom-reset">100% 表示</button><button id="graph-fit">全体を表示</button></div><div class="graph-viewport"><div id="graph-surface"><div id="graph-board" aria-label="ブロック図キャンバス"><svg id="graph-wires" width="1800" height="1000" aria-label="接続線"></svg><div id="graph-nodes"></div></div></div></div>
       <section class="panel graph-results"><h2>Scope の結果</h2><div id="graph-series" class="legend"></div><p class="hint">表示は最大16系列。CSV は全 Scope・全記録点を出力します。</p><div id="graph-plot"></div>
         <label>記録点カーソル<input id="graph-cursor" type="range" min="0" max="0" value="0" disabled></label><output id="graph-values" aria-live="polite"></output><button id="graph-csv" disabled>CSV を書き出す</button>
       </section>
@@ -248,6 +249,11 @@ export function mountEditor(host:HTMLElement) {
   get('graph-copy').addEventListener('click',copy);get('graph-paste').addEventListener('click',paste);get('graph-duplicate').addEventListener('click',duplicate);
   get('graph-zoom-in').addEventListener('click',()=>setZoom(zoom+.1));get('graph-zoom-out').addEventListener('click',()=>setZoom(zoom-.1));
   get('graph-zoom-reset').addEventListener('click',()=>setZoom(1));get('graph-fit').addEventListener('click',fit);
+  get('graph-layout').addEventListener('click',()=>guard(()=>{
+    const planned=structuredClone(current()),layout=autoLayout(planned);
+    if(!layout.changed){say('すでに自動配置されています');return;}
+    if(edit(g=>{g.blocks.forEach((b,i)=>{b.position=planned.blocks[i].position;});},layout.mode==='grid'?'モデルをコンパクトな格子に自動配置しました':'モデルを信号の流れに沿って自動配置しました'))fit();
+  }));
   get('graph-undo').addEventListener('click',undo);get('graph-redo').addEventListener('click',redo);
   const cancelWire=()=>{pendingWire=null;previewPoint=null;render();say('配線をキャンセルしました');};
   get('graph-wire-cancel').addEventListener('click',cancelWire);

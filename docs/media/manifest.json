@@ -65,6 +65,14 @@
       "bytes": 234178,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "layout.gif",
+      "frames": 126,
+      "duration_seconds": 12.6,
+      "bytes": 292476,
+      "width": 960,
+      "height": 737
     }
   ]
 }

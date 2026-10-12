@@ -137,6 +137,13 @@ try {
     const match=await p.evaluate(async()=>{const path='/src/wasm/blocksim.js',m=await import(path);await m.default();document.getElementById('graph-save').click();const graph=JSON.parse(localStorage.getItem('blocksim.graph.v2')).graph,result=JSON.parse(m.run_graph(JSON.stringify(graph)));return JSON.stringify(result.traces[0].values)===JSON.stringify(result.traces[1].values);});
     assert.equal(match,true);await expect(p.locator('#graph-dirty')).toHaveText('変更なし');await reveal(p);await cursor(p,.25);
   });
+  await record('layout',async p=>{await ready(p);await sample(p,'subsystem');await p.evaluate(()=>document.body.classList.add('capture-workspace'));await title(p,'FROM CLUTTER TO CLARITY.','接続と内部設定を保ったまま、自動配置。Undo で戻せます。','08 / ARRANGE');},async p=>{
+    await click(p,'graph-select-all');await click(p,'graph-copy');await click(p,'graph-paste');await sleep(700);
+    const before=await p.evaluate(()=>{document.getElementById('graph-save').click();return JSON.parse(localStorage.getItem('blocksim.graph.v2')).graph;});
+    await click(p,'graph-layout');await expect(p.locator('#graph-status')).toContainText('自動配置しました');await run(p);await expect(p.locator('#graph-status')).toContainText('2 Scope');
+    const equivalent=await p.evaluate(async before=>{document.getElementById('graph-save').click();const after=JSON.parse(localStorage.getItem('blocksim.graph.v2')).graph,path='/src/wasm/blocksim.js',m=await import(path);await m.default();return m.run_graph(JSON.stringify(before))===m.run_graph(JSON.stringify(after));},before);assert.equal(equivalent,true);
+    await sleep(700);await click(p,'graph-undo');await sleep(700);await click(p,'graph-redo');await run(p);await click(p,'graph-save');await expect(p.locator('#graph-dirty')).toHaveText('変更なし');await reveal(p);
+  });
   if(selected.length){const previous=JSON.parse(await readFile(join(MEDIA,'manifest.json'),'utf8'));const updated=new Map(previous.clips.map(clip=>[clip.file,clip]));for(const clip of manifest)updated.set(clip.file,clip);manifest.splice(0,manifest.length,...updated.values());}
   await writeFile(join(MEDIA,'manifest.json'),JSON.stringify({source:'Real BlockSim Chromium/WASM capture; presentation layout and path reveal only.',fps:10,clips:manifest},null,2)+'\n');
   console.log('Posters:',TMP);
