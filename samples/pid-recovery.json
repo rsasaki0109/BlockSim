@@ -1,0 +1,20 @@
+{
+  "mode": "continuous",
+  "pid": {
+    "kp": 2.0,
+    "ki": 1.0,
+    "kd": 0.0,
+    "derivative_tau": 0.05,
+    "limits": { "lower": 0.0, "upper": 1.0 },
+    "anti_windup": true
+  },
+  "dt": 0.01,
+  "duration": 40.0,
+  "step_time": 5.0,
+  "initial_reference": 3.0,
+  "final_reference": 0.5,
+  "plant_gain": 1.0,
+  "plant_tau": 1.0,
+  "initial_output": 0.0,
+  "settling_tolerance": 0.02
+}

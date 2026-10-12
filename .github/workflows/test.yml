@@ -1,0 +1,18 @@
+name: BlockSim checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: ./scripts/setup.sh
+      - run: npx playwright install --with-deps chromium
+        working-directory: web
+      - run: ./scripts/check.sh
