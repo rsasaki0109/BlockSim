@@ -1,4 +1,4 @@
-import { normalize_graph, validate_graph } from './wasm/blocksim';
+import { normalize_graph, diagnose_graph } from './wasm/blocksim';
 import { parseNumber } from './document';
 import { copySelection, pasteSelection, connectPorts, mergeGraph, ungroupBlock, inputWidth, nodeHeight, portY, wirePath } from './graph-edit';
 import {
@@ -9,6 +9,7 @@ import {
 import { plotGraph, seriesFrom } from './graph-chart';
 import { autoLayout } from './graph-layout';
 import { searchGraph, type GraphSearchHit } from './graph-search';
+import { diagnosticLinks, ISSUE_HINTS, type GraphDiagnostic, type GraphValidation } from './graph-diagnostics';
 import continuous from '../../samples/graphs/continuous-pid.json';
 import mixed from '../../samples/graphs/mixed-pid.json';
 import vector from '../../samples/graphs/vector.json';
@@ -23,9 +24,14 @@ export function mountEditor(host:HTMLElement) {
     <div class="graph-toolbar panel">
       <label>ブロック種類<select id="block-kind"></select></label><button id="block-add">ブロックを追加</button>
       <button id="graph-select-all">すべて選択</button><button id="graph-copy" disabled>コピー</button><button id="graph-paste" disabled>貼り付け</button><button id="graph-duplicate" disabled>複製</button><button id="graph-undo">Undo</button><button id="graph-redo">Redo</button><button id="graph-delete">選択を削除</button><button id="graph-group">サブシステム化</button><button id="graph-ungroup">グループ解除</button><button id="graph-wire-cancel" disabled>配線をキャンセル</button><button id="graph-disconnect" disabled>選択した接続を削除</button>
-      <button id="graph-run" class="primary">モデルを実行</button><button id="graph-cancel" disabled>実行を中止</button>
+      <button id="graph-check-run">モデルを確認</button><button id="graph-run" class="primary">モデルを実行</button><button id="graph-cancel" disabled>実行を中止</button>
     </div>
     <div id="graph-status" role="status" aria-label="モデル実行状態" aria-live="polite"></div>
+    <details id="graph-diagnostics" class="panel">
+      <summary id="graph-diagnostics-summary">モデル診断</summary><p id="graph-diagnostics-state" role="status" aria-live="polite"></p>
+      <ul id="graph-diagnostics-list" aria-label="モデルの問題"></ul>
+      <div class="diagnostic-pages"><button id="graph-diagnostics-prev">前の問題</button><span id="graph-diagnostics-page"></span><button id="graph-diagnostics-next">次の問題</button></div>
+    </details>
     <details id="graph-search" class="panel">
       <summary>ブロックを検索 <span class="hint">Ctrl/Cmd+K</span></summary>
       <form id="graph-search-form"><label>ブロック検索<input id="graph-query" type="search" maxlength="200" placeholder="名前・ID・種類（空白で複数指定）" autocomplete="off"></label>
@@ -58,6 +64,44 @@ export function mountEditor(host:HTMLElement) {
   let pendingWire:{from:string,from_port:number,path:string}|null=null, previewPoint:[number,number]|null=null, selectedEdge:number|null=null;
   let worker:Worker|null=null, request=0;
   let clipboard:GraphModel|null=null, pasteCount=0, zoom=1;
+  let diagnosticSnapshot:string|null=null,diagnosticPage=0,runtimeError:string|null=null;
+  let validation:GraphValidation={runnable:false,diagnostics:[]};
+  const problemBlocks=new Map<string,number>(),problemPorts=new Set<string>();
+  function refreshDiagnostics(force=false){
+    const json=JSON.stringify(history.graph);if(!force&&json===diagnosticSnapshot)return;
+    try{validation=JSON.parse(diagnose_graph(json)) as GraphValidation;}
+    catch(error){validation={runnable:false,diagnostics:[{code:'structure',message:String(error),block_id:null,port:null,source_id:null}]};}
+    diagnosticSnapshot=json;diagnosticPage=0;runtimeError=null;problemBlocks.clear();problemPorts.clear();
+    for(const issue of validation.diagnostics){
+      if(issue.block_id){
+        const parts=issue.block_id.split('/');for(let i=1;i<=parts.length;i++){const address=parts.slice(0,i).join('/');problemBlocks.set(address,(problemBlocks.get(address)||0)+1);}
+        if(issue.port!==null)problemPorts.add(`${issue.block_id}:${issue.port}`);
+      }
+      const parent=diagnosticLinks(history.graph,issue).parentInput;if(parent)problemPorts.add(`${parent.target.address}:${parent.port}`);
+    }
+  }
+  function renderDiagnostics(){
+    const issues:GraphDiagnostic[]=[...validation.diagnostics];
+    if(runtimeError)issues.push({code:'runtime_error',message:runtimeError,block_id:null,port:null,source_id:null});
+    const panel=get<HTMLDetailsElement>('graph-diagnostics');panel.classList.toggle('has-issues',issues.length>0);
+    get('graph-diagnostics-summary').textContent=`モデル診断 · ${issues.length?issues.length+' 件の問題':'問題なし'}`;
+    get('graph-diagnostics-state').textContent=runtimeError?'計算中にエラーが発生しました':validation.runnable?'実行前チェック: 問題なし':`実行前チェック: ${issues.length} 件の問題`;
+    const pages=Math.max(1,Math.ceil(issues.length/50));diagnosticPage=Math.max(0,Math.min(diagnosticPage,pages-1));
+    get<HTMLButtonElement>('graph-diagnostics-prev').disabled=diagnosticPage===0;get<HTMLButtonElement>('graph-diagnostics-next').disabled=diagnosticPage===pages-1;
+    get('graph-diagnostics-page').textContent=issues.length?`${diagnosticPage+1} / ${pages} ページ（全${issues.length}件）`:'';
+    const list=get('graph-diagnostics-list');list.replaceChildren();
+    for(const issue of issues.slice(diagnosticPage*50,(diagnosticPage+1)*50)){
+      const row=document.createElement('li'),title=document.createElement('strong'),message=document.createElement('p'),hint=document.createElement('p'),actions=document.createElement('div');
+      title.textContent=ISSUE_HINTS[issue.code][0];message.textContent=issue.message;hint.className='hint';hint.textContent=ISSUE_HINTS[issue.code][1];row.dataset.code=issue.code;
+      const links=diagnosticLinks(history.graph,issue);
+      if(links.target)actions.append(button(`表示 ${links.target.address}${issue.port!==null?':'+issue.port:''}`,()=>guard(()=>revealBlock(links.target!,issue.port))));
+      if(links.parentInput){const parent=links.parentInput;actions.append(button(`親の入力 ${parent.target.address}:${parent.port}`,()=>guard(()=>revealBlock(parent.target,parent.port))));hint.textContent='親階層の対応する入力と、内部の境界接続を確認してください。';}
+      if(links.source&&links.source.address!==links.target?.address)actions.append(button(`接続元 ${links.source.address}`,()=>guard(()=>revealBlock(links.source!))));
+      if(['empty_graph','missing_scope'].includes(issue.code))actions.append(button('Scope を選ぶ',()=>{get<HTMLSelectElement>('block-kind').value='scope';get('block-add').focus();}));
+      if(['work_limit','recording_limit'].includes(issue.code))actions.append(button('時間設定を確認',()=>get('graph-dt').focus()));
+      row.append(title,message,hint,actions);list.append(row);
+    }
+  }
   let baseline=JSON.stringify(history.graph);
   const dirty=()=>JSON.stringify(history.graph)!==baseline;
   function syncDirty(){get('graph-dirty').textContent=dirty()?'未保存の変更あり':'変更なし';}
@@ -102,7 +146,7 @@ export function mountEditor(host:HTMLElement) {
       target.classList.toggle('search-current',hit.path.join('/')===path.join('/')&&selected.has(hit.id));row.append(target);results.append(row);
     }
   }
-  function revealBlock(hit:GraphSearchHit){
+  function revealBlock(hit:GraphSearchHit,port:number|null=null){
     const graph=graphContext(history.graph,hit.path),block=graph.blocks.find(b=>b.id===hit.id);
     if(!block){renderSearch();throw new Error('ブロックがありません。検索し直してください');}
     path=[...hit.path];selected=new Set([hit.id]);pendingWire=null;previewPoint=null;selectedEdge=null;render();
@@ -112,6 +156,7 @@ export function mountEditor(host:HTMLElement) {
     viewport.scrollTop=(block.position[1]+32+height/2)*zoom-viewport.clientHeight/2;
     viewport.scrollIntoView({block:'nearest',inline:'nearest'});
     node.focus({preventScroll:true});
+    if(port!==null)get<HTMLButtonElement>(`port-in-${hit.id}-${port}`)?.focus({preventScroll:true});
   }
   const edit=(action:(graph:GraphModel)=>void,message='モデルを変更しました')=>{
     const previousSelection=new Set(selected);
@@ -201,17 +246,18 @@ export function mountEditor(host:HTMLElement) {
       curve.addEventListener('click',()=>chooseEdge(i));curve.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();chooseEdge(i);}});wires.append(curve);
     });
     for(const b of current().blocks){
-      const node=document.createElement('div');node.className='graph-node';node.classList.toggle('selected',selected.has(b.id));node.dataset.block=b.id;node.style.left=b.position[0]+'px';node.style.top=b.position[1]+'px';node.style.minHeight=nodeHeight(b)+'px';node.tabIndex=0;node.setAttribute('role','button');node.setAttribute('aria-label',`ブロック ${b.id}`);
+      const node=document.createElement('div');node.className='graph-node';const address=[...path,b.id].join('/');node.classList.toggle('problem',problemBlocks.has(address));node.classList.toggle('selected',selected.has(b.id));node.dataset.block=b.id;node.style.left=b.position[0]+'px';node.style.top=b.position[1]+'px';node.style.minHeight=nodeHeight(b)+'px';node.tabIndex=0;node.setAttribute('role','button');node.setAttribute('aria-label',`ブロック ${b.id}`);
       const check=document.createElement('input');check.type='checkbox';check.checked=selected.has(b.id);check.setAttribute('aria-label',`選択 ${b.id}`);
       check.addEventListener('pointerdown',e=>e.stopPropagation());check.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')e.stopPropagation();});check.addEventListener('click',e=>e.stopPropagation());check.addEventListener('change',()=>{selectedEdge=null;if(check.checked)selected.add(b.id);else selected.delete(b.id);render();});
       const title=document.createElement('strong');title.textContent=b.label;const small=document.createElement('small');small.textContent=`${KIND_NAMES[b.params.kind]} · 幅${b.width}`;
       node.append(check,title,small);
+      if(problemBlocks.has(address)){const badge=document.createElement('span');badge.className='problem-badge';badge.textContent=String(problemBlocks.get(address));badge.title='このブロックまたは内部に診断があります';badge.setAttribute('aria-hidden','true');node.append(badge);}
       for(const direction of ['in','out'] as const)for(let port=0;port<(direction==='in'?inputCount(b):outputCount(b));port++){
         const endpoint=document.createElement('button');endpoint.type='button';endpoint.className=`node-port port-${direction}`;endpoint.style.top=(portY(port)-11)+'px';endpoint.textContent=String(port);
         const label=`${direction==='in'?'入力':'出力'} ${b.id}:${port}`;endpoint.setAttribute('aria-label',label);endpoint.title=`${label} · 幅${direction==='in'?inputWidth(b,port):outputWidth(b,port)}`;
         endpoint.id=`port-${direction}-${b.id}-${port}`;endpoint.dataset.port=String(port);endpoint.dataset.direction=direction;
         if(direction==='out'){const active=pendingWire?.from===b.id&&pendingWire.from_port===port;endpoint.classList.toggle('port-pending',active);endpoint.setAttribute('aria-pressed',String(active));}
-        else endpoint.classList.toggle('port-connected',current().edges.some(e=>e.to===b.id&&e.to_port===port));
+        else {endpoint.classList.toggle('port-connected',current().edges.some(e=>e.to===b.id&&e.to_port===port));endpoint.classList.toggle('port-problem',problemPorts.has(`${address}:${port}`));}
         endpoint.addEventListener('pointerdown',event=>event.stopPropagation());endpoint.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' ')event.stopPropagation();});
         endpoint.addEventListener('click',event=>{event.stopPropagation();if(direction==='out'){
           pendingWire={from:b.id,from_port:port,path:path.join('/')};previewPoint=null;selectedEdge=null;render();get<HTMLButtonElement>(`port-out-${b.id}-${port}`).focus();say(`${label} を選択しました。接続先の入力ポートをクリックしてください`);
@@ -249,7 +295,7 @@ export function mountEditor(host:HTMLElement) {
     const kinds=get<HTMLSelectElement>('block-kind');const previous=kinds.value;kinds.replaceChildren();
     for(const kind of Object.keys(KIND_NAMES) as Kind[])if(path.length||!['input','output'].includes(kind))kinds.add(new Option(KIND_NAMES[kind],kind));if([...kinds.options].some(o=>o.value===previous))kinds.value=previous;
     for(const id of ['edge-from','edge-to']){const select=get<HTMLSelectElement>(id),previous=select.value;select.replaceChildren();for(const b of current().blocks)select.add(new Option(`${b.label} (${b.id})`,b.id));if(current().blocks.some(b=>b.id===previous))select.value=previous;}
-    renderPorts();renderNodes();renderInspector();syncCopy();syncDirty();renderSearch();
+    refreshDiagnostics();renderPorts();renderNodes();renderInspector();syncCopy();syncDirty();renderSearch();renderDiagnostics();
     const edges=get('graph-edges');edges.replaceChildren();current().edges.forEach((e,i)=>{
       const row=document.createElement('div');row.className='edge-row';const text=document.createElement('span');text.textContent=`${e.from}:${e.from_port} → ${e.to}:${e.to_port}`;
       const remove=button('×',()=>edit(g=>{g.edges.splice(i,1);},'接続を削除しました'));remove.setAttribute('aria-label',`接続を削除 ${e.from} ${e.to} ${e.to_port}`);row.append(text,remove);edges.append(row);
@@ -265,11 +311,13 @@ export function mountEditor(host:HTMLElement) {
     plotGraph(get('graph-plot'),data,visible);cursor();say(`完了 · ${data.times.length} 点 · ${data.traces.length} Scope · Rust / WASM`);
   }
   function run(){guard(()=>{
-    const json=validate_graph(JSON.stringify(history.graph));cancel();const id=++request;
+    refreshDiagnostics(true);renderNodes();renderDiagnostics();
+    if(!validation.runnable){get<HTMLDetailsElement>('graph-diagnostics').open=true;throw new Error(validation.diagnostics[0].message);}
+    const json=JSON.stringify(history.graph);cancel();const id=++request;
     get<HTMLButtonElement>('graph-run').disabled=true;get<HTMLButtonElement>('graph-cancel').disabled=false;say('モデルを計算中…');
     worker=new Worker(new URL('./graph-worker.ts',import.meta.url),{type:'module'});
-    worker.onmessage=(event:MessageEvent<{id:number,result?:GraphResult,error?:string}>)=>{if(event.data.id!==request)return;cancel();if(event.data.error)say(event.data.error,true);else if(event.data.result)showResult(event.data.result);};
-    worker.onerror=event=>{if(id!==request)return;cancel();say(`計算ワーカーの起動に失敗: ${event.message}`,true);};worker.postMessage({id,json});
+    worker.onmessage=(event:MessageEvent<{id:number,result?:GraphResult,error?:string}>)=>{if(event.data.id!==request)return;cancel();if(event.data.error){runtimeError=event.data.error;renderDiagnostics();get<HTMLDetailsElement>('graph-diagnostics').open=true;say(event.data.error,true);}else if(event.data.result)showResult(event.data.result);};
+    worker.onerror=event=>{if(id!==request)return;cancel();runtimeError=`計算ワーカーの起動に失敗: ${event.message}`;renderDiagnostics();get<HTMLDetailsElement>('graph-diagnostics').open=true;say(runtimeError,true);};worker.postMessage({id,json});
   });}
   get('block-add').addEventListener('click',()=>edit(g=>{const block=newBlock(get<HTMLSelectElement>('block-kind').value as Kind,g);g.blocks.push(block);selected=new Set([block.id]);},'ブロックを追加しました'));
   get('graph-delete').addEventListener('click',()=>edit(g=>deleteBlocks(g,selected),'選択と接続を削除しました'));
@@ -306,6 +354,8 @@ export function mountEditor(host:HTMLElement) {
     if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'&&(!typing||event.target===get('graph-query'))){event.preventDefault();openSearch();return;}
     if(event.key==='Escape'&&!pendingWire&&searchPanel.open){event.preventDefault();const fromSearch=event.target instanceof Node&&searchPanel.contains(event.target);searchPanel.open=false;if(fromSearch)searchPanel.querySelector<HTMLElement>('summary')!.focus();return;}
 if(event.key==='Escape'&&pendingWire){event.preventDefault();cancelWire();return;}if(event.target instanceof HTMLElement&&['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName))return;if(event.key==='Delete'||event.key==='Backspace'){if(selectedEdge!==null){event.preventDefault();disconnect();}return;}if(!event.ctrlKey&&!event.metaKey)return;if(event.target instanceof HTMLElement&&['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName))return;if(event.key.toLowerCase()==='a'){event.preventDefault();selectAll();}else if(event.key.toLowerCase()==='c'){event.preventDefault();copy();}else if(event.key.toLowerCase()==='v'){event.preventDefault();paste();}else if(event.key.toLowerCase()==='d'){event.preventDefault();duplicate();}else if(event.key.toLowerCase()==='z'){event.preventDefault();if(event.shiftKey)redo();else undo();}else if(event.key.toLowerCase()==='y'){event.preventDefault();redo();}});
+  get('graph-check-run').addEventListener('click',()=>{refreshDiagnostics(true);renderNodes();renderDiagnostics();get<HTMLDetailsElement>('graph-diagnostics').open=true;});
+  get('graph-diagnostics-prev').addEventListener('click',()=>{diagnosticPage--;renderDiagnostics();});get('graph-diagnostics-next').addEventListener('click',()=>{diagnosticPage++;renderDiagnostics();});
   get('graph-run').addEventListener('click',run);get('graph-cancel').addEventListener('click',()=>{cancel();say('実行を中止しました');});
   get('edge-from').addEventListener('change',renderPorts);get('edge-to').addEventListener('change',renderPorts);
   get<HTMLFormElement>('graph-connect').addEventListener('submit',event=>{event.preventDefault();edit(g=>{

@@ -35,7 +35,7 @@ try {
     .capture-brand{font-size:14px;color:#63e3bc;letter-spacing:2px;font-weight:700}.capture-title{font-size:28px;font-weight:750;letter-spacing:-.8px;line-height:1.25;color:#ecf5ff}.capture-sub{font-size:12px;color:#9fb7cd;margin-top:3px}.capture-chip{border:1px solid #3b6c64;border-radius:30px;padding:8px 12px;color:#63e3bc;font-size:11px;letter-spacing:2px}
     .capture-pointer{position:fixed;z-index:9999;width:14px;height:14px;border-radius:50%;background:#63e3bc;box-shadow:0 0 0 6px #63e3bc33;pointer-events:none;left:-50px;top:-50px;transition:box-shadow .16s}
     .graph-toolbar{padding:9px;margin-bottom:9px;min-height:43px}.graph-toolbar label,.graph-toolbar button{display:none}.graph-toolbar #graph-run,.graph-toolbar #graph-undo,.graph-toolbar #graph-redo,.graph-toolbar #graph-group,.graph-toolbar #graph-ungroup{display:block}.graph-toolbar .primary{margin-top:0!important;font-size:12px;padding:8px 16px}.graph-toolbar button{padding:8px 11px;font-size:11px}
-    .graph-workspace{grid-template-columns:minmax(0,1fr);gap:16px}.graph-center{min-width:0}.graph-workspace aside{display:none}.graph-topline{height:29px}.graph-center>.hint,.graph-view-tools,#graph-search{display:none}
+    .graph-workspace{grid-template-columns:minmax(0,1fr);gap:16px}.graph-center{min-width:0}.graph-workspace aside{display:none}.graph-topline{height:29px}.graph-center>.hint,.graph-view-tools,#graph-search,#graph-diagnostics{display:none}
     .graph-viewport{height:280px;margin:8px 0 12px;overflow:hidden}#graph-board{transform-origin:0 0}.graph-node strong{font-size:17px}.graph-node small{font-size:14px}.graph-node{padding:12px}
     #graph-status{font-size:12px;padding-bottom:4px}.graph-results{padding:12px 18px;margin:0}.graph-results h2{font-size:14px;margin:0 0 8px}.graph-results .hint{display:none}#graph-series label{font-size:11px;margin:0}#graph-plot svg{height:190px}#graph-series{gap:6px 16px}#graph-csv{display:none}#graph-values{margin:0;padding-top:6px;font-size:11px;line-height:1.5}
     .graph-results>label{font-size:10px;margin:3px 0}#graph-cursor{margin-top:2px}#graph-breadcrumb button{padding:5px 10px}
@@ -45,6 +45,7 @@ try {
     body.capture-pid .panel{padding:14px 20px;margin-bottom:10px}body.capture-pid .panel h2{font-size:15px;margin:0 0 8px}body.capture-pid .hint{display:none}body.capture-pid .charts h3{font-size:12px;margin:8px 0 0}body.capture-pid .charts h3:nth-of-type(3),body.capture-pid #integral-chart{display:none}body.capture-pid .charts svg{height:185px}body.capture-pid th,body.capture-pid td{padding:10px 12px}
     body.capture-workspace .graph-toolbar #graph-select-all,body.capture-workspace .graph-toolbar #graph-copy,body.capture-workspace .graph-toolbar #graph-paste{display:block}body.capture-workspace .graph-view-tools{display:flex}body.capture-workspace #block-properties label:nth-child(4){display:block!important}body.capture-workspace .graph-viewport{height:230px}body.capture-workspace #graph-plot svg{height:165px}
     body.capture-search #graph-search{display:block;padding:8px 12px;margin:4px 0 8px}body.capture-search #graph-search summary{font-size:12px}body.capture-search #graph-search-form{margin-top:8px;gap:8px}body.capture-search #graph-search input,body.capture-search #graph-search select{padding:6px;font-size:12px;margin-top:4px}body.capture-search #graph-search-count{margin:6px 0}body.capture-search #graph-search-results{max-height:94px;margin-bottom:0}body.capture-search #graph-search-results button{padding:5px 8px;gap:2px}body.capture-search #graph-search>.hint{display:none}body.capture-search .graph-viewport{height:145px}body.capture-search #graph-plot svg{height:115px}
+    body.capture-diagnostics #graph-diagnostics{display:block;padding:8px 12px;margin:4px 0 8px}body.capture-diagnostics #graph-check-run{display:block}body.capture-diagnostics #graph-diagnostics summary{font-size:13px}body.capture-diagnostics #graph-diagnostics-state{font-size:12px;margin:7px 0}body.capture-diagnostics #graph-diagnostics-list{max-height:120px;margin:0}body.capture-diagnostics #graph-diagnostics-list li{padding:8px 12px}body.capture-diagnostics #graph-diagnostics-list p{font-size:11px;margin:5px 0}body.capture-diagnostics #graph-diagnostics-list button{padding:5px 10px;font-size:11px}body.capture-diagnostics .diagnostic-pages{display:none}body.capture-diagnostics .graph-viewport{height:145px}body.capture-diagnostics #graph-plot svg{height:115px}
     .capture-reveal{animation:trace-draw 3s ease-in-out both}@keyframes trace-draw{from{stroke-dashoffset:var(--trace-length)}to{stroke-dashoffset:0}}
   `;
   async function ready(page,editor=true) {
@@ -150,6 +151,23 @@ try {
     await p.getByRole('button',{name:'表示 gain (copy-amplifier/gain)',exact:true}).click();await expect(p.locator('#graph-breadcrumb')).toContainText('copy-amplifier');await expect(p.getByLabel('ゲイン',{exact:true})).toHaveValue('3');await sleep(900);
     await gain(p,5);await run(p);await cursor(p,.25);await expect(p.locator('#graph-values')).toContainText('wave-output (wave-output) [0]=3.00000');await expect(p.locator('#graph-values')).toContainText('wave-output (copy-wave-output) [0]=5.00000');await reveal(p);
     await click(p,'graph-save');await p.getByLabel('ブロック検索',{exact:true}).fill('copy-amplifier gain');await expect(p.locator('#graph-search-count')).toHaveText('1 件');await expect(p.locator('#graph-dirty')).toHaveText('変更なし');
+  });
+  await record('diagnostics',async p=>{
+    await ready(p);await p.evaluate(()=>document.body.classList.add('capture-inspector'));await click(p,'graph-empty');
+    for(const kind of ['constant','gain','scope']){
+      await p.evaluate(kind=>{document.getElementById('block-kind').value=kind;document.getElementById('block-add').click();},kind);
+      if(kind==='constant'){await p.locator('[name="p.value"]').fill('[2]');await p.locator('#block-properties').evaluate(form=>form.requestSubmit());}
+      if(kind==='gain')await gain(p,3);
+    }
+    await p.evaluate(()=>document.body.classList.remove('capture-inspector'));await connect(p,'constant-1','gain-1');await click(p,'graph-save');
+    await p.evaluate(()=>{document.body.classList.add('capture-diagnostics');document.getElementById('graph-fit').click();});
+    await title(p,'FIND THE PROBLEM. FIX THE FLOW.','モデル診断から入力ポートへ。配線を直して、再実行。','10 / DIAGNOSE');
+  },async p=>{
+    await click(p,'graph-check-run');await expect(p.locator('#graph-diagnostics-summary')).toContainText('1 件の問題');await sleep(1200);
+    await p.screenshot({path:join(TMP,'diagnostics-issue.png')});
+    await p.getByRole('button',{name:'表示 scope-1:0',exact:true}).click();await expect(p.locator('#port-in-scope-1-0')).toBeFocused();await sleep(700);
+    await connect(p,'gain-1','scope-1');await expect(p.locator('#graph-diagnostics-summary')).toContainText('問題なし');await run(p);await expect(p.locator('#graph-values')).toContainText('6.00000');
+    await title(p,'CONNECT. FIX. CONTINUE.','問題なし → 実 WASM で出力6 → モデル保存','10 / DIAGNOSE');await reveal(p);await click(p,'graph-save');await expect(p.locator('#graph-dirty')).toHaveText('変更なし');
   });
   if(selected.length){const previous=JSON.parse(await readFile(join(MEDIA,'manifest.json'),'utf8'));const updated=new Map(previous.clips.map(clip=>[clip.file,clip]));for(const clip of manifest)updated.set(clip.file,clip);manifest.splice(0,manifest.length,...updated.values());}
   await writeFile(join(MEDIA,'manifest.json'),JSON.stringify({source:'Real BlockSim Chromium/WASM capture; presentation layout and path reveal only.',fps:10,clips:manifest},null,2)+'\n');

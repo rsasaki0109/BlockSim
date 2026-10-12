@@ -81,6 +81,14 @@
       "bytes": 272787,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "diagnostics.gif",
+      "frames": 102,
+      "duration_seconds": 10.2,
+      "bytes": 199085,
+      "width": 960,
+      "height": 737
     }
   ]
 }

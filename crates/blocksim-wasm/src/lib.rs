@@ -64,6 +64,14 @@ pub fn normalize_graph_json(json: &str, runnable: bool) -> Result<String, String
     }
     encode(&graph)
 }
+pub fn diagnose_graph_json(json: &str) -> Result<String, String> {
+    let graph: blocksim_core::graph::GraphModel = decode(json)?;
+    encode(&blocksim_core::graph::diagnose_graph(&graph))
+}
+#[wasm_bindgen]
+pub fn diagnose_graph(json: &str) -> Result<String, JsValue> {
+    diagnose_graph_json(json).map_err(|e| JsValue::from_str(&e))
+}
 #[wasm_bindgen]
 pub fn run_graph(json: &str) -> Result<String, JsValue> {
     graph_json(json).map_err(|e| JsValue::from_str(&e))
@@ -80,6 +88,23 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn graph_diagnostics_boundary_returns_structured_reports_and_rejects_bad_json() {
+        let json = include_str!("../../../samples/graphs/subsystem.json");
+        let valid: serde_json::Value =
+            serde_json::from_str(&diagnose_graph_json(json).unwrap()).unwrap();
+        assert_eq!(valid["runnable"], true);
+        let mut graph: serde_json::Value = serde_json::from_str(json).unwrap();
+        graph["edges"] = serde_json::json!([]);
+        let report: serde_json::Value =
+            serde_json::from_str(&diagnose_graph_json(&graph.to_string()).unwrap()).unwrap();
+        assert_eq!(report["runnable"], false);
+        assert_eq!(report["diagnostics"][0]["code"], "unconnected_input");
+        assert_eq!(report["diagnostics"][0]["block_id"], "amplifier/in");
+        assert_eq!(report["diagnostics"][0]["port"], 0);
+        assert!(diagnose_graph_json("{}").is_err());
+        assert!(diagnose_graph_json(&" ".repeat(MAX_JSON_BYTES + 1)).is_err());
+    }
     #[test]
     fn graph_boundary_executes_vectors_and_draft_validation() {
         let json = include_str!("../../../samples/graphs/vector.json");

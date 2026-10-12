@@ -396,10 +396,71 @@ fn structure(model: &GraphModel) -> Result<Flat> {
 pub fn validate_draft(model: &GraphModel) -> Result<()> {
     structure(model).map(|_| ())
 }
-fn compile(model: &GraphModel) -> Result<Compiled> {
-    let flat = structure(model)?;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DiagnosticCode {
+    Structure,
+    EmptyGraph,
+    DuplicateInput,
+    UnconnectedInput,
+    SignalWidth,
+    MuxWidth,
+    SelectorIndex,
+    AlgebraicLoop,
+    MissingScope,
+    WorkLimit,
+    RecordingLimit,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GraphDiagnostic {
+    pub code: DiagnosticCode,
+    pub message: String,
+    pub block_id: Option<String>,
+    pub port: Option<usize>,
+    pub source_id: Option<String>,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GraphValidation {
+    pub runnable: bool,
+    pub diagnostics: Vec<GraphDiagnostic>,
+}
+fn issue(
+    code: DiagnosticCode,
+    message: String,
+    block_id: Option<&str>,
+    port: Option<usize>,
+    source_id: Option<&str>,
+) -> GraphDiagnostic {
+    GraphDiagnostic {
+        code,
+        message,
+        block_id: block_id.map(str::to_owned),
+        port,
+        source_id: source_id.map(str::to_owned),
+    }
+}
+struct Analysis {
+    incoming: Vec<Vec<Option<usize>>>,
+    order: Vec<usize>,
+    scopes: Vec<usize>,
+    diagnostics: Vec<GraphDiagnostic>,
+}
+fn analyze(flat: &Flat, model: &GraphModel) -> Analysis {
+    use DiagnosticCode::*;
+    let mut diagnostics = vec![];
     if flat.blocks.is_empty() {
-        return Err("Graph has no blocks".into());
+        return Analysis {
+            incoming: vec![],
+            order: vec![],
+            scopes: vec![],
+            diagnostics: vec![issue(
+                EmptyGraph,
+                "Graph has no blocks".into(),
+                None,
+                None,
+                None,
+            )],
+        };
     }
     let map: BTreeMap<_, _> = flat
         .blocks
@@ -416,48 +477,81 @@ fn compile(model: &GraphModel) -> Result<Compiled> {
         let from = map[e.from.as_str()];
         let to = map[e.to.as_str()];
         if incoming[to][e.to_port].replace(from).is_some() {
-            return Err(format!("{}: duplicate input", e.to));
+            diagnostics.push(issue(
+                DuplicateInput,
+                format!("{}: duplicate input", e.to),
+                Some(&e.to),
+                Some(e.to_port),
+                Some(&e.from),
+            ));
         }
     }
-    let mut full = vec![];
-    for (i, ports) in incoming.into_iter().enumerate() {
-        let mut entries = vec![];
-        for (port, source) in ports.into_iter().enumerate() {
-            entries.push(
-                source.ok_or_else(|| format!("{}:{port}: unconnected input", flat.blocks[i].id))?,
-            );
-        }
+    for (i, ports) in incoming.iter().enumerate() {
         let b = &flat.blocks[i];
+        for (port, source) in ports.iter().enumerate() {
+            if source.is_none() {
+                diagnostics.push(issue(
+                    UnconnectedInput,
+                    format!("{}:{port}: unconnected input", b.id),
+                    Some(&b.id),
+                    Some(port),
+                    None,
+                ));
+            }
+        }
         match &b.params {
             BlockKind::Mux { .. } => {
-                if entries.iter().map(|s| flat.blocks[*s].width).sum::<usize>() != b.width {
-                    return Err(format!(
-                        "{}: Mux output width must equal sum of input widths",
-                        b.id
+                let total: usize = ports.iter().flatten().map(|s| flat.blocks[*s].width).sum();
+                if total > b.width || (ports.iter().all(Option::is_some) && total != b.width) {
+                    diagnostics.push(issue(
+                        MuxWidth,
+                        format!("{}: Mux output width must equal sum of input widths", b.id),
+                        Some(&b.id),
+                        None,
+                        None,
                     ));
                 }
             }
             BlockKind::Selector { indices } => {
-                if indices.iter().any(|v| *v >= flat.blocks[entries[0]].width) {
-                    return Err(format!("{}: Selector index outside source width", b.id));
+                if let Some(source) = ports[0] {
+                    if indices.iter().any(|v| *v >= flat.blocks[source].width) {
+                        diagnostics.push(issue(
+                            SelectorIndex,
+                            format!("{}: Selector index outside source width", b.id),
+                            Some(&b.id),
+                            Some(0),
+                            Some(&flat.blocks[source].id),
+                        ));
+                    }
                 }
             }
             _ => {
-                if entries.iter().any(|s| flat.blocks[*s].width != b.width) {
-                    return Err(format!("{}: signal width mismatch", b.id));
+                for (port, source) in ports.iter().enumerate() {
+                    if let Some(source) = source {
+                        if flat.blocks[*source].width != b.width {
+                            diagnostics.push(issue(
+                                SignalWidth,
+                                format!("{}: signal width mismatch", b.id),
+                                Some(&b.id),
+                                Some(port),
+                                Some(&flat.blocks[*source].id),
+                            ));
+                        }
+                    }
                 }
             }
         }
-        full.push(entries);
     }
-    // Treat continuous state and unit delays as dependency breaks, preserving feedback.
+    // Preserve the existing greedy execution order for valid graphs. Missing
+    // connections do not block this analysis: they already have their own issues.
     let mut order = vec![];
     let mut done = BTreeSet::new();
     while order.len() < flat.blocks.len() {
         let mut progress = false;
         for (i, b) in flat.blocks.iter().enumerate() {
             if !done.contains(&i)
-                && (b.params.state_output() || full[i].iter().all(|s| done.contains(s)))
+                && (b.params.state_output()
+                    || incoming[i].iter().flatten().all(|s| done.contains(s)))
             {
                 order.push(i);
                 done.insert(i);
@@ -465,16 +559,42 @@ fn compile(model: &GraphModel) -> Result<Compiled> {
             }
         }
         if !progress {
-            let ids: Vec<_> = flat
-                .blocks
-                .iter()
-                .enumerate()
-                .filter(|(i, _)| !done.contains(i))
-                .map(|(_, b)| b.id.as_str())
-                .collect();
-            return Err(format!(
-                "Algebraic loop: {}. Insert Integrator, FirstOrder or Delay",
-                ids.join(", ")
+            break;
+        }
+    }
+    // Only actual cycle participants are blamed, not downstream Scope blocks.
+    for (i, b) in flat.blocks.iter().enumerate() {
+        if done.contains(&i) {
+            continue;
+        }
+        let mut stack = vec![i];
+        let mut seen = BTreeSet::new();
+        let mut cycle = false;
+        while let Some(node) = stack.pop() {
+            if !seen.insert(node) || flat.blocks[node].params.state_output() {
+                continue;
+            }
+            for source in incoming[node].iter().flatten() {
+                if *source == i {
+                    cycle = true;
+                    break;
+                }
+                stack.push(*source);
+            }
+            if cycle {
+                break;
+            }
+        }
+        if cycle {
+            diagnostics.push(issue(
+                AlgebraicLoop,
+                format!(
+                    "Algebraic loop: {}. Insert Integrator, FirstOrder or Delay",
+                    b.id
+                ),
+                Some(&b.id),
+                None,
+                None,
             ));
         }
     }
@@ -486,25 +606,77 @@ fn compile(model: &GraphModel) -> Result<Compiled> {
         .map(|(i, _)| i)
         .collect();
     if scopes.is_empty() {
-        return Err("Add a Scope to record results".into());
+        diagnostics.push(issue(
+            MissingScope,
+            "Add a Scope to record results".into(),
+            None,
+            None,
+            None,
+        ));
     }
+    let samples = (model.duration / model.dt).round() as usize + 1;
     let work: usize = flat.blocks.iter().map(|b| b.width).sum();
-    if work * ((model.duration / model.dt).round() as usize + 1) > 20_000_000 {
-        return Err(
+    if work * samples > 20_000_000 {
+        diagnostics.push(issue(
+            WorkLimit,
             "Graph exceeds 20000000 block-component steps; reduce graph size or time steps".into(),
-        );
+            None,
+            None,
+            None,
+        ));
     }
     let recorded_width: usize = scopes.iter().map(|i| flat.blocks[*i].width).sum();
-    if recorded_width * ((model.duration / model.dt).round() as usize + 1) > 2_000_000 {
-        return Err("Recorded signals exceed 2000000 cells; reduce duration or Scope width".into());
+    if recorded_width * samples > 2_000_000 {
+        diagnostics.push(issue(
+            RecordingLimit,
+            "Recorded signals exceed 2000000 cells; reduce duration or Scope width".into(),
+            None,
+            None,
+            None,
+        ));
     }
-    Ok(Compiled {
-        flat,
-        incoming: full,
+    Analysis {
+        incoming,
         order,
         scopes,
+        diagnostics,
+    }
+}
+/// Structured preflight checks; no simulation state or recorded samples are allocated.
+pub fn diagnose_graph(model: &GraphModel) -> GraphValidation {
+    let diagnostics = match structure(model) {
+        Ok(flat) => analyze(&flat, model).diagnostics,
+        Err(message) => vec![issue(DiagnosticCode::Structure, message, None, None, None)],
+    };
+    GraphValidation {
+        runnable: diagnostics.is_empty(),
+        diagnostics,
+    }
+}
+fn compile(model: &GraphModel) -> Result<Compiled> {
+    let flat = structure(model)?;
+    let analysis = analyze(&flat, model);
+    if let Some(first) = analysis.diagnostics.first() {
+        return Err(first.message.clone());
+    }
+    let incoming = analysis
+        .incoming
+        .into_iter()
+        .map(|ports| {
+            ports
+                .into_iter()
+                .map(|p| p.expect("missing inputs are diagnostics"))
+                .collect()
+        })
+        .collect();
+    Ok(Compiled {
+        flat,
+        incoming,
+        order: analysis.order,
+        scopes: analysis.scopes,
     })
 }
+
 pub fn validate_graph(model: &GraphModel) -> Result<()> {
     compile(model).map(|_| ())
 }
