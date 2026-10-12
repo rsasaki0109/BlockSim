@@ -14,6 +14,7 @@ fn request() -> FrequencyRequest {
         min_omega: 0.01,
         max_omega: 100.0,
         points: 201,
+        open_loop: false,
     }
 }
 #[test]

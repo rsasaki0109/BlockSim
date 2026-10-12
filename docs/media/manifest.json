@@ -129,6 +129,14 @@
       "bytes": 133997,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "margins.gif",
+      "frames": 130,
+      "duration_seconds": 13,
+      "bytes": 127054,
+      "width": 960,
+      "height": 737
     }
   ]
 }

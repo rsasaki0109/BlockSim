@@ -121,6 +121,36 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 mod tests {
     use super::*;
     #[test]
+    fn explicit_open_loop_margin_boundary_preserves_default_and_rejects_invalid_flags() {
+        let p: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../samples/frequency/open-loop-plan.json"
+        ))
+        .unwrap();
+        let model = p["model"].to_string();
+        let result: serde_json::Value =
+            serde_json::from_str(&frequency_json(&model, &p["request"].to_string()).unwrap())
+                .unwrap();
+        let out = &result["margins"];
+        assert_eq!(out["gain_crossings"].as_array().unwrap().len(), 1);
+        assert_eq!(out["phase_crossings"].as_array().unwrap().len(), 1);
+        assert!((out["phase_crossings"][0]["gain_margin"].as_f64().unwrap() - 1.5).abs() < 1e-9);
+        let mut q = p["request"].clone();
+        q.as_object_mut().unwrap().remove("open_loop");
+        let plain: serde_json::Value =
+            serde_json::from_str(&frequency_json(&model, &q.to_string()).unwrap()).unwrap();
+        assert_eq!(plain["points"], result["points"]);
+        assert!(plain.get("margins").is_none());
+        for invalid in [
+            serde_json::json!(1),
+            serde_json::json!("true"),
+            serde_json::Value::Null,
+        ] {
+            q["open_loop"] = invalid;
+            assert!(frequency_check_json(&model, &q.to_string()).is_err());
+            assert!(frequency_json(&model, &q.to_string()).is_err());
+        }
+    }
+    #[test]
     fn frequency_boundary_checks_linear_models_and_reports_zero_singular_and_finite_points() {
         let model = include_str!("../../../samples/frequency/lowpass.json");
         let request = r#"{"source":"source","source_component":0,"scope":"output","scope_component":0,"min_omega":1,"max_omega":2,"points":2}"#;

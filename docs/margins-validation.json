@@ -1,0 +1,50 @@
+{
+  "cases": [
+    {
+      "additional_evaluations": 66,
+      "gain_crossing_rad_s": 1.1432030439651144,
+      "gain_margin_db": 3.5218251811051706,
+      "gain_margin_ratio": 1.49999999999854,
+      "max_frequency_error": 4.040545675820795e-12,
+      "max_margin_error": 1.8760459852273925e-10,
+      "model": "4/s(s+1)(s+2)",
+      "phase_crossing_rad_s": 1.4142135623724068,
+      "phase_margin_deg": 11.424981844733821
+    },
+    {
+      "additional_evaluations": 66,
+      "gain_crossing_rad_s": 1.6259592577053301,
+      "gain_margin_db": -2.498774732174453,
+      "gain_margin_ratio": 0.74999999999927,
+      "max_frequency_error": 1.1226575225009583e-12,
+      "max_margin_error": 3.701927653310122e-11,
+      "model": "8/s(s+1)(s+2)",
+      "phase_crossing_rad_s": 1.4142135623724068,
+      "phase_margin_deg": -7.517996077730714
+    },
+    {
+      "additional_evaluations": 66,
+      "gain_crossings": [
+        {
+          "omega": 0.9064892528257654,
+          "phase_deg": -26.952047165336015,
+          "phase_margin_deg": 153.047952834664,
+          "relative_residual": 0.0
+        },
+        {
+          "omega": 1.0808687406495996,
+          "phase_deg": -147.28678678818235,
+          "phase_margin_deg": 32.713213211817646,
+          "relative_residual": 0.0
+        }
+      ],
+      "max_frequency_error": 8.404388296412435e-13,
+      "model": "0.2/(s²+0.1s+1)",
+      "phase_crossings": []
+    }
+  ],
+  "interpretation": "explicit open-loop L(s), unit negative feedback; finite sampled range, no stability inference",
+  "max_omega": 100.0,
+  "min_omega": 0.01,
+  "points": 201
+}

@@ -2,6 +2,8 @@
 //! This does not linearize nonlinear models or infer closed-loop stability.
 use super::*;
 use std::ops::{Add, Mul, Sub};
+mod margins;
+pub use margins::{GainCrossing, MarginAnalysis, MarginIssue, PhaseCrossing};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -13,6 +15,9 @@ pub struct FrequencyRequest {
     pub min_omega: f64,
     pub max_omega: f64,
     pub points: usize,
+    /// Caller explicitly interprets the selected transfer as an open-loop L(s).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub open_loop: bool,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -40,6 +45,8 @@ pub struct FrequencyResult {
     pub check: FrequencyCheck,
     pub points: Vec<FrequencyPoint>,
     pub method: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub margins: Option<MarginAnalysis>,
 }
 #[derive(Clone, Copy, Debug, Default)]
 struct C {
@@ -343,6 +350,27 @@ pub fn analyze_frequency(
         .enumerate()
         .map(|(i, node)| (*node, i))
         .collect();
+    let evaluate = |omega: f64| {
+        let n = nodes.len();
+        let mut matrix = vec![vec![C::default(); n + 1]; n];
+        let s = C { re: 0.0, im: omega };
+        for (row, &node) in nodes.iter().enumerate() {
+            matrix[row][row] = C::ONE;
+            let dependencies = dependencies(&graph, node)?;
+            for (dependency, weight) in dependencies
+                .iter()
+                .zip(weights(&graph.flat.blocks[node.0].params, s)?)
+            {
+                let col = indices[dependency];
+                matrix[row][col] = (matrix[row][col] - weight).checked()?;
+            }
+            if node == (source, request.source_component) {
+                matrix[row][n] = C::ONE;
+            }
+        }
+        let (values, residual) = solve(matrix)?;
+        Ok::<_, String>((values[0], residual))
+    };
     let mut points = Vec::with_capacity(request.points);
     let mut previous_phase: Option<f64> = None;
     for index in 0..request.points {
@@ -356,27 +384,7 @@ pub fn analyze_frequency(
                     / (request.points - 1) as f64)
                 .exp()
         };
-        let response = (|| {
-            let n = nodes.len();
-            let mut matrix = vec![vec![C::default(); n + 1]; n];
-            let s = C { re: 0.0, im: omega };
-            for (row, &node) in nodes.iter().enumerate() {
-                matrix[row][row] = C::ONE;
-                let dependencies = dependencies(&graph, node)?;
-                for (dependency, weight) in dependencies
-                    .iter()
-                    .zip(weights(&graph.flat.blocks[node.0].params, s)?)
-                {
-                    let col = indices[dependency];
-                    matrix[row][col] = (matrix[row][col] - weight).checked()?;
-                }
-                if node == (source, request.source_component) {
-                    matrix[row][n] = C::ONE;
-                }
-            }
-            let (values, residual) = solve(matrix)?;
-            Ok::<_, String>((values[0], residual))
-        })();
+        let response = evaluate(omega);
         match response {
             Ok((value, residual)) => {
                 let magnitude = value.abs();
@@ -417,5 +425,12 @@ pub fn analyze_frequency(
             }
         }
     }
-    Ok(FrequencyResult {request:request.clone(),check,points,method:"continuous LTI complex component equations / scaled partial-pivot solve / sampled phase unwrap".into()})
+    let margins = request.open_loop.then(|| {
+        margins::analyze(
+            &points,
+            (20_000_000 / nodes.len().pow(3) - request.points).min(4096),
+            evaluate,
+        )
+    });
+    Ok(FrequencyResult {request:request.clone(),check,points,margins,method:"continuous LTI complex component equations / scaled partial-pivot solve / sampled phase unwrap".into()})
 }
