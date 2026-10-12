@@ -75,6 +75,28 @@ pub fn frequency_check_json(model: &str, request: &str) -> Result<String, String
         &graph, &request,
     )?)
 }
+pub fn pole_zero_json(model: &str, request: &str) -> Result<String, String> {
+    let graph = decode(model)?;
+    let request = decode(request)?;
+    encode(&blocksim_core::graph::pole_zero::analyze_pole_zero(
+        &graph, &request,
+    )?)
+}
+pub fn pole_zero_check_json(model: &str, request: &str) -> Result<String, String> {
+    let graph = decode(model)?;
+    let request = decode(request)?;
+    encode(&blocksim_core::graph::pole_zero::validate_pole_zero(
+        &graph, &request,
+    )?)
+}
+#[wasm_bindgen]
+pub fn analyze_pole_zero(model: &str, request: &str) -> Result<String, JsValue> {
+    pole_zero_json(model, request).map_err(|e| JsValue::from_str(&e))
+}
+#[wasm_bindgen]
+pub fn validate_pole_zero(model: &str, request: &str) -> Result<String, JsValue> {
+    pole_zero_check_json(model, request).map_err(|e| JsValue::from_str(&e))
+}
 #[wasm_bindgen]
 pub fn analyze_frequency(model: &str, request: &str) -> Result<String, JsValue> {
     frequency_json(model, request).map_err(|e| JsValue::from_str(&e))
@@ -120,6 +142,29 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn pole_zero_boundary_keeps_uncancelled_poles_and_refuses_invalid_queries() {
+        let model = include_str!("../../../samples/frequency/open-loop.json");
+        let query = r#"{"block":"plant","mode":"unit_negative_feedback"}"#;
+        let r: serde_json::Value =
+            serde_json::from_str(&pole_zero_json(model, query).unwrap()).unwrap();
+        assert_eq!(r["stability"]["classification"], "stable");
+        assert_eq!(r["poles"]["roots"].as_array().unwrap().len(), 3);
+        assert_eq!(r["zeros"]["degree"], 0);
+        assert!(pole_zero_check_json(model, r#"{"block":"plant","mode":"graph"}"#).is_err());
+        assert!(pole_zero_json(model, &" ".repeat(1_000_001)).is_err());
+        let mut zero: serde_json::Value = serde_json::from_str(model).unwrap();
+        zero["blocks"][1]["params"]["numerator"] = serde_json::json!([0]);
+        let r: serde_json::Value =
+            serde_json::from_str(&pole_zero_json(&zero.to_string(), query).unwrap()).unwrap();
+        assert_eq!(r["zeros"]["status"], "identically_zero");
+        assert!(r["zeros"]["degree"].is_null());
+        assert_eq!(r["stability"]["classification"], "boundary_or_uncertain");
+        zero["blocks"][1]["params"]["numerator"] = serde_json::json!([-1, 0, 0, 0]);
+        assert!(pole_zero_check_json(&zero.to_string(), query)
+            .unwrap_err()
+            .contains("direct gain -1"));
+    }
     #[test]
     fn explicit_open_loop_margin_boundary_preserves_default_and_rejects_invalid_flags() {
         let p: serde_json::Value = serde_json::from_str(include_str!(

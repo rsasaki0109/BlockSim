@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 mod adaptive;
 pub mod frequency;
+pub mod pole_zero;
 mod transfer;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

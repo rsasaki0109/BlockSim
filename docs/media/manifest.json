@@ -137,6 +137,14 @@
       "bytes": 127054,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "pole-zero.gif",
+      "frames": 88,
+      "duration_seconds": 8.8,
+      "bytes": 160368,
+      "width": 960,
+      "height": 737
     }
   ]
 }

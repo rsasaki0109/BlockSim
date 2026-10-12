@@ -50,3 +50,7 @@ summary { color: #9facc5; cursor: pointer; font-size: 12px; margin: 18px 0; } fo
 #graph-frequency-caption, #graph-frequency-state { overflow-wrap: anywhere; }
 
 .frequency-open-loop{grid-column:1/-1;display:flex;align-items:center;gap:8px}.frequency-open-loop input{width:auto;margin:0}#graph-frequency-margins p,#graph-frequency-margins li{overflow-wrap:anywhere}#graph-frequency-margins .table-wrap{margin:8px 0}#graph-frequency-margins h3{margin-top:18px}
+
+#graph-pole-zero-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}#graph-pole-zero-fields label{min-width:0}.pole-zero-tables{display:grid;grid-template-columns:1fr 1fr;gap:16px}#graph-pole-zero p,#graph-pole-zero li{overflow-wrap:anywhere}#graph-pole-zero-plot svg{display:block;width:100%;max-height:380px}#graph-pole-zero-plot{min-width:0}#graph-pole-zero-stability{font-weight:600;color:#63e3bc}#graph-pole-zero-stability.error{color:#ffb39b}@media(max-width:650px){#graph-pole-zero-fields,.pole-zero-tables{grid-template-columns:1fr}}
+
+.pole-zero-tables section{min-width:0}#graph-pole-zero-fields{min-width:0}

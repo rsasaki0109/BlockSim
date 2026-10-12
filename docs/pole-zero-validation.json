@@ -1,0 +1,100 @@
+{
+  "cases": [
+    {
+      "classification": "stable",
+      "gain": 4.0,
+      "late_max": 1.0002223898582283,
+      "late_min": 0.9997699234847043,
+      "late_window_s": [
+        80,
+        100
+      ],
+      "max_absolute_output": 1.7001321928322168,
+      "max_root_error_vs_cardano": 1.3322676295501878e-15,
+      "poles": [
+        {
+          "imag": 0.0,
+          "real": -2.796321903259441,
+          "relative_residual": 1.3646182493867479e-17
+        },
+        {
+          "imag": -1.191670795604733,
+          "real": -0.10183904837027935,
+          "relative_residual": 3.7789820732909585e-17
+        },
+        {
+          "imag": 1.191670795604733,
+          "real": -0.10183904837027931,
+          "relative_residual": 0.0
+        }
+      ],
+      "right_half_plane_poles": 0,
+      "time_samples": 2001
+    },
+    {
+      "classification": "boundary_or_uncertain",
+      "gain": 6.0,
+      "late_max": 1.9045291620834521,
+      "late_min": 0.09548791971332278,
+      "late_window_s": [
+        80,
+        100
+      ],
+      "max_absolute_output": 1.9045291620834521,
+      "max_root_error_vs_cardano": 2.2452780939799315e-15,
+      "poles": [
+        {
+          "imag": 0.0,
+          "real": -2.999999999999999,
+          "relative_residual": 2.2709107321878213e-17
+        },
+        {
+          "imag": -1.414213562373095,
+          "real": -1.3246286244151037e-16,
+          "relative_residual": 4.3224802419169424e-17
+        },
+        {
+          "imag": 1.414213562373095,
+          "real": -8.666775663774535e-17,
+          "relative_residual": 4.245033873154915e-17
+        }
+      ],
+      "right_half_plane_poles": 0,
+      "time_samples": 2001
+    },
+    {
+      "classification": "unstable",
+      "gain": 8.0,
+      "late_max": 2850.668900930677,
+      "late_min": -3359.1316301408388,
+      "late_window_s": [
+        80,
+        100
+      ],
+      "max_absolute_output": 3359.1316301408388,
+      "max_root_error_vs_cardano": 2.4126604949548913e-15,
+      "poles": [
+        {
+          "imag": 0.0,
+          "real": -3.1663127473977886,
+          "relative_residual": 1.9681388561659465e-17
+        },
+        {
+          "imag": 1.5873509976226483,
+          "real": 0.08315637369889431,
+          "relative_residual": 6.783457104823687e-17
+        },
+        {
+          "imag": -1.5873509976226483,
+          "real": 0.08315637369889434,
+          "relative_residual": 6.958880500304874e-17
+        }
+      ],
+      "right_half_plane_poles": 2,
+      "time_samples": 2001
+    }
+  ],
+  "root_reference": "independent Cardano formula for s³+3s²+2s+K",
+  "scope": "selected continuous realization T=N/(D+N), no cancellation, not arbitrary graph stability",
+  "time_reference": "actual RK45 unit-step simulation of the explicit T(s) realization"
+}
