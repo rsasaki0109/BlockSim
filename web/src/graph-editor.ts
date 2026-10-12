@@ -8,6 +8,7 @@ import {
 } from './graph-model';
 import { plotGraph, seriesFrom } from './graph-chart';
 import { autoLayout } from './graph-layout';
+import { searchGraph, type GraphSearchHit } from './graph-search';
 import continuous from '../../samples/graphs/continuous-pid.json';
 import mixed from '../../samples/graphs/mixed-pid.json';
 import vector from '../../samples/graphs/vector.json';
@@ -25,6 +26,14 @@ export function mountEditor(host:HTMLElement) {
       <button id="graph-run" class="primary">モデルを実行</button><button id="graph-cancel" disabled>実行を中止</button>
     </div>
     <div id="graph-status" role="status" aria-label="モデル実行状態" aria-live="polite"></div>
+    <details id="graph-search" class="panel">
+      <summary>ブロックを検索 <span class="hint">Ctrl/Cmd+K</span></summary>
+      <form id="graph-search-form"><label>ブロック検索<input id="graph-query" type="search" maxlength="200" placeholder="名前・ID・種類（空白で複数指定）" autocomplete="off"></label>
+        <label>検索範囲<select id="graph-search-scope"><option value="all">モデル全体（内部を含む）</option><option value="current">現在の階層</option></select></label>
+        <label>種類で絞り込む<select id="graph-search-kind"><option value="">すべての種類</option></select></label><button id="graph-search-clear" type="button">検索をクリア</button>
+      </form><p id="graph-search-count" role="status" aria-live="polite"></p><ul id="graph-search-results" aria-label="ブロック検索結果"></ul>
+      <p class="hint">検索結果を選ぶとブロックへ移動し、設定を開きます。Enter で最初の結果へ。検索と移動はモデルを変更しません。</p>
+    </details>
     <div class="graph-workspace"><section class="graph-center">
       <div class="graph-topline"><div id="graph-breadcrumb"></div><span id="graph-count" class="pill"></span><span id="graph-dirty" role="status"></span></div>
       <p class="hint">ブロックはドラッグで移動。チェックで複数選択。出力ポート→入力ポートをクリックして配線。Escape で中止。線を選ぶと削除できます。右のフォームも使えます。</p>
@@ -79,6 +88,31 @@ export function mountEditor(host:HTMLElement) {
   const cancel=()=>{request++;worker?.terminate();worker=null;get<HTMLButtonElement>('graph-run').disabled=false;get<HTMLButtonElement>('graph-cancel').disabled=true;};
   const invalidate=()=>{cancel();pendingWire=null;previewPoint=null;selectedEdge=null;result=null;get('graph-plot').replaceChildren();get('graph-series').replaceChildren();get('graph-values').textContent='モデル変更後は再実行してください';get<HTMLInputElement>('graph-cursor').disabled=true;get<HTMLButtonElement>('graph-csv').disabled=true;};
   const current=()=>graphContext(history.graph,path);
+  let searchHits:GraphSearchHit[]=[];
+  function renderSearch(){
+    const query=get<HTMLInputElement>('graph-query').value,kind=get<HTMLSelectElement>('graph-search-kind').value as Kind|'';
+    const scope=get<HTMLSelectElement>('graph-search-scope').value;
+    searchHits=query.trim()||kind?searchGraph(history.graph,query,{kind,path:scope==='current'?path:[],recursive:scope==='all'}):[];
+    get('graph-search-count').textContent=query.trim()||kind?`${searchHits.length} 件`:'名前・ID・種類を入力するか、種類で絞り込んでください';
+    const results=get('graph-search-results');results.replaceChildren();
+    for(const hit of searchHits){
+      const row=document.createElement('li'),target=button('',()=>guard(()=>revealBlock(hit)));
+      const title=document.createElement('strong'),detail=document.createElement('small');title.textContent=hit.label;detail.textContent=`${KIND_NAMES[hit.kind]} · ${hit.address}`;
+      target.append(title,detail);target.setAttribute('aria-label',`表示 ${hit.label} (${hit.address})`);
+      target.classList.toggle('search-current',hit.path.join('/')===path.join('/')&&selected.has(hit.id));row.append(target);results.append(row);
+    }
+  }
+  function revealBlock(hit:GraphSearchHit){
+    const graph=graphContext(history.graph,hit.path),block=graph.blocks.find(b=>b.id===hit.id);
+    if(!block){renderSearch();throw new Error('ブロックがありません。検索し直してください');}
+    path=[...hit.path];selected=new Set([hit.id]);pendingWire=null;previewPoint=null;selectedEdge=null;render();
+    const viewport=host.querySelector<HTMLElement>('.graph-viewport')!,node=get('graph-nodes').querySelector<HTMLElement>(`[data-block="${hit.id}"]`)!,height=node.offsetHeight;
+    setZoom(Math.min(1,(viewport.clientWidth-48)/190,(viewport.clientHeight-48)/height));
+    viewport.scrollLeft=(block.position[0]+32+83)*zoom-viewport.clientWidth/2;
+    viewport.scrollTop=(block.position[1]+32+height/2)*zoom-viewport.clientHeight/2;
+    viewport.scrollIntoView({block:'nearest',inline:'nearest'});
+    node.focus({preventScroll:true});
+  }
   const edit=(action:(graph:GraphModel)=>void,message='モデルを変更しました')=>{
     const previousSelection=new Set(selected);
     try { history.apply(root=>action(graphContext(root,path)));invalidate();render();say(message);return true; }
@@ -152,7 +186,7 @@ export function mountEditor(host:HTMLElement) {
   function syncSelection() {
     for(const card of get('graph-nodes').children){const id=(card as HTMLElement).dataset.block!;card.classList.toggle('selected',selected.has(id));const check=card.querySelector<HTMLInputElement>('input[type=checkbox]');if(check)check.checked=selected.has(id);}
     for(const line of get('graph-wires').querySelectorAll<SVGPathElement>('.wire'))line.classList.toggle('wire-selected',selectedEdge===Number(line.dataset.edge));
-    get<HTMLButtonElement>('graph-disconnect').disabled=selectedEdge===null;syncCopy();
+    get<HTMLButtonElement>('graph-disconnect').disabled=selectedEdge===null;syncCopy();renderSearch();
   }
   function renderNodes() {
     const nodes=get('graph-nodes');nodes.replaceChildren();const wires=get<SVGSVGElement>('graph-wires');wires.replaceChildren();
@@ -198,7 +232,8 @@ export function mountEditor(host:HTMLElement) {
         node.addEventListener('pointermove',move);node.addEventListener('pointerup',finish);node.addEventListener('pointercancel',abort);
       });nodes.append(node);
     }paintPreview();
-    const bounds=wires.getBBox(),fullWidth=Math.ceil(Math.max(width,bounds.x+bounds.width+40)),fullHeight=Math.ceil(Math.max(height,bounds.y+bounds.height+40));
+    const nodeBottom=Math.max(0,...Array.from(nodes.children,n=>(n as HTMLElement).offsetTop+(n as HTMLElement).offsetHeight+40));
+    const bounds=wires.getBBox(),fullWidth=Math.ceil(Math.max(width,bounds.x+bounds.width+40)),fullHeight=Math.ceil(Math.max(height,bounds.y+bounds.height+40,nodeBottom));
     board.style.width=fullWidth+'px';board.style.height=fullHeight+'px';wires.setAttribute('width',String(fullWidth));wires.setAttribute('height',String(fullHeight));applyZoom();
   }
   function render() {
@@ -214,7 +249,7 @@ export function mountEditor(host:HTMLElement) {
     const kinds=get<HTMLSelectElement>('block-kind');const previous=kinds.value;kinds.replaceChildren();
     for(const kind of Object.keys(KIND_NAMES) as Kind[])if(path.length||!['input','output'].includes(kind))kinds.add(new Option(KIND_NAMES[kind],kind));if([...kinds.options].some(o=>o.value===previous))kinds.value=previous;
     for(const id of ['edge-from','edge-to']){const select=get<HTMLSelectElement>(id),previous=select.value;select.replaceChildren();for(const b of current().blocks)select.add(new Option(`${b.label} (${b.id})`,b.id));if(current().blocks.some(b=>b.id===previous))select.value=previous;}
-    renderPorts();renderNodes();renderInspector();syncCopy();syncDirty();
+    renderPorts();renderNodes();renderInspector();syncCopy();syncDirty();renderSearch();
     const edges=get('graph-edges');edges.replaceChildren();current().edges.forEach((e,i)=>{
       const row=document.createElement('div');row.className='edge-row';const text=document.createElement('span');text.textContent=`${e.from}:${e.from_port} → ${e.to}:${e.to_port}`;
       const remove=button('×',()=>edit(g=>{g.edges.splice(i,1);},'接続を削除しました'));remove.setAttribute('aria-label',`接続を削除 ${e.from} ${e.to} ${e.to_port}`);row.append(text,remove);edges.append(row);
@@ -260,7 +295,17 @@ export function mountEditor(host:HTMLElement) {
   const disconnect=()=>{if(selectedEdge!==null){const index=selectedEdge;edit(g=>{g.edges.splice(index,1);},'接続を削除しました');}};
   get('graph-disconnect').addEventListener('click',disconnect);
   get('graph-board').addEventListener('pointermove',event=>{if(!pendingWire)return;const rect=get('graph-board').getBoundingClientRect(),scale=rect.width/get('graph-board').clientWidth;previewPoint=[(event.clientX-rect.left)/scale,(event.clientY-rect.top)/scale];paintPreview();});
-  document.addEventListener('keydown',event=>{if(host.hidden)return;if(event.key==='Escape'&&pendingWire){event.preventDefault();cancelWire();return;}if(event.target instanceof HTMLElement&&['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName))return;if(event.key==='Delete'||event.key==='Backspace'){if(selectedEdge!==null){event.preventDefault();disconnect();}return;}if(!event.ctrlKey&&!event.metaKey)return;if(event.target instanceof HTMLElement&&['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName))return;if(event.key.toLowerCase()==='a'){event.preventDefault();selectAll();}else if(event.key.toLowerCase()==='c'){event.preventDefault();copy();}else if(event.key.toLowerCase()==='v'){event.preventDefault();paste();}else if(event.key.toLowerCase()==='d'){event.preventDefault();duplicate();}else if(event.key.toLowerCase()==='z'){event.preventDefault();if(event.shiftKey)redo();else undo();}else if(event.key.toLowerCase()==='y'){event.preventDefault();redo();}});
+  const searchPanel=get<HTMLDetailsElement>('graph-search');
+  const openSearch=()=>{searchPanel.open=true;const input=get<HTMLInputElement>('graph-query');input.focus();input.select();};
+  for(const kind of Object.keys(KIND_NAMES) as Kind[])get<HTMLSelectElement>('graph-search-kind').add(new Option(KIND_NAMES[kind],kind));
+  get('graph-query').addEventListener('input',renderSearch);get('graph-search-kind').addEventListener('change',renderSearch);get('graph-search-scope').addEventListener('change',renderSearch);
+  get('graph-search-clear').addEventListener('click',()=>{get<HTMLInputElement>('graph-query').value='';get<HTMLSelectElement>('graph-search-kind').value='';renderSearch();get('graph-query').focus();});
+  get('graph-search-form').addEventListener('submit',event=>{event.preventDefault();if(searchHits.length)guard(()=>revealBlock(searchHits[0]));});
+  document.addEventListener('keydown',event=>{if(host.hidden)return;
+    const typing=event.target instanceof HTMLElement&&['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName);
+    if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'&&(!typing||event.target===get('graph-query'))){event.preventDefault();openSearch();return;}
+    if(event.key==='Escape'&&!pendingWire&&searchPanel.open){event.preventDefault();const fromSearch=event.target instanceof Node&&searchPanel.contains(event.target);searchPanel.open=false;if(fromSearch)searchPanel.querySelector<HTMLElement>('summary')!.focus();return;}
+if(event.key==='Escape'&&pendingWire){event.preventDefault();cancelWire();return;}if(event.target instanceof HTMLElement&&['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName))return;if(event.key==='Delete'||event.key==='Backspace'){if(selectedEdge!==null){event.preventDefault();disconnect();}return;}if(!event.ctrlKey&&!event.metaKey)return;if(event.target instanceof HTMLElement&&['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName))return;if(event.key.toLowerCase()==='a'){event.preventDefault();selectAll();}else if(event.key.toLowerCase()==='c'){event.preventDefault();copy();}else if(event.key.toLowerCase()==='v'){event.preventDefault();paste();}else if(event.key.toLowerCase()==='d'){event.preventDefault();duplicate();}else if(event.key.toLowerCase()==='z'){event.preventDefault();if(event.shiftKey)redo();else undo();}else if(event.key.toLowerCase()==='y'){event.preventDefault();redo();}});
   get('graph-run').addEventListener('click',run);get('graph-cancel').addEventListener('click',()=>{cancel();say('実行を中止しました');});
   get('edge-from').addEventListener('change',renderPorts);get('edge-to').addEventListener('change',renderPorts);
   get<HTMLFormElement>('graph-connect').addEventListener('submit',event=>{event.preventDefault();edit(g=>{

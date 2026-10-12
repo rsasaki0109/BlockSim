@@ -74,11 +74,18 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <sub>自動配置 → Undo／Redo → 同じ数値結果を確認。</sub>
 </p>
 
+<p align="center">
+  <strong>09 — Find the block. Follow the signal.</strong><br>
+  <a href="docs/media/search.gif"><img src="docs/media/search.gif" width="960" alt="同じ ID の内部 Gain を階層パスで区別して検索し、コピー側だけを編集して出力3と5を比較・保存"></a><br>
+  <sub>階層をまたいで検索 → 内部へ移動 → 設定を編集。</sub>
+</p>
+
 [GIF の生成方法とサイズ](docs/media/README.md) · [ブロック図の仕様](docs/graph.md) · [数値検証](docs/validation.md)
 
 ## さらに使いやすく
 
 - **コピー・複製**：選択内の接続と内部設定を保持。Ctrl/Cmd+A・C・V・D、Undo／Redo に対応し、設定は元モデルから独立します。
+- **ブロック検索**：名前・ID・種類で階層内も検索。結果からブロックへ移動して設定を開けます。Ctrl/Cmd+K に対応します。
 - **自動配置**：表示中の階層を信号の流れに沿って整理。独立したモデルを分け、閉ループ・Undo／Redo に対応します。
 - **ズームと全体表示**：2〜200% 表示。縮小・拡大中もモデル座標で移動でき、全体表示にはフィードバック線も含めます。
 - **未保存変更の保護**：モデル置き換えとページ離脱で確認し、Undo で保存時点へ戻ると確認を解除します。

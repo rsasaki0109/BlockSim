@@ -73,6 +73,14 @@
       "bytes": 292476,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "search.gif",
+      "frames": 90,
+      "duration_seconds": 9,
+      "bytes": 272787,
+      "width": 960,
+      "height": 737
     }
   ]
 }
