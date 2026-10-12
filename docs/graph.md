@@ -124,7 +124,7 @@ Scope の結果の「実行結果ファイル」を開き、「現行の結果�
 
 ## 時計とソルバ
 
-接続された連続線形部分の [状態空間・固有値と内部安定性](state-space.md)、同一周期の [離散状態空間・単位円](discrete-state-space.md)、選択したTransferFunctionの [極・零点と内部安定性](pole-zero.md)、同一周期の [離散Bode](discrete-frequency.md)、連続線形モデルの Bode と明示した開ループのゲイン／位相余裕解析は [周波数応答仕様](frequency.md) を参照してください。
+接続された連続線形部分の [状態空間・固有値と内部安定性](state-space.md)、同一周期の [離散状態空間・単位円](discrete-state-space.md)、選択したTransferFunctionの [極・零点と内部安定性](pole-zero.md)、同一周期の [離散Bode](discrete-frequency.md) と [離散余裕](discrete-margins.md)、連続線形モデルの Bode と明示した開ループのゲイン／位相余裕解析は [周波数応答仕様](frequency.md) を参照してください。
 
 可変刻み RK45・計算統計・パラメータ掃引の詳細と再現モデルは [数値計算と掃引](numerics.md) を参照してください。`solver` を省略したモデルは従来と同じ RK4 と結果 JSON を維持します。
 

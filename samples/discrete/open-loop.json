@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "dt": 0.02,
+  "duration": 10,
+  "blocks": [
+    {
+      "id": "source",
+      "label": "Unit step",
+      "width": 1,
+      "position": [
+        40,
+        140
+      ],
+      "params": {
+        "kind": "step",
+        "before": [
+          0
+        ],
+        "after": [
+          1
+        ],
+        "step_time": 0
+      }
+    },
+    {
+      "id": "gain",
+      "label": "Loop gain K=0.75",
+      "width": 1,
+      "position": [
+        240,
+        140
+      ],
+      "params": {
+        "kind": "gain",
+        "gain": 0.75
+      }
+    },
+    {
+      "id": "filter",
+      "label": "u + 0.5 x",
+      "width": 1,
+      "position": [
+        440,
+        140
+      ],
+      "params": {
+        "kind": "sum",
+        "signs": [
+          1,
+          0.5
+        ]
+      }
+    },
+    {
+      "id": "delay1",
+      "label": "Filter state",
+      "width": 1,
+      "position": [
+        640,
+        140
+      ],
+      "params": {
+        "kind": "delay",
+        "initial": [
+          0
+        ],
+        "sample_time": 0.1
+      }
+    },
+    {
+      "id": "delay2",
+      "label": "One extra sample",
+      "width": 1,
+      "position": [
+        840,
+        140
+      ],
+      "params": {
+        "kind": "delay",
+        "initial": [
+          0
+        ],
+        "sample_time": 0.1
+      }
+    },
+    {
+      "id": "output",
+      "label": "Open-loop L(z)",
+      "width": 1,
+      "position": [
+        1040,
+        140
+      ],
+      "params": {
+        "kind": "scope"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "source",
+      "from_port": 0,
+      "to": "gain",
+      "to_port": 0
+    },
+    {
+      "from": "gain",
+      "from_port": 0,
+      "to": "filter",
+      "to_port": 0
+    },
+    {
+      "from": "delay1",
+      "from_port": 0,
+      "to": "filter",
+      "to_port": 1
+    },
+    {
+      "from": "filter",
+      "from_port": 0,
+      "to": "delay1",
+      "to_port": 0
+    },
+    {
+      "from": "delay1",
+      "from_port": 0,
+      "to": "delay2",
+      "to_port": 0
+    },
+    {
+      "from": "delay2",
+      "from_port": 0,
+      "to": "output",
+      "to_port": 0
+    }
+  ]
+}

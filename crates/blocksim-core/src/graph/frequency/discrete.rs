@@ -32,9 +32,6 @@ fn state_query(q: &FrequencyRequest) -> StateSpaceRequest {
     }
 }
 fn range(q: &FrequencyRequest, ts: f64) -> Result<f64> {
-    if q.open_loop {
-        return Err("Discrete frequency margins are not implemented; disable open_loop".into());
-    }
     let nyquist = std::f64::consts::PI / ts;
     finite("Discrete Nyquist angular frequency", nyquist)?;
     if !(1e-9..=1e9).contains(&q.min_omega)
@@ -119,5 +116,11 @@ pub fn analyze_discrete_frequency(
         Ok((value, residual))
     };
     let points = sample_points(q, &evaluate);
-    Ok(DiscreteFrequencyResult {response:FrequencyResult {request:q.clone(),check:FrequencyCheck {source_label:check.source_label,scope_label:check.scope_label,variables:check.variables},points,margins:None,method:"discrete same-clock Scope ancestry / actual sample-instant matrices / C(exp(j*omega*Ts)I-A)^-1 B+D / scaled partial-pivot solve / sampled phase unwrap / no hold reconstruction or stability inference".into()},sample_time:check.sample_time,nyquist_omega:check.nyquist_omega,states:check.states})
+    let margins = q.open_loop.then(|| {
+        let remaining = (20_000_000 / check.states.max(1).pow(3) - q.points).min(4096);
+        let mut m = margins::analyze(&points, remaining, evaluate);
+        m.method.push_str(" / discrete z=exp(j*omega*Ts) within Nyquist / sample-instant unit negative feedback / no stability inference");
+        m
+    });
+    Ok(DiscreteFrequencyResult {response:FrequencyResult {request:q.clone(),check:FrequencyCheck {source_label:check.source_label,scope_label:check.scope_label,variables:check.variables},points,margins,method:"discrete same-clock Scope ancestry / actual sample-instant matrices / C(exp(j*omega*Ts)I-A)^-1 B+D / scaled partial-pivot solve / sampled phase unwrap / no hold reconstruction or stability inference".into()},sample_time:check.sample_time,nyquist_omega:check.nyquist_omega,states:check.states})
 }

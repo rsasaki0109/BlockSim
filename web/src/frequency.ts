@@ -19,7 +19,6 @@ export function validateFrequencyPlan(value:unknown,normalize:(model:string)=>st
  if(Object.hasOwn(q,'open_loop')&&typeof q.open_loop!=='boolean')throw new Error('開ループの指定は有効／無効で指定してください');
  if(typeof q.source!=='string'||typeof q.scope!=='string'||['source_component','scope_component','points'].some(k=>!Number.isSafeInteger(q[k])||(q[k] as number)<0)||['min_omega','max_omega'].some(k=>typeof q[k]!=='number'||!Number.isFinite(q[k]))||(q.min_omega as number)<1e-9||(q.max_omega as number)>1e9||(q.max_omega as number)<=(q.min_omega as number)||(q.points as number)<2||(q.points as number)>2048)throw new Error('解析条件は1e-9 ≤ 最小 < 最大 ≤ 1e9 rad/s、2〜2048点で指定してください');
  if((Math.log(q.max_omega as number)-Math.log(q.min_omega as number))/((q.points as number)-1)<=64*Number.EPSILON)throw new Error('周波数範囲が浮動小数点の分解能に対して狭すぎます');
- if(raw.domain==='discrete'&&q.open_loop===true)throw new Error('離散系の余裕解析は未実装です。開ループ指定を無効にしてください');
  const request=Object.fromEntries(Object.keys(q).map(k=>[k,q[k]])) as unknown as FrequencyRequest;check(JSON.stringify(model),JSON.stringify(request),raw.domain==='discrete'?'discrete':'continuous');return {format:'blocksim.frequency',version:1,...(raw.domain==='discrete'?{domain:'discrete' as const}:{}),model,request};
 }
 export function encodeFrequencyPlan(plan:FrequencyPlan){const text=JSON.stringify(plan);if(new TextEncoder().encode(text).length>1_000_000)throw new Error('周波数解析設定は1 MB以下にしてください');return text;}
@@ -30,15 +29,15 @@ export function frequencyCsv(data:FrequencyResult){
 }
 export function marginsCsv(data:FrequencyResult){
  if(!data.margins||!data.request.open_loop)throw new Error('開ループ余裕解析の結果がありません');
- const q=data.request,m=data.margins,quote=csvQuote;
+ const q=data.request,m=data.margins,quote=csvQuote,discrete=data.sample_time!==undefined;
  const prefix=[quote(q.source),q.source_component,quote(q.scope),q.scope_component,q.min_omega,q.max_omega];
- const headers=['source','input_component','scope','output_component','range_min_rad_s','range_max_rad_s','record','omega_rad_s','phase_deg','phase_margin_deg','phase_level_deg','gain_margin_db','gain_margin_ratio','relative_residual','interval_min_rad_s','interval_max_rad_s','note'];
+ const headers=['source','input_component','scope','output_component','range_min_rad_s','range_max_rad_s','record','omega_rad_s','phase_deg','phase_margin_deg','phase_level_deg','gain_margin_db','gain_margin_ratio','relative_residual','interval_min_rad_s','interval_max_rad_s','note',...(discrete?['sample_time_s','nyquist_rad_s','omega_rad_sample']:[])];
  const rows:Array<Array<string|number>>=[];
  for(const p of m.gain_crossings)rows.push([...prefix,quote('gain_crossing'),p.omega,p.phase_deg,p.phase_margin_deg,'','','',p.relative_residual,'','',quote('PM = 180 + locally unwrapped phase; no stability inference')]);
  for(const p of m.phase_crossings)rows.push([...prefix,quote('phase_crossing'),p.omega,'','',p.phase_level_deg,p.gain_margin_db,p.gain_margin??'',p.relative_residual,'','',quote('Unit negative feedback; no stability inference')]);
  for(const p of m.issues)rows.push([...prefix,quote(p.kind),'','','','','','','',p.min_omega,p.max_omega,quote(p.message)]);
  for(const [name,list] of [['gain_crossing',m.gain_crossings],['phase_crossing',m.phase_crossings]] as const)if(!list.length)rows.push([...prefix,quote(name+'_not_detected'),'','','','','','','','','',quote('No isolated crossing detected in sampled finite range; not infinite margin')]);
- return '\uFEFF'+[headers.map(quote).join(','),...rows.map(r=>r.join(','))].join('\r\n');
+ return '\uFEFF'+[headers.map(quote).join(','),...rows.map(r=>[...r,...(discrete?[data.sample_time!,data.nyquist_omega!,typeof r[7]==='number'?r[7]*data.sample_time!:'']:[])].join(','))].join('\r\n');
 }
 export function frequencyGeometry(data:FrequencyResult,field:'magnitude_db'|'phase_deg'){
  const values=data.points.flatMap(p=>p[field]!==null&&!p.error?[p[field]!]:[]);const lo=values.length?Math.min(...values):0,hi=values.length?Math.max(...values):1;const span=hi-lo,padding=(span<=1e-9*Math.max(1,Math.abs(lo),Math.abs(hi))?1:span)*.08;const min=lo-padding,max=hi+padding;

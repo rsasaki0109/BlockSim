@@ -1,0 +1,136 @@
+{
+  "cases": [
+    {
+      "additional_evaluations": 64,
+      "closed_loop_A": [
+        [
+          0.0,
+          1.0
+        ],
+        [
+          -0.75,
+          0.5
+        ]
+      ],
+      "closed_loop_classification": "stable",
+      "closed_loop_outside_count": 0,
+      "closed_loop_poles": [
+        {
+          "imag": -0.82915619758885,
+          "real": 0.25,
+          "relative_residual": 0.0
+        },
+        {
+          "imag": 0.82915619758885,
+          "real": 0.25,
+          "relative_residual": 0.0
+        }
+      ],
+      "gain": 0.75,
+      "gain_crossing_rad_s": 8.1275556137096,
+      "gain_margin_db": 2.498774732164864,
+      "gain_margin_ratio": 1.3333333333331592,
+      "max_absolute_output": 1.125,
+      "max_crossing_frequency_error": 2.2993162929196842e-11,
+      "max_margin_error_deg_or_db": 2.8543922780954745e-10,
+      "max_pole_error": 0.0,
+      "max_step_absolute_error": 4.440892098500626e-16,
+      "max_step_scaled_error": 2.6908127271388415e-16,
+      "nyquist_rad_s": 31.41592653589793,
+      "phase_crossing_rad_s": 13.181160716525486,
+      "phase_margin_deg": 57.910048743434245,
+      "recorded_points": 501,
+      "sample_instants": 101,
+      "sample_time_s": 0.1
+    },
+    {
+      "additional_evaluations": 64,
+      "closed_loop_A": [
+        [
+          0.0,
+          1.0
+        ],
+        [
+          -1.0,
+          0.5
+        ]
+      ],
+      "closed_loop_classification": "boundary_or_uncertain",
+      "closed_loop_outside_count": 0,
+      "closed_loop_poles": [
+        {
+          "imag": -0.9682458365518543,
+          "real": 0.25,
+          "relative_residual": 0.0
+        },
+        {
+          "imag": 0.9682458365518543,
+          "real": 0.25,
+          "relative_residual": 0.0
+        }
+      ],
+      "gain": 1.0,
+      "gain_crossing_rad_s": 13.181160716494597,
+      "gain_margin_db": -1.1340491006665915e-12,
+      "gain_margin_ratio": 0.9999999999998694,
+      "max_absolute_output": 1.509710356940559,
+      "max_crossing_frequency_error": 3.3582026048861735e-11,
+      "max_margin_error_deg_or_db": 3.6075675780011807e-10,
+      "max_pole_error": 0.0,
+      "max_step_absolute_error": 8.215650382226158e-15,
+      "max_step_scaled_error": 3.909560158538447e-15,
+      "nyquist_rad_s": 31.41592653589793,
+      "phase_crossing_rad_s": 13.181160716525486,
+      "phase_margin_deg": 3.6075675780011807e-10,
+      "recorded_points": 501,
+      "sample_instants": 101,
+      "sample_time_s": 0.1
+    },
+    {
+      "additional_evaluations": 64,
+      "closed_loop_A": [
+        [
+          0.0,
+          1.0
+        ],
+        [
+          -1.25,
+          0.5
+        ]
+      ],
+      "closed_loop_classification": "unstable",
+      "closed_loop_outside_count": 2,
+      "closed_loop_poles": [
+        {
+          "imag": -1.0897247358851683,
+          "real": 0.25,
+          "relative_residual": 4.5366821542127855e-17
+        },
+        {
+          "imag": 1.0897247358851683,
+          "real": 0.25,
+          "relative_residual": 4.5366821542127855e-17
+        }
+      ],
+      "gain": 1.25,
+      "gain_crossing_rad_s": 18.886200307112205,
+      "gain_margin_db": -1.9382002601622625,
+      "gain_margin_ratio": 0.7999999999998956,
+      "max_absolute_output": 43800.88912727598,
+      "max_crossing_frequency_error": 1.155697759713803e-10,
+      "max_margin_error_deg_or_db": 1.1521308351802872e-9,
+      "max_pole_error": 2.220446049250313e-16,
+      "max_step_absolute_error": 6.184563972055912e-10,
+      "max_step_scaled_error": 1.1205389690461147e-12,
+      "nyquist_rad_s": 31.41592653589793,
+      "phase_crossing_rad_s": 13.181160716525486,
+      "phase_margin_deg": -58.75155873663539,
+      "recorded_points": 501,
+      "sample_instants": 101,
+      "sample_time_s": 0.1
+    }
+  ],
+  "closed_loop_reference": "actual additional outer negative-feedback edges, poles 0.25+-j*sqrt(K-0.0625), analytic held step from y[k+2]=0.5y[k+1]-Ky[k]+K",
+  "margin_reference": "Omega_gc=acos(1.25-K^2), Omega_pc=acos(0.25), GM=1/K, PM=180-(Omega_gc+atan2(sin(Omega_gc),cos(Omega_gc)-0.5))*180/pi",
+  "scope": "explicitly selected same-clock open-loop K/[z(z-0.5)]"
+}

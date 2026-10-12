@@ -16,13 +16,13 @@ it('adds a proper transfer block without changing clock or solver settings',()=>
 
 it('preserves explicit open-loop settings, defaults old files to response, and rejects nonboolean flags',()=>{const p=plan();p.request.open_loop=true;expect(decodeFrequencyPlan(encodeFrequencyPlan(validateFrequencyPlan(p,normalize,check)),normalize,check)).toEqual(p);p.request.open_loop=false;expect(validateFrequencyPlan(p,normalize,check).request.open_loop).toBe(false);delete p.request.open_loop;expect(validateFrequencyPlan(p,normalize,check).request.open_loop).toBeUndefined();for(const flag of [1,'true',null])expect(()=>validateFrequencyPlan({...p,request:{...p.request,open_loop:flag}},normalize,check)).toThrow('開ループ');expect(()=>validateFrequencyPlan({...p,request:{...p.request,unknown:true}},normalize,check)).toThrow('保存形式');});
 it('exports every margin candidate and unresolved interval with finite range and safe quoted context',()=>{const d=data();d.request.open_loop=true;d.request.source='=source';d.margins={gain_crossings:[{omega:1,phase_deg:-160,phase_margin_deg:20,relative_residual:0},{omega:2,phase_deg:-200,phase_margin_deg:-20,relative_residual:0}],phase_crossings:[{omega:1.5,phase_level_deg:-180,magnitude_db:-3.5,gain_margin_db:3.5,gain_margin:1.5,relative_residual:0}],issues:[{kind:'gap',min_omega:3,max_omega:4,message:'=bad,"pole"'}],additional_evaluations:20,method:'sampled'};const csv=marginsCsv(d);expect(csv.split('\r\n')).toHaveLength(5);expect(csv).toContain('"\'=source"');expect(csv).toContain('"\'=bad,""pole"""');expect(csv.match(/"gain_crossing"/g)).toHaveLength(2);expect(csv).toContain('no stability inference');d.margins.gain_crossings=[];d.margins.phase_crossings=[];const none=marginsCsv(d);expect(none).toContain('gain_crossing_not_detected');expect(none).toContain('phase_crossing_not_detected');expect(none).toContain('not infinite margin');expect(none).not.toContain('Infinity');d.request.open_loop=false;expect(()=>marginsCsv(d)).toThrow('開ループ');});
-it('strictly restores discrete domain, routes preflight, canonicalizes old files and refuses discrete margins',()=>{
+it('strictly restores discrete domain, routes preflight, canonicalizes old files and retains explicit discrete open-loop mode',()=>{
  const p={...plan(),domain:'discrete' as const},native=vi.fn(check);
  expect(decodeFrequencyPlan(encodeFrequencyPlan(validateFrequencyPlan(p,normalize,native)),normalize,native)).toEqual(p);
  expect(native).toHaveBeenCalledWith(JSON.stringify(p.model),JSON.stringify(p.request),'discrete');
  expect(validateFrequencyPlan({...plan(),domain:'continuous'},normalize,check)).toEqual(plan());
  for(const domain of [null,1,'mixed','Discrete'])expect(()=>validateFrequencyPlan({...p,domain},normalize,check)).toThrow('解析領域');
- expect(()=>validateFrequencyPlan({...p,request:{...p.request,open_loop:true}},normalize,check)).toThrow('余裕解析');
+ expect(validateFrequencyPlan({...p,request:{...p.request,open_loop:true}},normalize,check).request.open_loop).toBe(true);
 });
 it('discrete CSV appends period Nyquist and radians per sample to every good zero or error point',()=>{
  const d=data();d.sample_time=.01;d.nyquist_omega=Math.PI/.01;d.states=2;const csv=frequencyCsv(d);
@@ -34,4 +34,13 @@ it('discrete CSV appends period Nyquist and radians per sample to every good zer
 it('plots floating-point noise around unity on a useful axis while retaining every computed value',()=>{
  const d=data();for(const [i,p]of d.points.entries()){p.error=null;p.magnitude=[1,1+Number.EPSILON,1-Number.EPSILON,1][i];p.magnitude_db=20*Math.log10(p.magnitude);}const before=structuredClone(d),csv=frequencyCsv(d);
  const g=frequencyGeometry(d,'magnitude_db');expect(g.max-g.min).toBeGreaterThan(.1);expect(Math.abs(g.y(d.points[0].magnitude_db!)-g.y(d.points[1].magnitude_db!))).toBeLessThan(1e-9);expect(d).toEqual(before);expect(frequencyCsv(d)).toBe(csv);
+});
+it('discrete margin CSV carries executed sampling context on candidates issues and non-detection rows',()=>{
+ const d=data();d.request.open_loop=true;d.sample_time=.1;d.nyquist_omega=Math.PI/.1;d.margins={gain_crossings:[{omega:8,phase_deg:-122,phase_margin_deg:58,relative_residual:0}],phase_crossings:[{omega:13,phase_level_deg:-180,magnitude_db:-2.5,gain_margin_db:2.5,gain_margin:4/3,relative_residual:0}],issues:[{kind:'gap',min_omega:20,max_omega:21,message:'=gap'}],additional_evaluations:40,method:'unit circle'};
+ let csv=marginsCsv(d);expect(csv.split('\r\n')).toHaveLength(4);expect(csv).toContain('sample_time_s');expect(csv).toContain('nyquist_rad_s');expect(csv).toContain('omega_rad_sample');expect(csv).toContain(',0.1,31.41592653589793,0.8');expect(csv).toContain(',0.1,31.41592653589793,1.3');expect(csv).toContain('"\'=gap"');
+ d.margins.gain_crossings=[];d.margins.phase_crossings=[];csv=marginsCsv(d);expect(csv).toContain('gain_crossing_not_detected');expect(csv).toContain('not infinite margin');expect(csv.split('\r\n').slice(1).every(row=>row.endsWith(',0.1,31.41592653589793,'))).toBe(true);
+});
+it('discrete open-loop plans retain true and false independently of continuous defaults',()=>{
+ for(const open_loop of [true,false]){const p={...plan(),domain:'discrete' as const,request:{...plan().request,max_omega:Math.PI/.1,open_loop}},before=structuredClone(p);expect(decodeFrequencyPlan(encodeFrequencyPlan(validateFrequencyPlan(p,normalize,check)),normalize,check)).toEqual(before);expect(p).toEqual(before)}
+ for(const open_loop of [null,1,'true'])expect(()=>validateFrequencyPlan({...plan(),domain:'discrete',request:{...plan().request,open_loop}},normalize,check)).toThrow('開ループ');
 });

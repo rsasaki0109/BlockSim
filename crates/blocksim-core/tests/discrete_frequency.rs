@@ -199,10 +199,6 @@ fn rate_range_flags_and_nonlinear_or_continuous_ancestors_are_refused_before_ana
             ..query()
         },
         FrequencyRequest {
-            open_loop: true,
-            ..query()
-        },
-        FrequencyRequest {
             points: 1,
             ..query()
         },

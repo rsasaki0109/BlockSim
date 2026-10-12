@@ -59,4 +59,4 @@ y[k] = x₁[k]
 
 詳細は [検証JSON](discrete-state-space-validation.json)。不安定ケースの最大出力は約5.57e7です。有限の10秒窓の値で、任意のモデルや期間で同じ精度を保証しません。
 
-同一周期のBodeは [離散周波数応答](discrete-frequency.md) に対応しました。離散余裕、連続プラントとの混在系の状態空間、異なる周期のlifting、Discrete TransferFunctionブロック、MIMO、モデル全体・9状態以上、Nyquist・最小実現は未実装です。
+同一周期のBodeは [離散周波数応答](discrete-frequency.md) に対応しました。離散余裕は [余裕解析](discrete-margins.md) に追加しました。連続プラントとの混在系の状態空間、異なる周期のlifting、Discrete TransferFunctionブロック、MIMO、モデル全体・9状態以上、Nyquist・最小実現は未実装です。

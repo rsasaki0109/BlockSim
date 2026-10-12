@@ -169,6 +169,14 @@
       "bytes": 234466,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "discrete-margins.gif",
+      "frames": 171,
+      "duration_seconds": 17.1,
+      "bytes": 200492,
+      "width": 960,
+      "height": 737
     }
   ]
 }

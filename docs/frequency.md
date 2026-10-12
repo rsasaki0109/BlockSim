@@ -122,3 +122,5 @@ cargo run --locked -p blocksim-core --example frequency
 現在の接続から選択Scope成分の祖先のA・B・C・Dと固有値を求める解析は [状態空間仕様](state-space.md) を参照してください。最大8状態の内部実現に限り、Bodeパネルの意味や開ループ余裕の判定範囲は変えません。
 
 同一周期の離散PID／Delayの状態空間と単位円の内部安定性は [離散状態空間](discrete-state-space.md) を参照してください。同一周期の離散周波数応答は [離散Bode仕様](discrete-frequency.md) に記載します。連続系の本仕様の意味・余裕解析の範囲は維持します。
+
+同一周期の離散開ループの交差・余裕は [離散余裕仕様](discrete-margins.md) を参照してください。連続系の単位負帰還の解釈・有限帯域・位相の枝は維持します。
