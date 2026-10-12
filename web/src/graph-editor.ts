@@ -1,4 +1,4 @@
-import { normalize_graph, diagnose_graph } from './wasm/blocksim';
+import { normalize_graph, diagnose_graph, validate_graph } from './wasm/blocksim';
 import { parseNumber } from './document';
 import { copySelection, pasteSelection, connectPorts, mergeGraph, ungroupBlock, inputWidth, nodeHeight, portY, wirePath } from './graph-edit';
 import {
@@ -11,6 +11,7 @@ import { autoLayout } from './graph-layout';
 import { searchGraph, type GraphSearchHit } from './graph-search';
 import { diagnosticLinks, ISSUE_HINTS, type GraphDiagnostic, type GraphValidation } from './graph-diagnostics';
 import { snapshotRun, compareResults, differenceCsv, type RunSnapshot, type ComparisonReport } from './graph-comparison';
+import { checkArchiveSize, decodeRunArchive, encodeRunArchive, verifyArchivedResult } from './graph-run-archive';
 import continuous from '../../samples/graphs/continuous-pid.json';
 import mixed from '../../samples/graphs/mixed-pid.json';
 import vector from '../../samples/graphs/vector.json';
@@ -48,6 +49,7 @@ export function mountEditor(host:HTMLElement) {
       <section class="panel graph-results"><h2>Scope の結果</h2>
         <div class="graph-reference-tools"><button id="graph-reference-set" disabled>基準として保持</button><button id="graph-reference-clear" disabled>基準を解除</button><button id="graph-reference-export" disabled>基準のモデル JSON</button><label class="check"><input id="graph-reference-show" type="checkbox" checked disabled>基準を重ねる</label></div>
         <p id="graph-reference-state" class="hint" role="status"></p>
+        <details id="graph-run-files"><summary>実行結果ファイル</summary><div class="buttons"><button id="graph-run-export" disabled>現行の結果を保存</button><button id="graph-reference-save" disabled>基準の結果を保存</button><label class="file-button">基準の結果を読み込む<input id="graph-reference-import" type="file" accept=".json,application/json"></label><button id="graph-reference-cancel" disabled>読み込みを中止</button></div><p id="graph-reference-import-state" role="status" aria-live="polite">保存した設定と結果を、再計算で確認して基準にします。</p><p class="hint">実行時のモデルと全 Scope の結果を JSON に保存。読み込みは64 MiBまで、モデルは1 MBまでです。現在のモデルは保持します。</p></details>
         <div id="graph-series" class="legend"></div><p class="hint">表示は最大16系列。実線が現行、破線が基準。CSV は現行の全 Scope・全記録点を出力します。</p><div id="graph-plot"></div>
         <label>記録点カーソル<input id="graph-cursor" type="range" min="0" max="0" value="0" disabled></label><output id="graph-values" aria-live="polite"></output><output id="graph-reference-values" hidden></output><button id="graph-csv" disabled>CSV を書き出す</button>
         <details id="graph-comparison" hidden><summary id="graph-comparison-summary">比較結果</summary><p class="hint">Δ = 現行 − 基準。同じ Scope ID・幅・記録時刻で比較。RMSE は記録点の平均、∫|Δ|dt は台形則です。比較は表示の選択によらず全対応成分を含みます。</p>
@@ -73,6 +75,7 @@ export function mountEditor(host:HTMLElement) {
   let worker:Worker|null=null, request=0;
   let clipboard:GraphModel|null=null, pasteCount=0, zoom=1;
   let resultModel:GraphModel|null=null,referenceRun:RunSnapshot|null=null,comparison:ComparisonReport|null=null,comparisonPage=0;
+  let archiveWorker:Worker|null=null,archiveRequest=0,archiveBusy=false;
   let diagnosticSnapshot:string|null=null,diagnosticPage=0,runtimeError:string|null=null;
   let validation:GraphValidation={runnable:false,diagnostics:[]};
   const problemBlocks=new Map<string,number>(),problemPorts=new Set<string>();
@@ -112,9 +115,14 @@ export function mountEditor(host:HTMLElement) {
     }
   }
   function renderComparison(){
-    get<HTMLButtonElement>('graph-reference-set').disabled=!result||!resultModel||!!worker;
+    get<HTMLButtonElement>('graph-run').disabled=!!worker||archiveBusy;
+    get<HTMLButtonElement>('graph-reference-set').disabled=!result||!resultModel||!!worker||archiveBusy;
     get('graph-reference-set').textContent=referenceRun?'基準を置き換える':'基準として保持';
-    get<HTMLButtonElement>('graph-reference-clear').disabled=!referenceRun;get<HTMLButtonElement>('graph-reference-export').disabled=!referenceRun;
+    get<HTMLButtonElement>('graph-reference-clear').disabled=!referenceRun||archiveBusy;get<HTMLButtonElement>('graph-reference-export').disabled=!referenceRun;
+    get<HTMLButtonElement>('graph-run-export').disabled=!result||!resultModel||!!worker||archiveBusy;
+    get<HTMLButtonElement>('graph-reference-save').disabled=!referenceRun||!!worker||archiveBusy;
+    get<HTMLInputElement>('graph-reference-import').disabled=!!worker||archiveBusy;
+    get<HTMLButtonElement>('graph-reference-cancel').disabled=!archiveBusy;
     get<HTMLInputElement>('graph-reference-show').disabled=!referenceRun;
     get('graph-reference-state').textContent=referenceRun?`基準: dt=${referenceRun.model.dt}s · 終了=${referenceRun.model.duration}s · ${referenceRun.result.traces.length} Scope · ${referenceRun.result.times.length} 点。${result?'設定と結果を保持しています。':'再実行して比較してください。'} このタブ内のみ保持し、再読み込みで解除します。`:'実行結果を基準として保持すると、設定変更後の波形と差分を比較できます。';
     get('graph-comparison').hidden=!referenceRun||!result;get('graph-reference-values').hidden=!referenceRun||!result;
@@ -348,6 +356,7 @@ export function mountEditor(host:HTMLElement) {
     renderComparison();plotResult();cursor();say(`完了 · ${data.times.length} 点 · ${data.traces.length} Scope · Rust / WASM`);
   }
   function run(){guard(()=>{
+    if(archiveBusy)throw new Error('実行結果ファイルの確認が終わるか、中止してから実行してください');
     refreshDiagnostics(true);renderNodes();renderDiagnostics();
     if(!validation.runnable){get<HTMLDetailsElement>('graph-diagnostics').open=true;throw new Error(validation.diagnostics[0].message);}
     const json=JSON.stringify(history.graph);cancel();const id=++request;
@@ -411,12 +420,40 @@ if(event.key==='Escape'&&pendingWire){event.preventDefault();cancelWire();return
   get('graph-restore').addEventListener('click',()=>guard(()=>{const text=localStorage.getItem(GRAPH_STORAGE_KEY);if(text===null)throw new Error('保存済みモデルがありません');if(replace(decodeGraphDocument(text,normalize_graph))){baseline=JSON.stringify(history.graph);syncDirty();say('モデルを復元しました');}}));
   get('graph-export').addEventListener('click',()=>download(encodeGraphDocument(history.graph),'blocksim-graph.json','application/json'));
   get('graph-csv').addEventListener('click',()=>{if(result)download(resultCsv(result),'blocksim-signals.csv','text/csv');});
-  get('graph-reference-set').addEventListener('click',()=>guard(()=>{if(!result||!resultModel||worker)throw new Error('実行が完了してから基準を保持してください');referenceRun=snapshotRun(resultModel,result);comparison=compareResults(result,referenceRun.result);comparisonPage=0;get<HTMLDetailsElement>('graph-comparison').open=true;renderComparison();plotResult();cursor();}));
-  get('graph-reference-clear').addEventListener('click',()=>{referenceRun=null;comparison=null;comparisonPage=0;renderComparison();plotResult();cursor();});
+  get('graph-reference-set').addEventListener('click',()=>guard(()=>{if(!result||!resultModel||worker||archiveBusy)throw new Error('実行・読み込みが完了してから基準を保持してください');referenceRun=snapshotRun(resultModel,result);comparison=compareResults(result,referenceRun.result);comparisonPage=0;get<HTMLDetailsElement>('graph-comparison').open=true;renderComparison();plotResult();cursor();}));
+  get('graph-reference-clear').addEventListener('click',()=>{if(archiveBusy)return;referenceRun=null;comparison=null;comparisonPage=0;renderComparison();plotResult();cursor();});
   get('graph-reference-export').addEventListener('click',()=>{if(referenceRun)download(encodeGraphDocument(referenceRun.model),'blocksim-reference-model.json','application/json');});
   get('graph-reference-show').addEventListener('change',plotResult);
   get('graph-comparison-prev').addEventListener('click',()=>{comparisonPage--;renderComparison();});get('graph-comparison-next').addEventListener('click',()=>{comparisonPage++;renderComparison();});
   get('graph-difference-csv').addEventListener('click',()=>guard(()=>{if(result&&referenceRun&&comparison)download(differenceCsv(result,referenceRun.result,comparison),'blocksim-difference.csv','text/csv');}));
+  get('graph-run-export').addEventListener('click',()=>guard(()=>{if(result&&resultModel&&!worker&&!archiveBusy)download(encodeRunArchive({model:resultModel,result}),'blocksim-run.json','application/json');}));
+  get('graph-reference-save').addEventListener('click',()=>guard(()=>{if(referenceRun&&!worker&&!archiveBusy)download(encodeRunArchive(referenceRun),'blocksim-reference-run.json','application/json');}));
+  const archiveState=(message:string,error=false)=>{const state=get('graph-reference-import-state');state.textContent=message;state.classList.toggle('error',error);};
+  const finishArchive=()=>{archiveRequest++;archiveWorker?.terminate();archiveWorker=null;archiveBusy=false;get<HTMLInputElement>('graph-reference-import').value='';renderComparison();};
+  get('graph-reference-cancel').addEventListener('click',()=>{finishArchive();archiveState('実行結果ファイルの読み込みを中止しました');});
+  get<HTMLInputElement>('graph-reference-import').addEventListener('change',async event=>{
+    const target=event.target as HTMLInputElement,file=target.files?.[0];if(!file)return;
+    if(worker||archiveBusy){target.value='';return;}
+    const id=++archiveRequest;archiveBusy=true;get<HTMLDetailsElement>('graph-run-files').open=true;archiveState('実行結果ファイルを読み込み中…');renderComparison();
+    try{
+      checkArchiveSize(file.size);const text=await file.text();if(id!==archiveRequest)return;
+      const candidate=decodeRunArchive(text,validate_graph);archiveState('保存したモデルを WASM で再計算して確認中…');
+      archiveWorker=new Worker(new URL('./graph-worker.ts',import.meta.url),{type:'module'});
+      archiveWorker.onmessage=(message:MessageEvent<{id:number,result?:GraphResult,error?:string}>)=>{
+        if(id!==archiveRequest||message.data.id!==id)return;
+        try{
+          if(message.data.error)throw new Error(`保存したモデルの再計算に失敗: ${message.data.error}`);
+          if(!message.data.result)throw new Error('保存したモデルの再計算結果がありません');
+          verifyArchivedResult(candidate.result,message.data.result);
+          referenceRun={model:candidate.model,result:message.data.result};comparison=result?compareResults(result,referenceRun.result):null;comparisonPage=0;get<HTMLDetailsElement>('graph-comparison').open=true;
+          finishArchive();plotResult();cursor();archiveState(`再計算と全記録点の一致を確認し、基準を読み込みました · ${referenceRun.result.times.length} 点`);
+        }catch(error){finishArchive();archiveState(String(error),true);}
+      };
+      archiveWorker.onerror=error=>{if(id!==archiveRequest)return;finishArchive();archiveState(`確認用ワーカーの起動に失敗: ${error.message}`,true);};
+      archiveWorker.postMessage({id,json:JSON.stringify(candidate.model)});
+    }catch(error){if(id===archiveRequest){finishArchive();archiveState(String(error),true);}}
+    finally{if(id===archiveRequest)target.value='';}
+  });
   get<HTMLInputElement>('graph-import').addEventListener('change',async event=>{
     const target=event.target as HTMLInputElement,file=target.files?.[0];if(!file)return;
     try{if(file.size>1_000_000)throw new Error('モデルは1 MB以下にしてください');const incoming=decodeGraphDocument(await file.text(),normalize_graph);if(get<HTMLSelectElement>('graph-import-mode').value==='merge'){edit(g=>{selected=new Set(mergeGraph(g,incoming));},'モデルを追加しました（既存の時計・終了時刻を保持）');}else if(replace(incoming))say('モデル JSON を読み込みました');}

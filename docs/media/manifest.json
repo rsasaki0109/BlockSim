@@ -97,6 +97,14 @@
       "bytes": 170049,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "archive.gif",
+      "frames": 85,
+      "duration_seconds": 8.5,
+      "bytes": 176297,
+      "width": 960,
+      "height": 737
     }
   ]
 }
