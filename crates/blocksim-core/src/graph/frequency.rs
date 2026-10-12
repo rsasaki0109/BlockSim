@@ -160,6 +160,13 @@ pub(super) fn network(
     model: &GraphModel,
     request: &FrequencyRequest,
 ) -> Result<(Compiled, Vec<Node>, FrequencyCheck, usize)> {
+    network_with_dependencies(model, request, dependencies)
+}
+pub(super) fn network_with_dependencies(
+    model: &GraphModel,
+    request: &FrequencyRequest,
+    dependencies: fn(&Compiled, Node) -> Result<Vec<Node>>,
+) -> Result<(Compiled, Vec<Node>, FrequencyCheck, usize)> {
     if !(1e-9..=1e9).contains(&request.min_omega)
         || !request.max_omega.is_finite()
         || request.max_omega > 1e9
@@ -206,6 +213,7 @@ pub(super) fn network(
         node: Node,
         nodes: &mut Vec<Node>,
         seen: &mut BTreeSet<Node>,
+        dependencies: fn(&Compiled, Node) -> Result<Vec<Node>>,
     ) -> Result<()> {
         if !seen.insert(node) {
             return Ok(());
@@ -215,7 +223,7 @@ pub(super) fn network(
         }
         nodes.push(node);
         for dependency in dependencies(graph, node)? {
-            visit(graph, dependency, nodes, seen)?;
+            visit(graph, dependency, nodes, seen, dependencies)?;
         }
         Ok(())
     }
@@ -225,6 +233,7 @@ pub(super) fn network(
         (scope, request.scope_component),
         &mut nodes,
         &mut BTreeSet::new(),
+        dependencies,
     )?;
     if nodes.len().pow(3) > 20_000_000 / request.points {
         return Err(

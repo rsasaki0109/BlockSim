@@ -151,6 +151,12 @@ pub struct DiscretePid {
     derivative: f64,
 }
 impl DiscretePid {
+    pub(crate) fn analysis_state(&self) -> [f64; 3] {
+        [self.integral, self.previous_error, self.derivative]
+    }
+    pub(crate) fn set_analysis_state(&mut self, state: [f64; 3]) {
+        [self.integral, self.previous_error, self.derivative] = state;
+    }
     pub fn new(config: PidConfig) -> Result<Self> {
         config.validate()?;
         Ok(Self {

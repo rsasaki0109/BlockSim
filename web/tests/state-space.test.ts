@@ -1,4 +1,4 @@
-import {expect,it} from 'vitest';
+import {expect,it,vi} from 'vitest';
 import {validateStateSpacePlan,encodeStateSpacePlan,decodeStateSpacePlan,stateSpaceCsv,type StateSpacePlan,type StateSpaceResult} from '../src/state-space';
 import feedback from '../../samples/state-space/feedback.json';
 import {type GraphModel} from '../src/graph-model';
@@ -9,3 +9,14 @@ it('rejects missing/unknown fields, fractional or negative components, oversized
 it('exports every A/B/C/D coefficient, state ordering, pole and residual with executed context',()=>{const r=result();r.request.source='=source';const csv=stateSpaceCsv(r);expect(csv.split('\r\n')).toHaveLength(9);expect(csv).toContain('"\'=source"');for(const name of ['A','B','C','D','state','eigenvalue','characteristic','assessment'])expect(csv).toContain('"'+name+'"');expect(csv).toContain('matrix determinant residual=0');expect(csv).toContain('plant[0].state[0]');expect(csv).not.toContain('Infinity');});
 it('retains unknown spectral results without omitting valid matrices or claiming zero eigenvalues',()=>{const r=result();r.poles.status='unresolved';r.poles.roots=[];r.poles.warnings=['underflow'];r.characteristic=null;r.characteristic_residual=null;r.stability.classification='indeterminate';r.stability.right_half_plane_poles=null;const csv=stateSpaceCsv(r);expect(csv).toContain('"eigenvalue_set"');expect(csv).toContain('unresolved');expect(csv).toContain('"A"');expect(csv).toContain('coefficients=null');expect(csv).not.toContain('NaN');});
 it('distinguishes zero-dimensional realizations with direct feedthrough',()=>{const r=result();r.states=[];r.check.states=0;r.a=[];r.b=[];r.c=[];r.poles.roots=[];r.poles.degree=0;const csv=stateSpaceCsv(r);expect(csv).toContain('no dynamic states');expect(csv).not.toContain('"A"');expect(csv).toContain('"D",0,0,4');});
+it('roundtrips discrete domain, routes native validation and keeps old continuous plans unchanged',()=>{
+ const p={...plan(),domain:'discrete' as const},native=vi.fn(check);
+ expect(decodeStateSpacePlan(encodeStateSpacePlan(validateStateSpacePlan(p,normalize,native)),normalize,native)).toEqual(p);
+ expect(native).toHaveBeenCalledWith(JSON.stringify(p.model),JSON.stringify(p.request),'discrete');
+ expect(validateStateSpacePlan({...plan(),domain:'continuous'},normalize,check)).toEqual(plan());
+ for(const domain of [null,0,'mixed','Discrete'])expect(()=>validateStateSpacePlan({...plan(),domain},normalize,check)).toThrow('解析領域');
+});
+it('discrete CSV records sample period, unit-circle count and dimensionless eigenvalues from executed results',()=>{
+ const r=result();r.sample_time=.1;r.stability.right_half_plane_poles=null;r.stability.outside_unit_circle_poles=2;
+ const csv=stateSpaceCsv(r);expect(csv.split('\r\n')).toHaveLength(10);expect(csv).toContain('outside_unit_circle_poles');expect(csv).not.toContain('right_half_plane_poles');expect(csv).toContain('real_dimensionless');expect(csv).not.toContain('real_per_s');expect(csv).toContain('"sample_time",,,0.1');expect(csv).toContain('x[k+1]=Ax[k]+Bu[k]');expect(csv).toContain('"assessment",,,,,,,"",2');
+});

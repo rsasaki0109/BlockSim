@@ -1,0 +1,151 @@
+{
+  "cases": [
+    {
+      "A": [
+        [
+          0.8,
+          -0.6400000000000001
+        ],
+        [
+          1.0,
+          0.0
+        ]
+      ],
+      "B": [
+        1.0,
+        0.0
+      ],
+      "C": [
+        1.0,
+        0.0
+      ],
+      "D": 0.0,
+      "characteristic_residual": 0.0,
+      "classification": "stable",
+      "matrix_residuals": [
+        0.0,
+        0.0
+      ],
+      "max_absolute_output": 1.8000000000000003,
+      "max_root_error_vs_radius_angle": 5.551115123125783e-17,
+      "max_step_absolute_error": 6.661338147750939e-16,
+      "max_step_scaled_error": 3.0410460813984336e-16,
+      "outside_unit_circle_poles": 0,
+      "poles": [
+        {
+          "imag": -0.6928203230275509,
+          "real": 0.39999999999999997,
+          "relative_residual": 7.401486830834378e-17
+        },
+        {
+          "imag": 0.6928203230275509,
+          "real": 0.39999999999999997,
+          "relative_residual": 7.401486830834378e-17
+        }
+      ],
+      "radius": 0.8,
+      "recorded_points": 501,
+      "sample_instants": 101,
+      "sample_time_s": 0.1
+    },
+    {
+      "A": [
+        [
+          1.0,
+          -1.0
+        ],
+        [
+          1.0,
+          0.0
+        ]
+      ],
+      "B": [
+        1.0,
+        0.0
+      ],
+      "C": [
+        1.0,
+        0.0
+      ],
+      "D": 0.0,
+      "characteristic_residual": 0.0,
+      "classification": "boundary_or_uncertain",
+      "matrix_residuals": [
+        0.0,
+        0.0
+      ],
+      "max_absolute_output": 2.0,
+      "max_root_error_vs_radius_angle": 0.0,
+      "max_step_absolute_error": 1.84297022087776e-14,
+      "max_step_scaled_error": 9.871208456768865e-15,
+      "outside_unit_circle_poles": 0,
+      "poles": [
+        {
+          "imag": -0.8660254037844386,
+          "real": 0.5,
+          "relative_residual": 3.700743415417188e-17
+        },
+        {
+          "imag": 0.8660254037844386,
+          "real": 0.5,
+          "relative_residual": 3.700743415417188e-17
+        }
+      ],
+      "radius": 1.0,
+      "recorded_points": 501,
+      "sample_instants": 101,
+      "sample_time_s": 0.1
+    },
+    {
+      "A": [
+        [
+          1.2,
+          -1.44
+        ],
+        [
+          1.0,
+          0.0
+        ]
+      ],
+      "B": [
+        1.0,
+        0.0
+      ],
+      "C": [
+        1.0,
+        0.0
+      ],
+      "D": 0.0,
+      "characteristic_residual": 0.0,
+      "classification": "unstable",
+      "matrix_residuals": [
+        0.0,
+        0.0
+      ],
+      "max_absolute_output": 55657241.74866563,
+      "max_root_error_vs_radius_angle": 2.220446049250313e-16,
+      "max_step_absolute_error": 8.25151801109314e-7,
+      "max_step_scaled_error": 1.0534288040348295e-13,
+      "outside_unit_circle_poles": 2,
+      "poles": [
+        {
+          "imag": -1.039230484541326,
+          "real": 0.6,
+          "relative_residual": 3.700743415417189e-17
+        },
+        {
+          "imag": 1.039230484541326,
+          "real": 0.6,
+          "relative_residual": 3.700743415417189e-17
+        }
+      ],
+      "radius": 1.2,
+      "recorded_points": 501,
+      "sample_instants": 101,
+      "sample_time_s": 0.1
+    }
+  ],
+  "root_reference": "radius * exp(+-j*pi/3)",
+  "scope": "actual same-clock connected two-Delay feedback, Scope ancestor realization",
+  "step_reference": "Im(exp(j*theta)*(1-(radius*exp(j*theta))^k)/(1-radius*exp(j*theta)))/sin(theta); held between sample instants"
+}

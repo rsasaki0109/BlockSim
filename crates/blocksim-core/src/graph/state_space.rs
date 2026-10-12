@@ -2,7 +2,9 @@
 //! No finite differencing, cancellation, minimal realization or whole-model claim.
 use super::*;
 use pole_zero::{PolynomialRoots, Stability};
+mod discrete;
 mod spectrum;
+pub use discrete::{analyze_discrete_state_space, validate_discrete_state_space};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -29,6 +31,28 @@ pub struct StateSpaceCheck {
     pub source_related: bool,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StateSpaceStability {
+    pub classification: String,
+    pub right_half_plane_poles: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub outside_unit_circle_poles: Option<usize>,
+    pub tolerance: f64,
+    pub method: String,
+    pub notes: Vec<String>,
+}
+impl From<Stability> for StateSpaceStability {
+    fn from(s: Stability) -> Self {
+        Self {
+            classification: s.classification,
+            right_half_plane_poles: s.right_half_plane_poles,
+            outside_unit_circle_poles: None,
+            tolerance: s.tolerance,
+            method: s.method,
+            notes: s.notes,
+        }
+    }
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StateSpaceResult {
     pub request: StateSpaceRequest,
     pub check: StateSpaceCheck,
@@ -44,7 +68,9 @@ pub struct StateSpaceResult {
     pub poles: PolynomialRoots,
     /// Independent row-scaled determinant residuals, aligned with physical poles.
     pub matrix_residuals: Vec<f64>,
-    pub stability: Stability,
+    pub stability: StateSpaceStability,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sample_time: Option<f64>,
     pub method: String,
 }
 struct Prepared {
@@ -55,7 +81,14 @@ struct Prepared {
     check: StateSpaceCheck,
 }
 fn prepare(model: &GraphModel, q: &StateSpaceRequest) -> Result<Prepared> {
-    // Reuse the Bode component ancestry rules and source/Scope validation exactly.
+    prepare_with_domain(model, q, false)
+}
+fn prepare_with_domain(
+    model: &GraphModel,
+    q: &StateSpaceRequest,
+    discrete: bool,
+) -> Result<Prepared> {
+    // Shared exact component mapping; each domain supplies its supported dependencies.
     let request = frequency::FrequencyRequest {
         source: q.source.clone(),
         source_component: q.source_component,
@@ -66,7 +99,16 @@ fn prepare(model: &GraphModel, q: &StateSpaceRequest) -> Result<Prepared> {
         points: 2,
         open_loop: false,
     };
-    let (original, nodes, check, source) = frequency::network(model, &request).map_err(|e| {
+    let (original, nodes, check, source) = frequency::network_with_dependencies(
+        model,
+        &request,
+        if discrete {
+            discrete::dependencies
+        } else {
+            frequency::dependencies
+        },
+    )
+    .map_err(|e| {
         e.replace("Frequency", "State-space")
             .replace("frequency analysis", "state-space analysis")
     })?;
@@ -78,19 +120,32 @@ fn prepare(model: &GraphModel, q: &StateSpaceRequest) -> Result<Prepared> {
     for (i, &node) in nodes.iter().enumerate() {
         let original_block = &original.flat.blocks[node.0];
         let mut b = original_block.clone();
-        b.id = format!("component_{i}");
+        b.id = format!("{}[{}]", original_block.id, node.1);
         b.width = 1;
         let count = match &b.params {
             BlockKind::Integrator { .. } | BlockKind::FirstOrder { .. } => 1,
             BlockKind::TransferFunction { denominator, .. } => denominator.len() - 1,
-            BlockKind::Pid { .. } => 2,
+            BlockKind::Pid { .. } => {
+                if discrete {
+                    3
+                } else {
+                    2
+                }
+            }
+            BlockKind::Delay { .. } => 1,
             _ => 0,
         };
         for state in 0..count {
             if states.len() >= 8 {
-                return Err("State-space analysis supports at most 8 related continuous states; no states are silently removed".into());
+                return Err(format!("State-space analysis supports at most 8 related {} states; no states are silently removed", if discrete { "discrete" } else { "continuous" }));
             }
             let description = match b.params {
+                BlockKind::Pid { .. } if discrete => match state {
+                    0 => "weighted PID integral",
+                    1 => "previous PID error",
+                    _ => "PID derivative filter",
+                },
+                BlockKind::Delay { .. } => "previous sampled input",
                 BlockKind::Pid { .. } => {
                     if state == 0 {
                         "weighted PID integral"
@@ -130,6 +185,10 @@ fn prepare(model: &GraphModel, q: &StateSpaceRequest) -> Result<Prepared> {
                 denominator,
                 initial: vec![0.0; count],
             },
+            BlockKind::Delay { sample_time, .. } => BlockKind::Delay {
+                sample_time,
+                initial: vec![0.0],
+            },
             BlockKind::Mux { .. }
             | BlockKind::Selector { .. }
             | BlockKind::Input { .. }
@@ -139,10 +198,14 @@ fn prepare(model: &GraphModel, q: &StateSpaceRequest) -> Result<Prepared> {
             other => other,
         };
         incoming.push(
-            frequency::dependencies(&original, node)?
-                .iter()
-                .map(|n| indices[n])
-                .collect(),
+            (if discrete {
+                discrete::dependencies
+            } else {
+                frequency::dependencies
+            })(&original, node)?
+            .iter()
+            .map(|n| indices[n])
+            .collect(),
         );
         blocks.push(b);
     }
@@ -229,5 +292,5 @@ pub fn analyze_state_space(model: &GraphModel, q: &StateSpaceRequest) -> Result<
     if !p.check.source_related {
         stability.notes.push("Selected source component is outside the Scope ancestry: B and D are zero; ancestor internal modes are still retained".into());
     }
-    Ok(StateSpaceResult{request:q.clone(),check:p.check,states:p.states,a,b,c,d,characteristic,pole_scale,characteristic_residual,poles,matrix_residuals,stability,method:"continuous LTI Scope ancestry / simulation-equation unit basis / xdot=Ax+Bu,y=Cx+Du / scaled characteristic polynomial and independent matrix determinant residuals / Routh / no state removal".into()})
+    Ok(StateSpaceResult{request:q.clone(),check:p.check,states:p.states,a,b,c,d,characteristic,pole_scale,characteristic_residual,poles,matrix_residuals,stability:stability.into(),sample_time:None,method:"continuous LTI Scope ancestry / simulation-equation unit basis / xdot=Ax+Bu,y=Cx+Du / scaled characteristic polynomial and independent matrix determinant residuals / Routh / no state removal".into()})
 }

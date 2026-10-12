@@ -120,3 +120,5 @@ cargo run --locked -p blocksim-core --example frequency
 詳細は [frequency-validation.json](frequency-validation.json)。これは2つのサンプルでの精度であり、任意のモデルで同じ誤差を保証しません。設定を再現する [lowpass-plan.json](../samples/frequency/lowpass-plan.json)、[feedback-plan.json](../samples/frequency/feedback-plan.json) は GUI の「解析設定を読み込む」で使えます。
 
 現在の接続から選択Scope成分の祖先のA・B・C・Dと固有値を求める解析は [状態空間仕様](state-space.md) を参照してください。最大8状態の内部実現に限り、Bodeパネルの意味や開ループ余裕の判定範囲は変えません。
+
+同一周期の離散PID／Delayの状態空間と単位円の内部安定性は [離散状態空間](discrete-state-space.md) を参照してください。この追加でBodeを離散／混在系へ拡張してはいません。

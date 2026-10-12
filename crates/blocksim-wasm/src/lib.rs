@@ -96,6 +96,24 @@ pub fn state_space_check_json(model: &str, request: &str) -> Result<String, Stri
         &graph, &request,
     )?)
 }
+pub fn discrete_state_space_json(model: &str, request: &str) -> Result<String, String> {
+    let graph = decode(model)?;
+    let request = decode(request)?;
+    encode(&blocksim_core::graph::state_space::analyze_discrete_state_space(&graph, &request)?)
+}
+pub fn discrete_state_space_check_json(model: &str, request: &str) -> Result<String, String> {
+    let graph = decode(model)?;
+    let request = decode(request)?;
+    encode(&blocksim_core::graph::state_space::validate_discrete_state_space(&graph, &request)?)
+}
+#[wasm_bindgen]
+pub fn analyze_discrete_state_space(model: &str, request: &str) -> Result<String, JsValue> {
+    discrete_state_space_json(model, request).map_err(|e| JsValue::from_str(&e))
+}
+#[wasm_bindgen]
+pub fn validate_discrete_state_space(model: &str, request: &str) -> Result<String, JsValue> {
+    discrete_state_space_check_json(model, request).map_err(|e| JsValue::from_str(&e))
+}
 #[wasm_bindgen]
 pub fn analyze_state_space(model: &str, request: &str) -> Result<String, JsValue> {
     state_space_json(model, request).map_err(|e| JsValue::from_str(&e))
@@ -164,6 +182,29 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn discrete_boundary_has_dimensionless_poles_and_rejects_mixed_and_invalid_queries() {
+        let model = include_str!("../../../samples/discrete/feedback.json");
+        let q = r#"{"source":"source","source_component":0,"scope":"output","scope_component":0}"#;
+        let r: serde_json::Value =
+            serde_json::from_str(&discrete_state_space_json(model, q).unwrap()).unwrap();
+        assert_eq!(r["a"], serde_json::json!([[0.8, -0.64], [1.0, 0.0]]));
+        assert_eq!(r["sample_time"], 0.1);
+        assert_eq!(r["stability"]["outside_unit_circle_poles"], 0);
+        assert!(r["stability"]["right_half_plane_poles"].is_null());
+        assert!(discrete_state_space_check_json(
+            include_str!("../../../samples/graphs/mixed-pid.json"),
+            q
+        )
+        .is_err());
+        assert!(discrete_state_space_json(
+            model,
+            &q.replace("\"source_component\":0", "\"source_component\":1")
+        )
+        .is_err());
+        assert!(discrete_state_space_json(model, &" ".repeat(1_000_001)).is_err());
+        assert!(discrete_state_space_json("{}", q).is_err());
+    }
     #[test]
     fn connected_state_space_boundary_reports_matrices_and_validates_components_and_limits() {
         let model = include_str!("../../../samples/state-space/feedback.json");

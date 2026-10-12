@@ -266,6 +266,17 @@ try {
     }
     await expect(p.locator('#graph-state-space-stability')).toContainText('右半平面の極 2個');const pending=p.waitForEvent('download');await click(p,'graph-state-space-csv');const file=await pending,text=await readFile(await file.path(),'utf8');assert.equal(text.split('\r\n').length,25);assert.ok(text.includes('eigenvalue')&&text.includes('unstable'));await sleep(900);
   });
+  await record('discrete-state-space',async p=>{
+    await ready(p);await p.evaluate(()=>{document.body.classList.add('capture-state-space','capture-discrete');document.getElementById('graph-state-space').open=true;});
+    const plan=await readFile(join(ROOT,'samples/discrete/feedback-plan.json'),'utf8');await p.locator('#graph-state-space-import').setInputFiles({name:'discrete.json',mimeType:'application/json',buffer:Buffer.from(plan)});await expect(p.locator('#graph-state-space-state')).toContainText('設定を読み込みました');await p.evaluate(()=>document.getElementById('graph-fit').click());await title(p,'ONE CLOCK. A UNIT CIRCLE.','Ts=0.1 s。2段Delayの現在の接続から、離散行列と無次元の極を計算。','19 / DISCRETE');
+  },async p=>{
+    await p.evaluate(()=>document.getElementById('graph-state-space-run').click());await expect(p.locator('#graph-state-space-stability')).toContainText('漸近安定');await expect(p.locator('#graph-state-space-plot [data-unit-circle]')).toHaveCount(1);await expect(p.locator('#graph-state-space-poles-rows tr')).toHaveCount(2);await sleep(2100);
+    for(const [radius,titleText,label]of [[1,'ON THE CIRCLE. AT THE BOUNDARY.','境界／近傍'],[1.2,'OUTSIDE THE CIRCLE. GROWING MODES.','不安定']]){
+      const plan=JSON.parse(await readFile(join(ROOT,'samples/discrete/feedback-plan.json'),'utf8'));plan.model.blocks[1].params.signs=[1,radius,-radius*radius];plan.model.blocks[1].label=`Feedback radius ${radius}`;
+      await p.locator('#graph-state-space-import').setInputFiles({name:`radius-${radius}.json`,mimeType:'application/json',buffer:Buffer.from(JSON.stringify(plan))});await expect(p.locator('#graph-state-space-state')).toContainText('設定を読み込みました');await p.evaluate(()=>document.getElementById('graph-fit').click());await title(p,titleText,`半径 ${radius}：同じ接続・周期。A と極が変わる。円上を安定と扱わない。`,'19 / DISCRETE');await p.evaluate(()=>document.getElementById('graph-state-space-run').click());await expect(p.locator('#graph-state-space-stability')).toContainText(label);await expect(p.locator('#graph-state-space-poles-rows tr')).toHaveCount(2);await expect(p.locator('#graph-state-space-a [data-row="0"][data-column="0"]')).toHaveText(radius.toPrecision(7));await sleep(2100);
+    }
+    await expect(p.locator('#graph-state-space-stability')).toContainText('単位円の外の極 2個');const pending=p.waitForEvent('download');await click(p,'graph-state-space-csv');const file=await pending,text=await readFile(await file.path(),'utf8');assert.equal(text.split('\r\n').length,17);assert.ok(text.includes('outside_unit_circle_poles')&&text.includes('real_dimensionless')&&text.includes('sample_time')&&text.includes('unstable'));await sleep(900);
+  });
   if(selected.length){const previous=JSON.parse(await readFile(join(MEDIA,'manifest.json'),'utf8'));const updated=new Map(previous.clips.map(clip=>[clip.file,clip]));for(const clip of manifest)updated.set(clip.file,clip);manifest.splice(0,manifest.length,...updated.values());}
   await writeFile(join(MEDIA,'manifest.json'),JSON.stringify({source:'Real BlockSim Chromium/WASM capture; presentation layout and path reveal only.',fps:10,clips:manifest},null,2)+'\n');
   console.log('Posters:',TMP);
