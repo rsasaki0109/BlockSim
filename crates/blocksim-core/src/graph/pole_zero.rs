@@ -1,7 +1,7 @@
 //! Selected continuous transfer realization, without pole/zero cancellation.
 //! This does not determine the stability of an arbitrary connected graph.
 use super::*;
-mod roots;
+pub(super) mod roots;
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -132,7 +132,7 @@ pub fn analyze_pole_zero(model: &GraphModel, q: &PoleZeroRequest) -> Result<Pole
     let stability = routh(&denominator);
     Ok(PoleZeroResult{request:q.clone(),check,numerator,denominator,poles,zeros,stability,method:"selected continuous companion realization; no cancellation; unit feedback uses D+N; polynomial roots verified by residual and reconstruction; independent scaled Routh table".into()})
 }
-fn routh(coefficients: &[f64]) -> Stability {
+pub(super) fn routh(coefficients: &[f64]) -> Stability {
     const EPS: f64 = 1e-10;
     let mut out=Stability{classification:"indeterminate".into(),right_half_plane_poles:None,tolerance:EPS,method:"scaled real Routh table; near-zero pivots unresolved; auxiliary derivative for zero rows".into(),notes:vec![]};
     let n = coefficients.len() - 1;

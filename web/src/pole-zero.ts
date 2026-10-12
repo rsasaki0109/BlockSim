@@ -24,14 +24,14 @@ export function poleZeroCsv(r:PoleZeroResult){
  for(const [name,group] of [['pole',r.poles],['zero',r.zeros]] as const){for(const p of group.roots)rows.push([...prefix,quote(name),p.real,p.imag,p.relative_residual,quote(group.status),quote(group.warnings.join(' | ')),...polynomials]);if(!group.roots.length)rows.push([...prefix,quote(name+'_set'),'','','',quote(group.status),quote(group.warnings.join(' | ')||'No finite roots (constant polynomial)'),...polynomials]);}
  return '\uFEFF'+[['block','mode','stability','right_half_plane_poles','record','real_per_s','imag_rad_s','relative_residual','status','note','numerator','denominator'].map(quote).join(','),...rows.map(x=>x.join(','))].join('\r\n');
 }
-export function poleZeroGeometry(r:PoleZeroResult){
+export function poleZeroGeometry(r:{poles:{roots:PolynomialRoot[]};zeros:{roots:PolynomialRoot[]}}){
  const roots=[...r.poles.roots,...r.zeros.roots];if(roots.some(p=>![p.real,p.imag].every(Number.isFinite)))throw new Error('極・零点の座標が有限値ではありません');
  const extent=Math.max(1,...roots.flatMap(p=>[Math.abs(p.real),Math.abs(p.imag)]));
  // Divide before multiplying, including poles near the finite floating-point limit.
  const x=(v:number)=>300+125*(v/extent),y=(v:number)=>165-125*(v/extent);
  return {extent,x,y,empty:!roots.length};
 }
-export function plotPoleZero(host:HTMLElement,r:PoleZeroResult){
+export function plotPoleZero(host:HTMLElement,r:{poles:{roots:PolynomialRoot[]};zeros:{roots:PolynomialRoot[]}}){
  const g=poleZeroGeometry(r),ns='http://www.w3.org/2000/svg';const make=(tag:string,attrs:Record<string,string>)=>{const e=document.createElementNS(ns,tag);for(const [k,v]of Object.entries(attrs))e.setAttribute(k,v);return e;};
  const svg=make('svg',{viewBox:'0 0 600 340',role:'img','aria-label':'連続伝達関数の極・零点（複素 s 平面）'});
  svg.append(make('rect',{x:'150',y:'15',width:'150',height:'300',fill:'#14362d',opacity:'.5'}));svg.append(make('rect',{x:'300',y:'15',width:'150',height:'300',fill:'#48232d',opacity:'.35'}));

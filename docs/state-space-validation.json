@@ -1,0 +1,193 @@
+{
+  "cases": [
+    {
+      "A": [
+        [
+          -3.0,
+          -2.0,
+          -4.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "B": [
+        4.0,
+        0.0,
+        0.0
+      ],
+      "C": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "D": 0.0,
+      "cayley_hamilton_residual": 0.0,
+      "classification": "stable",
+      "gain": 4.0,
+      "late_max": 1.0002223959512977,
+      "late_min": 0.999769917966658,
+      "late_window_s": [
+        80,
+        100
+      ],
+      "max_absolute_output": 1.700132193963604,
+      "max_matrix_determinant_residual": 0.0,
+      "max_root_error_vs_cardano": 7.782704976483342e-16,
+      "max_time_error_vs_analytic_step": 2.10985984239187e-9,
+      "poles": [
+        {
+          "imag": 0.0,
+          "real": -2.7963219032594417,
+          "relative_residual": 4.093854748160242e-17
+        },
+        {
+          "imag": -1.191670795604733,
+          "real": -0.10183904837027931,
+          "relative_residual": 0.0
+        },
+        {
+          "imag": 1.191670795604733,
+          "real": -0.1018390483702793,
+          "relative_residual": 6.046371317265533e-17
+        }
+      ],
+      "right_half_plane_poles": 0,
+      "time_samples": 2001
+    },
+    {
+      "A": [
+        [
+          -3.0,
+          -2.0,
+          -6.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "B": [
+        6.0,
+        0.0,
+        0.0
+      ],
+      "C": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "D": 0.0,
+      "cayley_hamilton_residual": 0.0,
+      "classification": "boundary_or_uncertain",
+      "gain": 6.0,
+      "late_max": 1.9045292439141046,
+      "late_min": 0.09548782754651247,
+      "late_window_s": [
+        80,
+        100
+      ],
+      "max_absolute_output": 1.9045292439141046,
+      "max_matrix_determinant_residual": 0.0,
+      "max_root_error_vs_cardano": 2.3451869784179504e-15,
+      "max_time_error_vs_analytic_step": 3.084379102125112e-8,
+      "poles": [
+        {
+          "imag": 0.0,
+          "real": -3.0,
+          "relative_residual": 3.40636609828173e-17
+        },
+        {
+          "imag": 1.414213562373095,
+          "real": 1.1708852142162593e-16,
+          "relative_residual": 4.3213519923935226e-17
+        },
+        {
+          "imag": -1.4142135623730951,
+          "real": 1.3881791963553022e-16,
+          "relative_residual": 4.296176551866908e-17
+        }
+      ],
+      "right_half_plane_poles": 0,
+      "time_samples": 2001
+    },
+    {
+      "A": [
+        [
+          -3.0,
+          -2.0,
+          -8.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "B": [
+        8.0,
+        0.0,
+        0.0
+      ],
+      "C": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "D": 0.0,
+      "cayley_hamilton_residual": 0.0,
+      "classification": "unstable",
+      "gain": 8.0,
+      "late_max": 2850.668946040914,
+      "late_min": -3359.1316841860457,
+      "late_window_s": [
+        80,
+        100
+      ],
+      "max_absolute_output": 3359.1316841860457,
+      "max_matrix_determinant_residual": 0.0,
+      "max_root_error_vs_cardano": 2.220446049250313e-15,
+      "max_time_error_vs_analytic_step": 0.00005769397876065341,
+      "poles": [
+        {
+          "imag": 0.0,
+          "real": -3.166312747397789,
+          "relative_residual": 1.9681388561659455e-17
+        },
+        {
+          "imag": -1.5873509976226488,
+          "real": 0.08315637369889449,
+          "relative_residual": 7.76053443057685e-17
+        },
+        {
+          "imag": 1.5873509976226488,
+          "real": 0.08315637369889456,
+          "relative_residual": 6.66076911059174e-17
+        }
+      ],
+      "right_half_plane_poles": 2,
+      "time_samples": 2001
+    }
+  ],
+  "root_reference": "independent Cardano for s³+3s²+2s+K",
+  "scope": "actual connected Source-Sum-Gain-TransferFunction-Scope negative feedback, selected Scope ancestry",
+  "time_reference": "analytic partial-fraction unit step of K/(s³+3s²+2s+K), compared with actual connected RK45 graph"
+}

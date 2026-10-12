@@ -145,6 +145,14 @@
       "bytes": 160368,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "state-space.gif",
+      "frames": 101,
+      "duration_seconds": 10.1,
+      "bytes": 188443,
+      "width": 960,
+      "height": 737
     }
   ]
 }

@@ -7,6 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 mod adaptive;
 pub mod frequency;
 pub mod pole_zero;
+pub mod state_space;
 mod transfer;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

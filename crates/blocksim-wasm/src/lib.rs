@@ -82,6 +82,28 @@ pub fn pole_zero_json(model: &str, request: &str) -> Result<String, String> {
         &graph, &request,
     )?)
 }
+pub fn state_space_json(model: &str, request: &str) -> Result<String, String> {
+    let graph = decode(model)?;
+    let request = decode(request)?;
+    encode(&blocksim_core::graph::state_space::analyze_state_space(
+        &graph, &request,
+    )?)
+}
+pub fn state_space_check_json(model: &str, request: &str) -> Result<String, String> {
+    let graph = decode(model)?;
+    let request = decode(request)?;
+    encode(&blocksim_core::graph::state_space::validate_state_space(
+        &graph, &request,
+    )?)
+}
+#[wasm_bindgen]
+pub fn analyze_state_space(model: &str, request: &str) -> Result<String, JsValue> {
+    state_space_json(model, request).map_err(|e| JsValue::from_str(&e))
+}
+#[wasm_bindgen]
+pub fn validate_state_space(model: &str, request: &str) -> Result<String, JsValue> {
+    state_space_check_json(model, request).map_err(|e| JsValue::from_str(&e))
+}
 pub fn pole_zero_check_json(model: &str, request: &str) -> Result<String, String> {
     let graph = decode(model)?;
     let request = decode(request)?;
@@ -142,6 +164,29 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn connected_state_space_boundary_reports_matrices_and_validates_components_and_limits() {
+        let model = include_str!("../../../samples/state-space/feedback.json");
+        let query =
+            r#"{"source":"source","source_component":0,"scope":"output","scope_component":0}"#;
+        let r: serde_json::Value =
+            serde_json::from_str(&state_space_json(model, query).unwrap()).unwrap();
+        assert_eq!(
+            r["a"],
+            serde_json::json!([[-3.0, -2.0, -4.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+        );
+        assert_eq!(r["b"], serde_json::json!([4.0, 0.0, 0.0]));
+        assert_eq!(r["check"]["states"], 3);
+        assert_eq!(r["stability"]["classification"], "stable");
+        assert_eq!(r["matrix_residuals"].as_array().unwrap().len(), 3);
+        assert!(state_space_check_json(
+            model,
+            &query.replace("\"scope_component\":0", "\"scope_component\":1")
+        )
+        .is_err());
+        assert!(state_space_json(model, &" ".repeat(1_000_001)).is_err());
+        assert!(state_space_json("{}", query).is_err());
+    }
     #[test]
     fn pole_zero_boundary_keeps_uncancelled_poles_and_refuses_invalid_queries() {
         let model = include_str!("../../../samples/frequency/open-loop.json");

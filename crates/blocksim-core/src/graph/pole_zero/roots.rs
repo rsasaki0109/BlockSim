@@ -74,7 +74,7 @@ fn failure(degree: Option<usize>, warning: &str) -> PolynomialRoots {
         warnings: vec![warning.into()],
     }
 }
-pub(super) fn solve(coefficients: &[f64]) -> PolynomialRoots {
+pub(crate) fn solve(coefficients: &[f64]) -> PolynomialRoots {
     let Some(first) = coefficients.iter().position(|x| *x != 0.0) else {
         return PolynomialRoots {
             status: "identically_zero".into(),

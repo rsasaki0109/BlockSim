@@ -112,7 +112,7 @@ impl Mul for C {
 }
 type Node = (usize, usize);
 
-fn dependencies(graph: &Compiled, node: Node) -> Result<Vec<Node>> {
+pub(super) fn dependencies(graph: &Compiled, node: Node) -> Result<Vec<Node>> {
     let (i, c) = node;
     let b = &graph.flat.blocks[i];
     let incoming = &graph.incoming[i];
@@ -156,7 +156,7 @@ fn dependencies(graph: &Compiled, node: Node) -> Result<Vec<Node>> {
         _ => return Err(unsupported()),
     })
 }
-fn network(
+pub(super) fn network(
     model: &GraphModel,
     request: &FrequencyRequest,
 ) -> Result<(Compiled, Vec<Node>, FrequencyCheck, usize)> {
