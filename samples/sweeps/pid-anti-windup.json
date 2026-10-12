@@ -1,0 +1,162 @@
+{
+  "format": "blocksim.sweep",
+  "version": 1,
+  "model": {
+    "version": 1,
+    "dt": 0.01,
+    "duration": 40,
+    "blocks": [
+      {
+        "id": "reference",
+        "label": "reference",
+        "width": 1,
+        "position": [
+          30,
+          120
+        ],
+        "params": {
+          "kind": "step",
+          "before": [
+            3.0
+          ],
+          "after": [
+            0.5
+          ],
+          "step_time": 5.0
+        }
+      },
+      {
+        "id": "error",
+        "label": "error",
+        "width": 1,
+        "position": [
+          250,
+          120
+        ],
+        "params": {
+          "kind": "sum",
+          "signs": [
+            1.0,
+            -1.0
+          ]
+        }
+      },
+      {
+        "id": "controller",
+        "label": "controller",
+        "width": 1,
+        "position": [
+          470,
+          120
+        ],
+        "params": {
+          "kind": "pid",
+          "config": {
+            "kp": 2.0,
+            "ki": 1.0,
+            "kd": 0.0,
+            "derivative_tau": 0.05,
+            "limits": {
+              "lower": 0.0,
+              "upper": 1.0
+            },
+            "anti_windup": true
+          },
+          "mode": "continuous",
+          "sample_time": 0.01
+        }
+      },
+      {
+        "id": "plant",
+        "label": "plant",
+        "width": 1,
+        "position": [
+          720,
+          120
+        ],
+        "params": {
+          "kind": "first_order",
+          "gain": 1.0,
+          "tau": 1.0,
+          "initial": [
+            0.0
+          ]
+        }
+      },
+      {
+        "id": "output",
+        "label": "output",
+        "width": 1,
+        "position": [
+          970,
+          120
+        ],
+        "params": {
+          "kind": "scope"
+        }
+      },
+      {
+        "id": "control",
+        "label": "control",
+        "width": 1,
+        "position": [
+          720,
+          300
+        ],
+        "params": {
+          "kind": "scope"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "reference",
+        "from_port": 0,
+        "to": "error",
+        "to_port": 0
+      },
+      {
+        "from": "plant",
+        "from_port": 0,
+        "to": "error",
+        "to_port": 1
+      },
+      {
+        "from": "error",
+        "from_port": 0,
+        "to": "controller",
+        "to_port": 0
+      },
+      {
+        "from": "controller",
+        "from_port": 0,
+        "to": "plant",
+        "to_port": 0
+      },
+      {
+        "from": "plant",
+        "from_port": 0,
+        "to": "output",
+        "to_port": 0
+      },
+      {
+        "from": "controller",
+        "from_port": 0,
+        "to": "control",
+        "to_port": 0
+      }
+    ]
+  },
+  "parameter": "controller:config.anti_windup",
+  "values": [
+    0,
+    1
+  ],
+  "metric": {
+    "scope": "output",
+    "component": 0,
+    "reference": 0.5,
+    "start": 5,
+    "end": 40
+  }
+}

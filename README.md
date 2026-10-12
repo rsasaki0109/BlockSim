@@ -100,6 +100,18 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
 
 [GIF の生成方法とサイズ](docs/media/README.md) · [ブロック図の仕様](docs/graph.md) · [数値検証](docs/validation.md)
 
+<p align="center">
+  <strong>13 — Adapt the step. Keep the samples.</strong><br>
+  <a href="docs/media/adaptive.gif"><img src="docs/media/adaptive.gif" width="960" alt="同じ1001記録点で RK4 と RK45 を切り替え、一次遅れの微分評価4000回から609回への削減と保存を確認"></a><br>
+  <sub>記録時計を保持 → 内部刻みを適応 → 誤差と評価回数を確認。</sub>
+</p>
+
+<p align="center">
+  <strong>14 — Sweep. Measure. Choose.</strong><br>
+  <a href="docs/media/sweep.gif"><img src="docs/media/sweep.gif" width="960" alt="anti-windup を0と1で掃引し、5〜40秒の復帰 IAE 約10.49から0.65への改善を比較、基準保持・設定適用・CSV出力を確認"></a><br>
+  <sub>設定を掃引 → IAE／ISE を比較 → 結果を基準やモデルに使う。</sub>
+</p>
+
 ## さらに使いやすく
 
 - **コピー・複製**：選択内の接続と内部設定を保持。Ctrl/Cmd+A・C・V・D、Undo／Redo に対応し、設定は元モデルから独立します。
@@ -139,12 +151,14 @@ source scripts/rust-env.sh
 
 画面上部の「ブロック図エディタ」でモデルを組めます。Constant、Step、Sine、Gain、Sum、Product、Saturation、Integrator、FirstOrder、Delay、PID、Mux、Selector、Scope、Subsystem を配置・接続できます。ブロックのチェックで複数選択しサブシステム化、内部を編集できます。Undo / Redo、モデル保存・復元、Scope の複数系列とカーソル、CSV 出力にも対応します。作成途中の保存は未接続を許可し、実行時に不足・幅不一致・代数ループを検証します。
 
-連続系の結合 RK4 と整数倍の複数離散周期を混在させ、計算は中止可能な Web Worker で行います。詳細・保存形式・サンプルは [ブロック図仕様](docs/graph.md) を参照してください。
+連続系の結合 RK4／可変刻み RK45 と整数倍の複数離散周期を混在させ、計算は中止可能な Web Worker で行います。詳細・保存形式・サンプルは [ブロック図仕様](docs/graph.md) を参照してください。
 
 ```bash
 source scripts/rust-env.sh
 cargo run --locked -p blocksim-core --example graph -- samples/graphs/mixed-pid.json
 ```
+
+「シミュレーション設定」で RK45 の許容誤差・最小／最大内部刻みを保存できます。「パラメータ掃引」は1パラメータを最大32通りで計算し、評価窓の最小／最大・終点・IAE／ISE、微分評価回数を比較します。設定ファイルの保存／復元、全ケースの CSV、結果の基準保持とモデルへの適用に対応します。記録時計と離散時計は保持します。詳しくは [数値計算と掃引](docs/numerics.md) を参照してください。
 
 ## PID Lab の操作
 

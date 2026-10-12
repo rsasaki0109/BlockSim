@@ -1,9 +1,55 @@
-//! Typed vector graph, subsystem expansion and fixed-step hybrid RK4 execution.
+//! Typed vector graphs, subsystem expansion and hybrid RK4/RK45 execution.
 use crate::{
     finite, positive, ContinuousPid, DiscretePid, OutputLimits, PidConfig, PidMode, Result,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
+mod adaptive;
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "method", rename_all = "snake_case", deny_unknown_fields)]
+pub enum SolverConfig {
+    Rk4 {},
+    Rk45 {
+        abs_tolerance: f64,
+        rel_tolerance: f64,
+        min_step: f64,
+        max_step: f64,
+    },
+}
+impl SolverConfig {
+    fn validate(&self) -> Result<()> {
+        if let Self::Rk45 {
+            abs_tolerance,
+            rel_tolerance,
+            min_step,
+            max_step,
+        } = self
+        {
+            positive("Absolute tolerance", *abs_tolerance)?;
+            finite("Relative tolerance", *rel_tolerance)?;
+            positive("Minimum step", *min_step)?;
+            positive("Maximum step", *max_step)?;
+            if *rel_tolerance < 0.0 || *rel_tolerance > 1.0 || min_step > max_step {
+                return Err(
+                    "RK45 requires 0 <= relative tolerance <= 1 and min_step <= max_step".into(),
+                );
+            }
+        }
+        Ok(())
+    }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SolverStatistics {
+    pub accepted_steps: usize,
+    pub rejected_steps: usize,
+    pub rate_evaluations: usize,
+    pub output_evaluations: usize,
+    pub min_step: f64,
+    pub max_step: f64,
+    pub max_error_ratio: f64,
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -11,6 +57,8 @@ pub struct GraphModel {
     pub version: u32,
     pub dt: f64,
     pub duration: f64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub solver: Option<SolverConfig>,
     pub blocks: Vec<Block>,
     pub edges: Vec<Edge>,
 }
@@ -105,6 +153,8 @@ pub struct GraphResult {
     pub times: Vec<f64>,
     pub traces: Vec<Trace>,
     pub solver: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub statistics: Option<SolverStatistics>,
 }
 #[derive(Clone)]
 struct Flat {
@@ -170,7 +220,7 @@ fn period(sample_time: f64, dt: f64) -> Result<usize> {
     }
     Ok(ticks.round() as usize)
 }
-fn validate_block(b: &Block, dt: f64) -> Result<()> {
+fn validate_block(b: &Block, dt: f64, adaptive: bool) -> Result<()> {
     count("Signal width", b.width)?;
     if b.label.len() > 128 {
         return Err("Block label exceeds 128 bytes".into());
@@ -222,7 +272,7 @@ fn validate_block(b: &Block, dt: f64) -> Result<()> {
             finite("Plant gain", *gain)?;
             positive("Plant tau", *tau)?;
             vector("Initial state", initial, b.width)?;
-            if dt > tau / 2.0 {
+            if !adaptive && dt > tau / 2.0 {
                 return Err("RK4 requires dt <= plant tau/2".into());
             }
         }
@@ -242,7 +292,7 @@ fn validate_block(b: &Block, dt: f64) -> Result<()> {
             positive("PID sample time", *sample_time)?;
             if *mode == PidMode::Discrete {
                 period(*sample_time, dt)?;
-            } else if dt > config.derivative_tau / 2.0 {
+            } else if !adaptive && dt > config.derivative_tau / 2.0 {
                 return Err("RK4 requires dt <= derivative_tau/2".into());
             }
         }
@@ -268,12 +318,16 @@ fn expand(
     depth: usize,
     flat: &mut Flat,
     dt: f64,
+    solver: &SolverConfig,
 ) -> Result<Boundary> {
     if depth > 8 {
         return Err("Subsystem nesting exceeds 8 levels".into());
     }
     if model.version != 1 {
         return Err("Unsupported graph version".into());
+    }
+    if depth > 0 && model.solver.as_ref().is_some_and(|child| child != solver) {
+        return Err("Subsystem solver must inherit or match the root solver".into());
     }
     // Child clocks are required to match, so saved models have unambiguous semantics.
     if depth > 0 && (model.dt != dt || model.duration <= 0.0 || !model.duration.is_finite()) {
@@ -304,13 +358,14 @@ fn expand(
             if b.label.len() > 128 {
                 return Err("Subsystem label exceeds 128 bytes".into());
             }
-            let boundary = expand(inner, &format!("{id}/"), depth + 1, flat, dt)?;
+            let boundary = expand(inner, &format!("{id}/"), depth + 1, flat, dt, solver)?;
             if boundary.outputs.is_empty() {
                 return Err(format!("{id}: subsystem needs an Output"));
             }
             boundary
         } else {
-            validate_block(b, dt).map_err(|e| format!("{id}: {e}"))?;
+            validate_block(b, dt, matches!(solver, SolverConfig::Rk45 { .. }))
+                .map_err(|e| format!("{id}: {e}"))?;
             if let BlockKind::Input { port } = b.params {
                 if depth == 0 {
                     return Err("Input blocks belong inside subsystems".into());
@@ -376,6 +431,8 @@ fn expand(
     })
 }
 fn structure(model: &GraphModel) -> Result<Flat> {
+    let solver = model.solver.as_ref().unwrap_or(&SolverConfig::Rk4 {});
+    solver.validate()?;
     positive("Graph dt", model.dt)?;
     positive("Graph duration", model.duration)?;
     if model.dt > model.duration || model.duration / model.dt > 100_000.0 {
@@ -389,7 +446,7 @@ fn structure(model: &GraphModel) -> Result<Flat> {
         blocks: vec![],
         edges: vec![],
     };
-    expand(model, "", 0, &mut flat, model.dt)?;
+    expand(model, "", 0, &mut flat, model.dt, solver)?;
     Ok(flat)
 }
 /// Parameter and edge checks for editor drafts; incomplete connections are allowed.
@@ -914,9 +971,21 @@ fn integrate(graph: &Compiled, rt: &mut Runtime, time: f64, end: f64, dt: f64) -
     }
     Ok(())
 }
-/// Fixed base clock, synchronous delays, per-block discrete clocks, coupled RK4.
+/// Fixed recording clock, synchronous discrete updates and coupled RK4 or RK45.
 pub fn simulate_graph(model: &GraphModel) -> Result<GraphResult> {
+    simulate_graph_inner(model, None)
+}
+/// Shared evaluation allowance for batches; never changes the model or legacy JSON.
+pub fn simulate_graph_with_budget(model: &GraphModel, limit: usize) -> Result<GraphResult> {
+    simulate_graph_inner(model, Some(limit.min(20_000_000)))
+}
+fn simulate_graph_inner(model: &GraphModel, limit: Option<usize>) -> Result<GraphResult> {
     let graph = compile(model)?;
+    if let Some(config @ SolverConfig::Rk45 { .. }) = &model.solver {
+        return adaptive::simulate(&graph, model, config, limit.unwrap_or(20_000_000));
+    }
+    let width: usize = graph.flat.blocks.iter().map(|b| b.width).sum();
+    let mut used = 0;
     let mut rt = runtime(&graph)?;
     let steps = (model.duration / model.dt).round() as usize;
     let mut result = GraphResult {
@@ -934,6 +1003,15 @@ pub fn simulate_graph(model: &GraphModel) -> Result<GraphResult> {
             })
             .collect(),
         solver: "fixed-step hybrid RK4 / synchronous sample-and-hold".into(),
+        statistics: model.solver.as_ref().map(|_| SolverStatistics {
+            accepted_steps: 0,
+            rejected_steps: 0,
+            rate_evaluations: 0,
+            output_evaluations: 0,
+            min_step: 0.0,
+            max_step: 0.0,
+            max_error_ratio: 0.0,
+        }),
     };
     let step_events: Vec<_> = graph
         .flat
@@ -959,7 +1037,14 @@ pub fn simulate_graph(model: &GraphModel) -> Result<GraphResult> {
                 }
             }
         }
+        used += width;
+        if limit.is_some_and(|cap| used > cap) {
+            return Err("Batch exceeds remaining block-component evaluations".into());
+        }
         let values = evaluate(&graph, &mut rt, time, Some(tick), model.dt, false)?;
+        if let Some(stats) = &mut result.statistics {
+            stats.output_evaluations += 1;
+        }
         for (i, b) in graph.flat.blocks.iter().enumerate() {
             if let BlockKind::Delay { sample_time, .. } = b.params {
                 if tick % period(sample_time, model.dt)? == 0 {
@@ -986,7 +1071,22 @@ pub fn simulate_graph(model: &GraphModel) -> Result<GraphResult> {
         events.dedup();
         let mut start = time;
         for event in events {
+            used += 4 * width;
+            if limit.is_some_and(|cap| used > cap) {
+                return Err("Batch exceeds remaining block-component evaluations".into());
+            }
             integrate(&graph, &mut rt, start, event, model.dt)?;
+            if let Some(stats) = &mut result.statistics {
+                let h = event - start;
+                stats.accepted_steps += 1;
+                stats.rate_evaluations += 4;
+                stats.min_step = if stats.accepted_steps == 1 {
+                    h
+                } else {
+                    stats.min_step.min(h)
+                };
+                stats.max_step = stats.max_step.max(h);
+            }
             start = event;
         }
     }

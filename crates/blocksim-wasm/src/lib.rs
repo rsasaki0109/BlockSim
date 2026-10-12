@@ -55,6 +55,16 @@ pub fn graph_json(json: &str) -> Result<String, String> {
     let graph: blocksim_core::graph::GraphModel = decode(json)?;
     encode(&blocksim_core::graph::simulate_graph(&graph)?)
 }
+pub fn graph_budget_json(json: &str, limit: usize) -> Result<String, String> {
+    let graph = decode(json)?;
+    encode(&blocksim_core::graph::simulate_graph_with_budget(
+        &graph, limit,
+    )?)
+}
+#[wasm_bindgen]
+pub fn run_graph_budgeted(json: &str, limit: usize) -> Result<String, JsValue> {
+    graph_budget_json(json, limit).map_err(|e| JsValue::from_str(&e))
+}
 pub fn normalize_graph_json(json: &str, runnable: bool) -> Result<String, String> {
     let graph: blocksim_core::graph::GraphModel = decode(json)?;
     if runnable {
@@ -88,6 +98,19 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn batch_boundary_preserves_adaptive_result_and_rejects_insufficient_allowance() {
+        let json = include_str!("../../../samples/numerics/first-order.json");
+        let original = graph_json(json).unwrap();
+        let result: serde_json::Value = serde_json::from_str(&original).unwrap();
+        let stats = &result["statistics"];
+        let cost = (stats["rate_evaluations"].as_u64().unwrap()
+            + stats["output_evaluations"].as_u64().unwrap()) as usize
+            * 3;
+        assert_eq!(graph_budget_json(json, cost).unwrap(), original);
+        assert!(graph_budget_json(json, cost - 1).is_err());
+        assert!(graph_budget_json("{}", 20_000_000).is_err());
+    }
     #[test]
     fn graph_diagnostics_boundary_returns_structured_reports_and_rejects_bad_json() {
         let json = include_str!("../../../samples/graphs/subsystem.json");

@@ -25,6 +25,7 @@ fn edge(from: &str, to: &str, to_port: usize) -> Edge {
 }
 fn model(blocks: Vec<Block>, edges: Vec<Edge>, dt: f64, duration: f64) -> GraphModel {
     GraphModel {
+        solver: None,
         version: 1,
         dt,
         duration,

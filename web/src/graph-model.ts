@@ -3,10 +3,12 @@ export type Kind = 'constant'|'step'|'sine'|'gain'|'sum'|'product'|'saturation'|
 export interface Params { kind: Kind; [key: string]: unknown }
 export interface GraphBlock { id: string; label: string; width: number; position: [number,number]; params: Params }
 export interface Edge { from: string; from_port: number; to: string; to_port: number }
-export interface GraphModel { version: 1; dt: number; duration: number; blocks: GraphBlock[]; edges: Edge[] }
+export type SolverConfig = {method:'rk4'}|{method:'rk45';abs_tolerance:number;rel_tolerance:number;min_step:number;max_step:number};
+export interface SolverStatistics { accepted_steps:number;rejected_steps:number;rate_evaluations:number;output_evaluations:number;min_step:number;max_step:number;max_error_ratio:number }
+export interface GraphModel { version: 1; dt: number; duration: number; solver?:SolverConfig; blocks: GraphBlock[]; edges: Edge[] }
 export interface GraphDocument { version: 2; graph: GraphModel }
 export interface GraphTrace { id: string; label: string; values: number[][] }
-export interface GraphResult { times: number[]; traces: GraphTrace[]; solver: string }
+export interface GraphResult { times: number[]; traces: GraphTrace[]; solver: string; statistics?:SolverStatistics }
 export const GRAPH_STORAGE_KEY = 'blocksim.graph.v2';
 export const KIND_NAMES: Record<Kind,string> = {
   constant:'Constant', step:'Step', sine:'Sine', gain:'Gain', sum:'Sum', product:'Product', saturation:'Saturation',
@@ -65,6 +67,8 @@ export function setClock(graph: GraphModel, dt: number, duration: number) {
   graph.dt=dt; graph.duration=duration;
   for (const b of graph.blocks) if (b.params.kind==='subsystem') setClock(b.params.model as GraphModel,dt,duration);
 }
+export function setSolver(graph:GraphModel,solver:SolverConfig){graph.solver=structuredClone(solver);const inherit=(g:GraphModel)=>{for(const b of g.blocks)if(b.params.kind==='subsystem'){const inner=b.params.model as GraphModel;delete inner.solver;inherit(inner);}};inherit(graph);}
+export function solverKey(graph:GraphModel):string {const s=graph.solver;return !s||s.method==='rk4'?'rk4':['rk45',s.abs_tolerance,s.rel_tolerance,s.min_step,s.max_step].join('|');}
 export function deleteBlocks(graph: GraphModel, ids: Set<string>) {
   graph.blocks=graph.blocks.filter(b=>!ids.has(b.id)); graph.edges=graph.edges.filter(e=>!ids.has(e.from)&&!ids.has(e.to));
 }

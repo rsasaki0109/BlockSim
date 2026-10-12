@@ -1,0 +1,106 @@
+[
+  {
+    "error_limit": 2e-8,
+    "max_abs_error": 3.8718850348118394e-10,
+    "points": 1001,
+    "rate_evaluation_reduction_percent": 84.775,
+    "reference": "analytic",
+    "rk4": {
+      "accepted_steps": 1000,
+      "max_error_ratio": 0.0,
+      "max_step": 0.010000000000001563,
+      "min_step": 0.009999999999999787,
+      "output_evaluations": 1001,
+      "rate_evaluations": 4000,
+      "rejected_steps": 0
+    },
+    "rk45": {
+      "accepted_steps": 87,
+      "max_error_ratio": 0.5427771475022827,
+      "max_step": 0.8000000000000007,
+      "min_step": 0.01,
+      "output_evaluations": 1001,
+      "rate_evaluations": 609,
+      "rejected_steps": 0
+    },
+    "sample": "first-order"
+  },
+  {
+    "error_limit": 2e-8,
+    "max_abs_error": 1.8229751042042608e-10,
+    "points": 601,
+    "rate_evaluation_reduction_percent": 56.833333333333336,
+    "reference": "analytic",
+    "rk4": {
+      "accepted_steps": 600,
+      "max_error_ratio": 0.0,
+      "max_step": 0.010000000000000675,
+      "min_step": 0.009999999999999787,
+      "output_evaluations": 601,
+      "rate_evaluations": 2400,
+      "rejected_steps": 0
+    },
+    "rk45": {
+      "accepted_steps": 148,
+      "max_error_ratio": 0.6279430911465615,
+      "max_step": 0.044668445948642166,
+      "min_step": 0.01,
+      "output_evaluations": 601,
+      "rate_evaluations": 1036,
+      "rejected_steps": 0
+    },
+    "sample": "oscillator"
+  },
+  {
+    "error_limit": 1e-12,
+    "max_abs_error": 8.881784197001252e-16,
+    "points": 11,
+    "rate_evaluation_reduction_percent": 36.36363636363637,
+    "reference": "analytic",
+    "rk4": {
+      "accepted_steps": 11,
+      "max_error_ratio": 0.0,
+      "max_step": 0.10000000000000009,
+      "min_step": 0.015,
+      "output_evaluations": 11,
+      "rate_evaluations": 44,
+      "rejected_steps": 0
+    },
+    "rk45": {
+      "accepted_steps": 4,
+      "max_error_ratio": 2.413528314402514e-8,
+      "max_step": 0.535,
+      "min_step": 0.015,
+      "output_evaluations": 11,
+      "rate_evaluations": 28,
+      "rejected_steps": 0
+    },
+    "sample": "off-grid-step"
+  },
+  {
+    "error_limit": 0.00001,
+    "max_abs_error": 1.0484990653480963e-10,
+    "points": 4001,
+    "rate_evaluation_reduction_percent": 91.2390625,
+    "reference": "RK4 at dt/4",
+    "rk4": {
+      "accepted_steps": 16000,
+      "max_error_ratio": 0.0,
+      "max_step": 0.0025000000000048317,
+      "min_step": 0.0024999999999977263,
+      "output_evaluations": 16001,
+      "rate_evaluations": 64000,
+      "rejected_steps": 0
+    },
+    "rk45": {
+      "accepted_steps": 801,
+      "max_error_ratio": 0.22384432719931557,
+      "max_step": 0.05000000000000426,
+      "min_step": 0.01,
+      "output_evaluations": 4001,
+      "rate_evaluations": 5607,
+      "rejected_steps": 0
+    },
+    "sample": "mixed-pid"
+  }
+]

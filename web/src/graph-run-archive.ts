@@ -1,18 +1,18 @@
 import type { RunSnapshot } from './graph-comparison';
-import type { GraphModel, GraphResult, GraphTrace } from './graph-model';
+import type { GraphModel, GraphResult, GraphTrace, SolverStatistics } from './graph-model';
 
 export const MAX_RUN_ARCHIVE_BYTES=64*1024*1024;
 export interface RunArchive extends RunSnapshot { format:'blocksim.run'; version:1 }
 export function checkArchiveSize(bytes:number){if(bytes>MAX_RUN_ARCHIVE_BYTES)throw new Error('実行結果ファイルは64 MiB以下にしてください');}
-function object(value:unknown,keys:string[],name:string):Record<string,unknown>{
-  if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).some(key=>!keys.includes(key))||keys.some(key=>!Object.hasOwn(value,key)))throw new Error(`${name}: 保存形式が不正です`);
+function object(value:unknown,keys:string[],name:string,optional:string[]=[]):Record<string,unknown>{
+  if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).some(key=>!keys.includes(key)&&!optional.includes(key))||keys.some(key=>!Object.hasOwn(value,key)))throw new Error(`${name}: 保存形式が不正です`);
   return value as Record<string,unknown>;
 }
 function scopes(model:GraphModel,prefix=''):Array<{id:string,label:string,width:number}>{
   return model.blocks.flatMap(block=>block.params.kind==='scope'?[{id:prefix+block.id,label:block.label,width:block.width}]:block.params.kind==='subsystem'?scopes(block.params.model as GraphModel,prefix+block.id+'/'):[]);
 }
 function validateResult(value:unknown,model:GraphModel):GraphResult{
-  const result=object(value,['times','traces','solver'],'計算結果'),expected=scopes(model),samples=Math.round(model.duration/model.dt)+1;
+  const result=object(value,['times','traces','solver'],'計算結果',['statistics']),expected=scopes(model),samples=Math.round(model.duration/model.dt)+1;
   if(!Number.isSafeInteger(samples)||samples<2||samples>100001||!expected.length||expected.length>256||expected.reduce((sum,s)=>sum+s.width,0)*samples>2_000_000)throw new Error('計算結果の記録数が上限を超えています');
   if(!Array.isArray(result.times)||result.times.length!==samples||!result.times.every((t,i)=>typeof t==='number'&&Number.isFinite(t)&&t===i*model.dt))throw new Error('計算結果の記録時刻がモデルと一致しません');
   if(typeof result.solver!=='string'||!result.solver.length||result.solver.length>200)throw new Error('計算結果のソルバ情報が不正です');
@@ -23,7 +23,14 @@ function validateResult(value:unknown,model:GraphModel):GraphResult{
     if(!Array.isArray(trace.values)||trace.values.length!==samples||!trace.values.every(row=>Array.isArray(row)&&row.length===scope.width&&row.every(v=>typeof v==='number'&&Number.isFinite(v))))throw new Error(`${scope.id}: 計算結果の信号幅・記録数・数値が不正です`);
     return {id:scope.id,label:scope.label,values:trace.values as number[][]};
   });
-  return {times:result.times as number[],traces,solver:result.solver};
+  let statistics:SolverStatistics|undefined;
+  if(Object.hasOwn(result,'statistics')){
+    const names=['accepted_steps','rejected_steps','rate_evaluations','output_evaluations','min_step','max_step','max_error_ratio'];const stats=object(result.statistics,names,'計算統計');
+    if(names.some(n=>typeof stats[n]!=='number'||!Number.isFinite(stats[n])||(stats[n] as number)<0)||names.slice(0,4).some(n=>!Number.isSafeInteger(stats[n])||(stats[n] as number)>1_000_000)||stats.output_evaluations!==samples||(stats.min_step as number)>(stats.max_step as number)||(stats.max_error_ratio as number)>1)throw new Error('計算統計が不正です');
+    statistics=Object.fromEntries(names.map(n=>[n,stats[n]])) as unknown as SolverStatistics;
+  }
+  if(model.solver&&!statistics)throw new Error('計算方式を指定したモデルには計算統計が必要です');
+  return {times:result.times as number[],traces,solver:result.solver,...(statistics?{statistics}:{})};
 }
 export function decodeRunArchive(text:string,validate:(model:string)=>string):RunSnapshot{
   checkArchiveSize(text.length);checkArchiveSize(new TextEncoder().encode(text).length);
@@ -40,6 +47,7 @@ export function encodeRunArchive(snapshot:RunSnapshot):string{
 }
 // Compare every cell without building additional, potentially large JSON strings.
 export function verifyArchivedResult(stored:GraphResult,computed:GraphResult):void{
+  if(!!stored.statistics!==!!computed.statistics||stored.statistics&&Object.keys(stored.statistics).some(k=>stored.statistics![k as keyof SolverStatistics]!==computed.statistics![k as keyof SolverStatistics]))throw new Error('保存した計算統計が再計算と一致しません');
   if(stored.solver!==computed.solver||stored.times.length!==computed.times.length||stored.traces.length!==computed.traces.length||stored.times.some((t,i)=>t!==computed.times[i]))throw new Error('保存結果が現在の WASM の再計算と一致しません');
   for(let i=0;i<stored.traces.length;i++){
     const a=stored.traces[i],b=computed.traces[i];

@@ -1,4 +1,4 @@
-import { inputCount, outputCount, outputWidth, interfaceBlocks, setClock, type GraphBlock, type GraphModel, type Edge } from './graph-model';
+import { inputCount, outputCount, outputWidth, interfaceBlocks, setClock, solverKey, type GraphBlock, type GraphModel, type Edge } from './graph-model';
 
 export function inputWidth(block: GraphBlock, port: number): number {
   return block.params.kind === 'subsystem' ? interfaceBlocks(block, 'input')[port].width : block.width;
@@ -45,6 +45,7 @@ export function copySelection(graph: GraphModel, ids: Set<string>): GraphModel {
   return structuredClone({ ...graph, blocks, edges: graph.edges.filter(e => ids.has(e.from) && ids.has(e.to)) });
 }
 export function pasteSelection(graph: GraphModel, snapshot: GraphModel, offset = 40): string[] {
+  if(solverKey(graph)!==solverKey(snapshot))throw new Error('コピー元と貼り付け先の計算方式・許容誤差を一致させてください');
   if (snapshot.dt !== graph.dt) throw new Error('コピー元と貼り付け先の刻み幅を一致させてください');
   if (snapshot.blocks.some(b => b.params.kind === 'input' || b.params.kind === 'output')) throw new Error('境界ポートは貼り付けできません');
   const used = new Set(graph.blocks.map(b => b.id)), mapping = new Map<string, string>();
@@ -60,6 +61,7 @@ export function pasteSelection(graph: GraphModel, snapshot: GraphModel, offset =
 }
 /** Add a graph without changing existing IDs, edges or the destination clock. */
 export function mergeGraph(graph: GraphModel, incoming: GraphModel): string[] {
+  if(solverKey(graph)!==solverKey(incoming))throw new Error('追加するモデルの計算方式・許容誤差を既存モデルと一致させてください');
   if (incoming.dt !== graph.dt) throw new Error('追加するモデルの刻み幅を既存モデルと一致させてください');
   const used = new Set(graph.blocks.map(b => b.id)), mapping = new Map<string, string>();
   const added = structuredClone(incoming.blocks);

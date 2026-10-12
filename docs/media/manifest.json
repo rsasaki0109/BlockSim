@@ -105,6 +105,22 @@
       "bytes": 176297,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "adaptive.gif",
+      "frames": 77,
+      "duration_seconds": 7.7,
+      "bytes": 147074,
+      "width": 960,
+      "height": 737
+    },
+    {
+      "file": "sweep.gif",
+      "frames": 71,
+      "duration_seconds": 7.1,
+      "bytes": 182094,
+      "width": 960,
+      "height": 737
     }
   ]
 }

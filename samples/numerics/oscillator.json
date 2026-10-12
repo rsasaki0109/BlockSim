@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "dt": 0.01,
+  "duration": 6,
+  "solver": {
+    "method": "rk45",
+    "abs_tolerance": 1e-10,
+    "rel_tolerance": 1e-10,
+    "min_step": 1e-12,
+    "max_step": 0.8
+  },
+  "blocks": [
+    {
+      "id": "x",
+      "label": "x",
+      "width": 1,
+      "position": [
+        30,
+        100
+      ],
+      "params": {
+        "kind": "integrator",
+        "initial": [
+          1
+        ]
+      }
+    },
+    {
+      "id": "negative",
+      "label": "negative",
+      "width": 1,
+      "position": [
+        260,
+        100
+      ],
+      "params": {
+        "kind": "gain",
+        "gain": -1
+      }
+    },
+    {
+      "id": "v",
+      "label": "v",
+      "width": 1,
+      "position": [
+        500,
+        100
+      ],
+      "params": {
+        "kind": "integrator",
+        "initial": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "position",
+      "label": "position",
+      "width": 1,
+      "position": [
+        740,
+        100
+      ],
+      "params": {
+        "kind": "scope"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "x",
+      "from_port": 0,
+      "to": "negative",
+      "to_port": 0
+    },
+    {
+      "from": "negative",
+      "from_port": 0,
+      "to": "v",
+      "to_port": 0
+    },
+    {
+      "from": "v",
+      "from_port": 0,
+      "to": "x",
+      "to_port": 0
+    },
+    {
+      "from": "x",
+      "from_port": 0,
+      "to": "position",
+      "to_port": 0
+    }
+  ]
+}
