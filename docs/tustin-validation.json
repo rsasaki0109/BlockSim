@@ -1,0 +1,189 @@
+{
+  "cases": [
+    {
+      "conversion": {
+        "denominator": [
+          1.0,
+          -1.8095238095238095,
+          0.81859410430839
+        ],
+        "leading_condition_ratio": 1.0,
+        "mapping_scale": 20.0,
+        "method": "Tustin bilinear substitution s=k(z-1)/(z+1); z-descending monic coefficients; optional prewarp; degree retained; no initial-state mapping, cancellation or ZOH equivalence",
+        "numerator": [
+          0.002267573696145125,
+          0.00453514739229025,
+          0.002267573696145125
+        ],
+        "request": {
+          "denominator": [
+            1.0,
+            2.0,
+            1.0
+          ],
+          "numerator": [
+            1.0
+          ],
+          "sample_time": 0.1
+        }
+      },
+      "first_sample_outputs": [
+        {
+          "output": 0.002267573696145125,
+          "time_s": 0.0
+        },
+        {
+          "output": 0.01090594968145989,
+          "time_s": 0.1
+        },
+        {
+          "output": 0.026948647939901593,
+          "time_s": 0.2
+        },
+        {
+          "output": 0.048906968755180164,
+          "time_s": 0.30000000000000004
+        },
+        {
+          "output": 0.07550861487603015,
+          "time_s": 0.4
+        },
+        {
+          "output": 0.10566997494433565,
+          "time_s": 0.5
+        }
+      ],
+      "max_complex_error_vs_warped_continuous_formula": 1.8455653844684857e-14,
+      "max_step_error_vs_independent_closed_form": 7.771561172376096e-15,
+      "recorded_points": 801,
+      "selected_error_vs_continuous_same_frequency": 0.00156338153173644,
+      "selected_imag": -0.013928079915112496,
+      "selected_physical_omega_rad_s": 5,
+      "selected_real": -0.03420055731375623
+    },
+    {
+      "conversion": {
+        "denominator": [
+          1.0,
+          -1.6363636363636365,
+          0.6694214876033059
+        ],
+        "leading_condition_ratio": 1.0,
+        "mapping_scale": 10.0,
+        "method": "Tustin bilinear substitution s=k(z-1)/(z+1); z-descending monic coefficients; optional prewarp; degree retained; no initial-state mapping, cancellation or ZOH equivalence",
+        "numerator": [
+          0.008264462809917357,
+          0.016528925619834715,
+          0.008264462809917357
+        ],
+        "request": {
+          "denominator": [
+            1.0,
+            2.0,
+            1.0
+          ],
+          "numerator": [
+            1.0
+          ],
+          "sample_time": 0.2
+        }
+      },
+      "first_sample_outputs": [
+        {
+          "output": 0.008264462809917357,
+          "time_s": 0.0
+        },
+        {
+          "output": 0.038317054845980476,
+          "time_s": 0.2
+        },
+        {
+          "output": 0.09022607745372588,
+          "time_s": 0.4
+        },
+        {
+          "output": 0.15505026358110172,
+          "time_s": 0.6000000000000001
+        },
+        {
+          "output": 0.22637718938269707,
+          "time_s": 0.8
+        },
+        {
+          "output": 0.2996992739479735,
+          "time_s": 1.0
+        }
+      ],
+      "max_complex_error_vs_warped_continuous_formula": 2.5823128856601336e-15,
+      "max_step_error_vs_independent_closed_form": 6.661338147750939e-16,
+      "recorded_points": 801,
+      "selected_error_vs_continuous_same_frequency": 0.00615036884892419,
+      "selected_imag": -0.01148427899765211,
+      "selected_physical_omega_rad_s": 5,
+      "selected_real": -0.030318359467494376
+    },
+    {
+      "conversion": {
+        "denominator": [
+          1.0,
+          -1.606005989868629,
+          0.6448138098734788
+        ],
+        "leading_condition_ratio": 1.0,
+        "mapping_scale": 9.15243860856226,
+        "method": "Tustin bilinear substitution s=k(z-1)/(z+1); z-descending monic coefficients; optional prewarp; degree retained; no initial-state mapping, cancellation or ZOH equivalence",
+        "numerator": [
+          0.009701955001212422,
+          0.019403910002424845,
+          0.009701955001212422
+        ],
+        "request": {
+          "denominator": [
+            1.0,
+            2.0,
+            1.0
+          ],
+          "numerator": [
+            1.0
+          ],
+          "prewarp_omega": 5.0,
+          "sample_time": 0.2
+        }
+      },
+      "first_sample_outputs": [
+        {
+          "output": 0.009701955001212422,
+          "time_s": 0.0
+        },
+        {
+          "output": 0.044687262849020325,
+          "time_s": 0.2
+        },
+        {
+          "output": 0.10431987724365735,
+          "time_s": 0.4
+        },
+        {
+          "output": 0.17753120351002916,
+          "time_s": 0.6000000000000001
+        },
+        {
+          "output": 0.2566570987395267,
+          "time_s": 0.8
+        },
+        {
+          "output": 0.3365260862161079,
+          "time_s": 1.0
+        }
+      ],
+      "max_complex_error_vs_warped_continuous_formula": 6.77923897476138e-15,
+      "max_step_error_vs_independent_closed_form": 3.552713678800501e-15,
+      "recorded_points": 801,
+      "selected_error_vs_continuous_same_frequency": 1.5612511283791264e-17,
+      "selected_imag": -0.014792899408284039,
+      "selected_physical_omega_rad_s": 5,
+      "selected_real": -0.03550295857988166
+    }
+  ],
+  "reference": "G(s)=1/(s+1)^2; s=j*k*tan(omega*Ts/2). Step y[n]=1+(A+B*n)*alpha^n, alpha=(k-1)/(k+1), beta=1/(k+1), A=beta^2-1, B=((2alpha+3)beta^2-1)/alpha-A; output held between samples. Not ZOH equivalence."
+}

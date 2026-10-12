@@ -179,6 +179,14 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
 
 [離散伝達関数](docs/discrete-transfer.md) で離散フィルターの係数を直接指定できます。
 
+<p align="center">
+  <strong>23 — Convert. Inspect. Keep the frequency.</strong><br>
+  <a href="docs/media/tustin.gif"><img src="docs/media/tustin.gif" width="960" alt="連続伝達関数をTustin法とプリワープで離散化し、変換係数を確認して適用、実WASMのStepと指定周波数のBodeを検証"></a><br>
+  <sub>係数を確認 → 離散化 → 実行。プリワープで指定周波数を一致。</sub>
+</p>
+
+[Tustin離散化](docs/tustin.md) で連続伝達関数を離散ブロックへ変換できます。
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。

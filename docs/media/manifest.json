@@ -185,6 +185,14 @@
       "bytes": 183758,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "tustin.gif",
+      "frames": 157,
+      "duration_seconds": 15.7,
+      "bytes": 225644,
+      "width": 960,
+      "height": 737
     }
   ]
 }

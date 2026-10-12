@@ -44,4 +44,6 @@ RK4／RK45の両方に対応。離散状態は連続積分の状態から分離�
 
 `cargo run --locked -p blocksim-core --example discrete_transfer` は直接IIR／遅れIIR／FIRの5秒・251記録点を独立したStep式と照合し、201複素点を独立の単位円式と比較します。さらに実Sine駆動シミュレーターの24〜40秒、160サンプル時刻・20周期をsin／cosへ投影し、Bodeと照合。[数値JSON](discrete-transfer-validation.json) の最大Step誤差は5.56e−16未満、複素誤差4.75e−16未満、実時間の調和応答との誤差6.05e−15未満です。選んだモデル・有限窓の検証で、一般の誤差保証ではありません。
 
-連続伝達関数からの自動離散化、z⁻¹形式の別入力、最小実現、汎用Nyquist判別、異なる周期のlifting／混在系の周波数解析、MIMO・9状態以上の解析は未実装です。
+ZOHなどTustin以外の離散化、z⁻¹形式の別入力、最小実現、汎用Nyquist判別、異なる周期のlifting／混在系の周波数解析、MIMO・9状態以上の解析は未実装です。
+
+連続TransferFunctionからの [Tustin変換とプリワープ](tustin.md) は、係数を確認してからこのブロックへ適用できます。初期状態0のみです。

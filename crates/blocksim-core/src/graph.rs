@@ -5,6 +5,7 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 mod adaptive;
+pub mod discretize;
 pub mod frequency;
 pub mod pole_zero;
 mod sampled;

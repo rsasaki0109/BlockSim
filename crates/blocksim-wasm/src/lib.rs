@@ -55,6 +55,14 @@ pub fn graph_json(json: &str) -> Result<String, String> {
     let graph: blocksim_core::graph::GraphModel = decode(json)?;
     encode(&blocksim_core::graph::simulate_graph(&graph)?)
 }
+pub fn tustin_json(request: &str) -> Result<String, String> {
+    let q = decode(request)?;
+    encode(&blocksim_core::graph::discretize::discretize_tustin(&q)?)
+}
+#[wasm_bindgen]
+pub fn discretize_tustin(request: &str) -> Result<String, JsValue> {
+    tustin_json(request).map_err(|e| JsValue::from_str(&e))
+}
 pub fn graph_budget_json(json: &str, limit: usize) -> Result<String, String> {
     let graph = decode(json)?;
     encode(&blocksim_core::graph::simulate_graph_with_budget(
@@ -200,6 +208,23 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn tustin_boundary_serializes_finite_coefficients_and_rejects_invalid_or_unknown_input() {
+        let q = r#"{"numerator":[1],"denominator":[1,1],"sample_time":0.1}"#;
+        let r: serde_json::Value = serde_json::from_str(&tustin_json(q).unwrap()).unwrap();
+        assert_eq!(r["mapping_scale"], 20.0);
+        assert!((r["numerator"][0].as_f64().unwrap() - 1.0 / 21.0).abs() < 1e-14);
+        for bad in [
+            q.replace("0.1", "0"),
+            q.replace("0.1", "null"),
+            q.replace("0.1", "\"0.1\""),
+            q.replace("0.1}", "0.1,\"method\":\"zoh\"}"),
+            q.replace("0.1}", "0.1,\"prewarp_omega\":40}"),
+        ] {
+            assert!(tustin_json(&bad).is_err());
+        }
+        assert!(tustin_json(&" ".repeat(MAX_JSON_BYTES + 1)).is_err());
+    }
     #[test]
     fn discrete_transfer_roundtrip_execution_analysis_and_invalid_period_boundary() {
         let model = include_str!("../../../samples/discrete/transfer.json");
