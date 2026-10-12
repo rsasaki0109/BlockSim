@@ -187,6 +187,14 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
 
 [Tustin離散化](docs/tustin.md) で連続伝達関数を離散ブロックへ変換できます。
 
+<p align="center">
+  <strong>24 — Hold the input. Match the samples.</strong><br>
+  <a href="docs/media/zoh.gif"><img src="docs/media/zoh.gif" width="960" alt="連続ローパスをゼロ次ホールドで離散化し、入力を途中で下げた応答のサンプル時刻の一致を確認、保存と離散Bodeを実WASMで実行"></a><br>
+  <sub>ZOHで離散化。保持入力に対するサンプル時刻の応答を合わせる。</sub>
+</p>
+
+[ZOH離散化](docs/zoh.md) で保持入力に対する応答を離散モデルへ変換できます。
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。

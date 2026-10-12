@@ -1,5 +1,7 @@
-//! Bilinear coefficient conversion, without state mapping, cancellation or ZOH claims.
+//! Continuous-to-discrete coefficients, without initial-state mapping or cancellation.
 use super::*;
+mod zoh;
+pub use zoh::{discretize_zoh, ZohRequest, ZohResult};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct TustinRequest {

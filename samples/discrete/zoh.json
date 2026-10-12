@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "dt": 0.01,
+  "duration": 8,
+  "solver": {
+    "method": "rk45",
+    "abs_tolerance": 1e-09,
+    "rel_tolerance": 1e-09,
+    "min_step": 1e-12,
+    "max_step": 0.8
+  },
+  "blocks": [
+    {
+      "id": "source",
+      "label": "Held input drop",
+      "width": 1,
+      "position": [
+        30,
+        100
+      ],
+      "params": {
+        "kind": "step",
+        "before": [
+          1
+        ],
+        "after": [
+          0
+        ],
+        "step_time": 2
+      }
+    },
+    {
+      "id": "plant",
+      "label": "Analog low-pass",
+      "width": 1,
+      "position": [
+        260,
+        100
+      ],
+      "params": {
+        "kind": "transfer_function",
+        "numerator": [
+          1
+        ],
+        "denominator": [
+          1,
+          2,
+          1
+        ],
+        "initial": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "output",
+      "label": "Filtered output",
+      "width": 1,
+      "position": [
+        500,
+        100
+      ],
+      "params": {
+        "kind": "scope"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "source",
+      "from_port": 0,
+      "to": "plant",
+      "to_port": 0
+    },
+    {
+      "from": "plant",
+      "from_port": 0,
+      "to": "output",
+      "to_port": 0
+    }
+  ]
+}

@@ -3,7 +3,7 @@
 「ブロック図エディタ」タブで任意の接続を持つ小規模な制御モデルを作れます。既存の PID Lab は独立した画面として維持します。
 
 
-[Discrete TransferFunction](discrete-transfer.md) でzの降べき順の離散IIR／FIRを設定できます。周期・companion初期状態・直接項とサンプル間保持に対応し、同一周期の離散解析にも接続できます。連続TransferFunctionは [Tustin変換](tustin.md) で係数を確認してから離散化できます。
+[Discrete TransferFunction](discrete-transfer.md) でzの降べき順の離散IIR／FIRを設定できます。周期・companion初期状態・直接項とサンプル間保持に対応し、同一周期の離散解析にも接続できます。連続TransferFunctionは [Tustin変換](tustin.md)・[ZOH変換](zoh.md) で係数を確認してから離散化できます。
 
 ## 編集と実行
 
@@ -177,6 +177,7 @@ WASM の `diagnose_graph(model_json)` は同じ実行前検証を行い、JSON �
 | `samples/graphs/vector.json` | 3成分の Gain / Saturation / Selector、複数系列 |
 | `samples/graphs/subsystem.json` | 正弦波入力と内部 Gain を持つ Subsystem |
 | `samples/discrete/transfer.json` | 直接IIRと1サンプル遅れるIIRを同じStepで比較 |
+| `samples/discrete/zoh.json` | 2秒で保持入力を下げるローパスをZOHへ変換 |
 
 ブラウザ以外でも実行できます。
 

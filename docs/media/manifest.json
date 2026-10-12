@@ -193,6 +193,14 @@
       "bytes": 225644,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "zoh.gif",
+      "frames": 172,
+      "duration_seconds": 17.2,
+      "bytes": 240844,
+      "width": 960,
+      "height": 737
     }
   ]
 }

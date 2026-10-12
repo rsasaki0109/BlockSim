@@ -59,6 +59,14 @@ pub fn tustin_json(request: &str) -> Result<String, String> {
     let q = decode(request)?;
     encode(&blocksim_core::graph::discretize::discretize_tustin(&q)?)
 }
+pub fn zoh_json(request: &str) -> Result<String, String> {
+    let q = decode(request)?;
+    encode(&blocksim_core::graph::discretize::discretize_zoh(&q)?)
+}
+#[wasm_bindgen]
+pub fn discretize_zoh(request: &str) -> Result<String, JsValue> {
+    zoh_json(request).map_err(|e| JsValue::from_str(&e))
+}
 #[wasm_bindgen]
 pub fn discretize_tustin(request: &str) -> Result<String, JsValue> {
     tustin_json(request).map_err(|e| JsValue::from_str(&e))
@@ -208,6 +216,23 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn zoh_boundary_serializes_realization_and_refuses_prewarp_or_bad_request() {
+        let q = r#"{"numerator":[1],"denominator":[1,1],"sample_time":0.1}"#;
+        let r: serde_json::Value = serde_json::from_str(&zoh_json(q).unwrap()).unwrap();
+        assert_eq!(r["numerator"][0], 0.0);
+        assert!((r["a"][0][0].as_f64().unwrap() - (-0.1_f64).exp()).abs() < 1e-13);
+        assert!(r["reconstruction_residual"].as_f64().unwrap() < 1e-9);
+        for bad in [
+            q.replace("0.1", "0"),
+            q.replace("0.1", "null"),
+            q.replace("0.1}", "0.1,\"prewarp_omega\":1}"),
+            q.replace("0.1}", "0.1,\"method\":\"zoh\"}"),
+        ] {
+            assert!(zoh_json(&bad).is_err());
+        }
+        assert!(zoh_json(&" ".repeat(MAX_JSON_BYTES + 1)).is_err());
+    }
     #[test]
     fn tustin_boundary_serializes_finite_coefficients_and_rejects_invalid_or_unknown_input() {
         let q = r#"{"numerator":[1],"denominator":[1,1],"sample_time":0.1}"#;
