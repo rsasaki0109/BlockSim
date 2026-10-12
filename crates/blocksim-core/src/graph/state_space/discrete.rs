@@ -52,12 +52,27 @@ pub fn validate_discrete_state_space(
     model: &GraphModel,
     q: &StateSpaceRequest,
 ) -> Result<StateSpaceCheck> {
-    prepare_discrete(model, q).map(|(p, _)| p.check)
+    check_discrete(model, q).map(|(check, _)| check)
 }
-pub fn analyze_discrete_state_space(
+pub(in crate::graph) fn check_discrete(
     model: &GraphModel,
     q: &StateSpaceRequest,
-) -> Result<StateSpaceResult> {
+) -> Result<(StateSpaceCheck, f64)> {
+    prepare_discrete(model, q).map(|(p, t)| (p.check, t))
+}
+pub(in crate::graph) struct DiscreteRealization {
+    pub check: StateSpaceCheck,
+    pub states: Vec<StateInfo>,
+    pub a: Vec<Vec<f64>>,
+    pub b: Vec<f64>,
+    pub c: Vec<f64>,
+    pub d: f64,
+    pub sample_time: f64,
+}
+pub(in crate::graph) fn discrete_realization(
+    model: &GraphModel,
+    q: &StateSpaceRequest,
+) -> Result<DiscreteRealization> {
     let (mut p, sample_time) = prepare_discrete(model, q)?;
     let n = p.states.len();
     let base = runtime(&p.graph)?;
@@ -102,17 +117,40 @@ pub fn analyze_discrete_state_space(
         }
         *output_coefficient = values[0][0];
     }
+    Ok(DiscreteRealization {
+        check: p.check,
+        states: p.states,
+        a,
+        b,
+        c,
+        d,
+        sample_time,
+    })
+}
+pub fn analyze_discrete_state_space(
+    model: &GraphModel,
+    q: &StateSpaceRequest,
+) -> Result<StateSpaceResult> {
+    let DiscreteRealization {
+        check,
+        states,
+        a,
+        b,
+        c,
+        d,
+        sample_time,
+    } = discrete_realization(model, q)?;
     let (characteristic, pole_scale, characteristic_residual, poles, matrix_residuals, _) =
         spectrum::analyze(&a);
     let mut stability = unit_circle::classify(characteristic.as_deref(), pole_scale);
     stability.notes.push("Numerical internal stability of selected Scope ancestry at sample instants; unrelated branches excluded; no cancellation or state removal".into());
-    if !p.check.source_related {
+    if !check.source_related {
         stability.notes.push(
             "Selected source is outside Scope ancestry: B and D are zero; internal modes retained"
                 .into(),
         );
     }
-    Ok(StateSpaceResult { request: q.clone(), check: p.check, states: p.states, a, b, c, d,
+    Ok(StateSpaceResult { request: q.clone(), check, states, a, b, c, d,
         characteristic, pole_scale, characteristic_residual, poles, matrix_residuals, stability,
         sample_time: Some(sample_time),
         method: "discrete LTI Scope ancestry / actual synchronous sample-instant PID and Delay unit basis / x[k+1]=Ax[k]+Bu[k],y[k]=Cx[k]+Du[k] / unit-circle bilinear polynomial and Routh / no state removal".into() })

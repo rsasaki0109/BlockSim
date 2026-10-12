@@ -1,0 +1,139 @@
+{
+  "format": "blocksim.frequency",
+  "version": 1,
+  "domain": "discrete",
+  "model": {
+    "version": 1,
+    "dt": 0.02,
+    "duration": 10,
+    "blocks": [
+      {
+        "id": "source",
+        "label": "Unit step",
+        "width": 1,
+        "position": [
+          40,
+          140
+        ],
+        "params": {
+          "kind": "step",
+          "before": [
+            0
+          ],
+          "after": [
+            1
+          ],
+          "step_time": 0
+        }
+      },
+      {
+        "id": "sum",
+        "label": "u + a·x₁ − b·x₂",
+        "width": 1,
+        "position": [
+          260,
+          140
+        ],
+        "params": {
+          "kind": "sum",
+          "signs": [
+            1,
+            0.8,
+            -0.64
+          ]
+        }
+      },
+      {
+        "id": "delay1",
+        "label": "One sample",
+        "width": 1,
+        "position": [
+          480,
+          140
+        ],
+        "params": {
+          "kind": "delay",
+          "initial": [
+            0
+          ],
+          "sample_time": 0.1
+        }
+      },
+      {
+        "id": "delay2",
+        "label": "Two samples",
+        "width": 1,
+        "position": [
+          700,
+          140
+        ],
+        "params": {
+          "kind": "delay",
+          "initial": [
+            0
+          ],
+          "sample_time": 0.1
+        }
+      },
+      {
+        "id": "output",
+        "label": "Sampled output",
+        "width": 1,
+        "position": [
+          920,
+          140
+        ],
+        "params": {
+          "kind": "scope"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "source",
+        "from_port": 0,
+        "to": "sum",
+        "to_port": 0
+      },
+      {
+        "from": "delay1",
+        "from_port": 0,
+        "to": "sum",
+        "to_port": 1
+      },
+      {
+        "from": "delay2",
+        "from_port": 0,
+        "to": "sum",
+        "to_port": 2
+      },
+      {
+        "from": "sum",
+        "from_port": 0,
+        "to": "delay1",
+        "to_port": 0
+      },
+      {
+        "from": "delay1",
+        "from_port": 0,
+        "to": "delay2",
+        "to_port": 0
+      },
+      {
+        "from": "delay1",
+        "from_port": 0,
+        "to": "output",
+        "to_port": 0
+      }
+    ]
+  },
+  "request": {
+    "source": "source",
+    "source_component": 0,
+    "scope": "output",
+    "scope_component": 0,
+    "min_omega": 0.01,
+    "max_omega": 31.41592653589793,
+    "points": 201
+  }
+}

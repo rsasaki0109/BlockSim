@@ -75,6 +75,24 @@ pub fn frequency_check_json(model: &str, request: &str) -> Result<String, String
         &graph, &request,
     )?)
 }
+pub fn discrete_frequency_json(model: &str, request: &str) -> Result<String, String> {
+    let graph = decode(model)?;
+    let request = decode(request)?;
+    encode(&blocksim_core::graph::frequency::analyze_discrete_frequency(&graph, &request)?)
+}
+pub fn discrete_frequency_check_json(model: &str, request: &str) -> Result<String, String> {
+    let graph = decode(model)?;
+    let request = decode(request)?;
+    encode(&blocksim_core::graph::frequency::validate_discrete_frequency(&graph, &request)?)
+}
+#[wasm_bindgen]
+pub fn analyze_discrete_frequency(model: &str, request: &str) -> Result<String, JsValue> {
+    discrete_frequency_json(model, request).map_err(|e| JsValue::from_str(&e))
+}
+#[wasm_bindgen]
+pub fn validate_discrete_frequency(model: &str, request: &str) -> Result<String, JsValue> {
+    discrete_frequency_check_json(model, request).map_err(|e| JsValue::from_str(&e))
+}
 pub fn pole_zero_json(model: &str, request: &str) -> Result<String, String> {
     let graph = decode(model)?;
     let request = decode(request)?;
@@ -182,6 +200,30 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn discrete_frequency_boundary_retains_period_nyquist_points_and_rejects_invalid_flags() {
+        let model = include_str!("../../../samples/discrete/feedback.json");
+        let q = r#"{"source":"source","source_component":0,"scope":"output","scope_component":0,"min_omega":0.01,"max_omega":30,"points":201}"#;
+        let r: serde_json::Value =
+            serde_json::from_str(&discrete_frequency_json(model, q).unwrap()).unwrap();
+        assert_eq!(r["sample_time"], 0.1);
+        assert_eq!(r["states"], 2);
+        assert_eq!(r["points"].as_array().unwrap().len(), 201);
+        assert!(r.get("margins").is_none());
+        assert!((r["nyquist_omega"].as_f64().unwrap() - std::f64::consts::PI / 0.1).abs() < 1e-12);
+        assert!(discrete_frequency_check_json(
+            model,
+            &q.replace("\"max_omega\":30", "\"max_omega\":32")
+        )
+        .is_err());
+        assert!(discrete_frequency_check_json(
+            model,
+            &q.replace("\"points\":201", "\"points\":201,\"open_loop\":true")
+        )
+        .is_err());
+        assert!(discrete_frequency_json(model, &" ".repeat(1_000_001)).is_err());
+        assert!(discrete_frequency_json("{}", q).is_err());
+    }
     #[test]
     fn discrete_boundary_has_dimensionless_poles_and_rejects_mixed_and_invalid_queries() {
         let model = include_str!("../../../samples/discrete/feedback.json");

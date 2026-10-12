@@ -2,7 +2,12 @@
 //! This does not linearize nonlinear models or infer closed-loop stability.
 use super::*;
 use std::ops::{Add, Mul, Sub};
+mod discrete;
 mod margins;
+pub use discrete::{
+    analyze_discrete_frequency, validate_discrete_frequency, DiscreteFrequencyCheck,
+    DiscreteFrequencyResult,
+};
 pub use margins::{GainCrossing, MarginAnalysis, MarginIssue, PhaseCrossing};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -380,6 +385,21 @@ pub fn analyze_frequency(
         let (values, residual) = solve(matrix)?;
         Ok::<_, String>((values[0], residual))
     };
+    let points = sample_points(request, &evaluate);
+    let margins = request.open_loop.then(|| {
+        margins::analyze(
+            &points,
+            (20_000_000 / nodes.len().pow(3) - request.points).min(4096),
+            evaluate,
+        )
+    });
+    Ok(FrequencyResult {request:request.clone(),check,points,margins,method:"continuous LTI complex component equations / scaled partial-pivot solve / sampled phase unwrap".into()})
+}
+
+fn sample_points(
+    request: &FrequencyRequest,
+    evaluate: &impl Fn(f64) -> Result<(C, f64)>,
+) -> Vec<FrequencyPoint> {
     let mut points = Vec::with_capacity(request.points);
     let mut previous_phase: Option<f64> = None;
     for index in 0..request.points {
@@ -434,12 +454,5 @@ pub fn analyze_frequency(
             }
         }
     }
-    let margins = request.open_loop.then(|| {
-        margins::analyze(
-            &points,
-            (20_000_000 / nodes.len().pow(3) - request.points).min(4096),
-            evaluate,
-        )
-    });
-    Ok(FrequencyResult {request:request.clone(),check,points,margins,method:"continuous LTI complex component equations / scaled partial-pivot solve / sampled phase unwrap".into()})
+    points
 }

@@ -1,4 +1,5 @@
 import {type GraphModel} from './graph-model';
+export type FrequencyDomain='continuous'|'discrete';
 export interface FrequencyRequest { source:string;source_component:number;scope:string;scope_component:number;min_omega:number;max_omega:number;points:number;open_loop?:boolean }
 export interface FrequencyCheck { source_label:string;scope_label:string;variables:number }
 export interface FrequencyPoint { omega:number;real:number|null;imag:number|null;magnitude:number|null;magnitude_db:number|null;phase_deg:number|null;relative_residual:number|null;error:string|null }
@@ -6,25 +7,26 @@ export interface GainCrossing {omega:number;phase_deg:number;phase_margin_deg:nu
 export interface PhaseCrossing {omega:number;phase_level_deg:number;magnitude_db:number;gain_margin_db:number;gain_margin:number|null;relative_residual:number}
 export interface MarginIssue {kind:string;min_omega:number;max_omega:number;message:string}
 export interface MarginAnalysis {gain_crossings:GainCrossing[];phase_crossings:PhaseCrossing[];issues:MarginIssue[];additional_evaluations:number;method:string}
-export interface FrequencyResult { margins?:MarginAnalysis;request:FrequencyRequest;check:FrequencyCheck;points:FrequencyPoint[];method:string }
-export interface FrequencyPlan { format:'blocksim.frequency';version:1;model:GraphModel;request:FrequencyRequest }
-export type FrequencyValidator=(model:string,request:string)=>string;
+export interface FrequencyResult { sample_time?:number;nyquist_omega?:number;states?:number;margins?:MarginAnalysis;request:FrequencyRequest;check:FrequencyCheck;points:FrequencyPoint[];method:string }
+export interface FrequencyPlan { format:'blocksim.frequency';version:1;domain?:FrequencyDomain;model:GraphModel;request:FrequencyRequest }
+export type FrequencyValidator=(model:string,request:string,domain?:FrequencyDomain)=>string;
 export function frequencySources(model:GraphModel,prefix:string[]=[]):Array<{id:string,label:string,width:number}>{return model.blocks.flatMap(b=>['constant','step','sine'].includes(b.params.kind)?[{id:[...prefix,b.id].join('/'),label:b.label,width:b.width}]:b.params.kind==='subsystem'?frequencySources(b.params.model as GraphModel,[...prefix,b.id]):[]);}
 function object(value:unknown,keys:string[],optional:string[]=[]){if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).some(k=>!keys.includes(k)&&!optional.includes(k))||keys.some(k=>!Object.hasOwn(value,k)))throw new Error('周波数解析の保存形式が不正です');return value as Record<string,unknown>;}
 export function validateFrequencyPlan(value:unknown,normalize:(model:string)=>string,check:FrequencyValidator):FrequencyPlan{
- const raw=object(value,['format','version','model','request']);if(raw.format!=='blocksim.frequency'||raw.version!==1)throw new Error('未対応の周波数解析形式です');
+ const raw=object(value,['format','version','model','request'],['domain']);if(Object.hasOwn(raw,'domain')&&raw.domain!=='continuous'&&raw.domain!=='discrete')throw new Error('周波数解析の解析領域が不正です');if(raw.format!=='blocksim.frequency'||raw.version!==1)throw new Error('未対応の周波数解析形式です');
  const json=JSON.stringify(raw.model);if(new TextEncoder().encode(json).length>1_000_000)throw new Error('モデルは1 MB以下にしてください');const model=JSON.parse(normalize(json)) as GraphModel;
  const q=object(raw.request,['source','source_component','scope','scope_component','min_omega','max_omega','points'],['open_loop']);
  if(Object.hasOwn(q,'open_loop')&&typeof q.open_loop!=='boolean')throw new Error('開ループの指定は有効／無効で指定してください');
  if(typeof q.source!=='string'||typeof q.scope!=='string'||['source_component','scope_component','points'].some(k=>!Number.isSafeInteger(q[k])||(q[k] as number)<0)||['min_omega','max_omega'].some(k=>typeof q[k]!=='number'||!Number.isFinite(q[k]))||(q.min_omega as number)<1e-9||(q.max_omega as number)>1e9||(q.max_omega as number)<=(q.min_omega as number)||(q.points as number)<2||(q.points as number)>2048)throw new Error('解析条件は1e-9 ≤ 最小 < 最大 ≤ 1e9 rad/s、2〜2048点で指定してください');
  if((Math.log(q.max_omega as number)-Math.log(q.min_omega as number))/((q.points as number)-1)<=64*Number.EPSILON)throw new Error('周波数範囲が浮動小数点の分解能に対して狭すぎます');
- const request=Object.fromEntries(Object.keys(q).map(k=>[k,q[k]])) as unknown as FrequencyRequest;check(JSON.stringify(model),JSON.stringify(request));return {format:'blocksim.frequency',version:1,model,request};
+ if(raw.domain==='discrete'&&q.open_loop===true)throw new Error('離散系の余裕解析は未実装です。開ループ指定を無効にしてください');
+ const request=Object.fromEntries(Object.keys(q).map(k=>[k,q[k]])) as unknown as FrequencyRequest;check(JSON.stringify(model),JSON.stringify(request),raw.domain==='discrete'?'discrete':'continuous');return {format:'blocksim.frequency',version:1,...(raw.domain==='discrete'?{domain:'discrete' as const}:{}),model,request};
 }
 export function encodeFrequencyPlan(plan:FrequencyPlan){const text=JSON.stringify(plan);if(new TextEncoder().encode(text).length>1_000_000)throw new Error('周波数解析設定は1 MB以下にしてください');return text;}
 export function decodeFrequencyPlan(text:string,normalize:(model:string)=>string,check:FrequencyValidator){if(new TextEncoder().encode(text).length>1_000_000)throw new Error('周波数解析設定は1 MB以下にしてください');return validateFrequencyPlan(JSON.parse(text),normalize,check);}
 const csvQuote=(s:string)=>'"'+(/^\s*[=+\-@]/.test(s)?"'":'')+s.replaceAll('"','""')+'"';
 export function frequencyCsv(data:FrequencyResult){
- const quote=csvQuote;const q=data.request;return '\uFEFF'+[['source','input_component','scope','output_component','omega_rad_s','real','imag','magnitude','magnitude_db','phase_deg','status','relative_residual','error'].map(quote).join(','),...data.points.map(p=>[quote(q.source),q.source_component,quote(q.scope),q.scope_component,p.omega,p.real??'',p.imag??'',p.magnitude??'',p.magnitude_db??'',p.phase_deg??'',quote(p.error?'error':p.magnitude===0?'zero':'ok'),p.relative_residual??'',quote(p.error||'')].join(','))].join('\r\n');
+ const discrete=data.sample_time!==undefined,quote=csvQuote;const q=data.request;return '\uFEFF'+[['source','input_component','scope','output_component','omega_rad_s','real','imag','magnitude','magnitude_db','phase_deg','status','relative_residual','error',...(discrete?['sample_time_s','nyquist_rad_s','omega_rad_sample']:[])].map(quote).join(','),...data.points.map(p=>[quote(q.source),q.source_component,quote(q.scope),q.scope_component,p.omega,p.real??'',p.imag??'',p.magnitude??'',p.magnitude_db??'',p.phase_deg??'',quote(p.error?'error':p.magnitude===0?'zero':'ok'),p.relative_residual??'',quote(p.error||''),...(discrete?[data.sample_time!,data.nyquist_omega!,p.omega*data.sample_time!]:[])].join(','))].join('\r\n');
 }
 export function marginsCsv(data:FrequencyResult){
  if(!data.margins||!data.request.open_loop)throw new Error('開ループ余裕解析の結果がありません');
@@ -39,7 +41,7 @@ export function marginsCsv(data:FrequencyResult){
  return '\uFEFF'+[headers.map(quote).join(','),...rows.map(r=>r.join(','))].join('\r\n');
 }
 export function frequencyGeometry(data:FrequencyResult,field:'magnitude_db'|'phase_deg'){
- const values=data.points.flatMap(p=>p[field]!==null&&!p.error?[p[field]!]:[]);const lo=values.length?Math.min(...values):0,hi=values.length?Math.max(...values):1;const padding=(hi-lo||1)*.08;const min=lo-padding,max=hi+padding;
+ const values=data.points.flatMap(p=>p[field]!==null&&!p.error?[p[field]!]:[]);const lo=values.length?Math.min(...values):0,hi=values.length?Math.max(...values):1;const span=hi-lo,padding=(span<=1e-9*Math.max(1,Math.abs(lo),Math.abs(hi))?1:span)*.08;const min=lo-padding,max=hi+padding;
  const first=Math.log10(data.points[0].omega),last=Math.log10(data.points.at(-1)!.omega);
  if(!Number.isFinite(first)||!Number.isFinite(last)||last<=first)throw new Error('周波数の対数軸を描画できません');
  const x=(omega:number)=>65+710*(Math.log10(omega)-first)/(last-first),y=(v:number)=>175-150*(v-min)/(max-min);

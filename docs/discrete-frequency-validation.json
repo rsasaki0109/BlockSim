@@ -1,0 +1,68 @@
+{
+  "cases": [
+    {
+      "case": "two_delay_feedback",
+      "frequency_imag": -1.311130945693364,
+      "frequency_real": 1.8524428293883985,
+      "harmonic_complex_error": 1.602725279836167e-14,
+      "harmonic_imag": -1.311130945693353,
+      "harmonic_omega_rad_s": 7.853981633974483,
+      "harmonic_real": 1.8524428293884103,
+      "harmonic_samples": 160,
+      "harmonic_window_s": [
+        24,
+        40
+      ],
+      "max_complex_error_vs_closed_form": 1.831026719408895e-15,
+      "max_linear_solve_residual": 1.6917629013323402e-16,
+      "nyquist_rad_s": 31.41592653589793,
+      "nyquist_response": {
+        "error": null,
+        "imag": 0.0,
+        "magnitude": 0.4098360655737705,
+        "magnitude_db": -7.7477965267745885,
+        "omega": 31.41592653589793,
+        "phase_deg": -180.0,
+        "real": -0.4098360655737705,
+        "relative_residual": 0.0
+      },
+      "points": 201,
+      "sample_time_s": 0.1,
+      "states": 2,
+      "time_recorded_points": 2001
+    },
+    {
+      "case": "one_sample_delay",
+      "frequency_imag": -0.7071067811865475,
+      "frequency_real": 0.7071067811865476,
+      "harmonic_complex_error": 6.677047783012433e-15,
+      "harmonic_imag": -0.7071067811865426,
+      "harmonic_omega_rad_s": 7.853981633974483,
+      "harmonic_real": 0.7071067811865521,
+      "harmonic_samples": 160,
+      "harmonic_window_s": [
+        24,
+        40
+      ],
+      "max_complex_error_vs_closed_form": 2.7755575615628914e-16,
+      "max_linear_solve_residual": 1.1443916996305596e-16,
+      "nyquist_rad_s": 31.41592653589793,
+      "nyquist_response": {
+        "error": null,
+        "imag": 0.0,
+        "magnitude": 1.0,
+        "magnitude_db": 0.0,
+        "omega": 31.41592653589793,
+        "phase_deg": -180.0,
+        "real": -1.0,
+        "relative_residual": 0.0
+      },
+      "points": 201,
+      "sample_time_s": 0.1,
+      "states": 1,
+      "time_recorded_points": 2001
+    }
+  ],
+  "frequency_reference": "z/(z^2-0.8z+0.64), or 1/z; z=exp(j*omega*0.1)",
+  "time_reference": "actual sine-driven simulator fitted on 160 sample instants (20 full cycles), sample-and-hold reconstruction excluded"
+}

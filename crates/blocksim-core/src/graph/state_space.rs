@@ -2,7 +2,7 @@
 //! No finite differencing, cancellation, minimal realization or whole-model claim.
 use super::*;
 use pole_zero::{PolynomialRoots, Stability};
-mod discrete;
+pub(super) mod discrete;
 mod spectrum;
 pub use discrete::{analyze_discrete_state_space, validate_discrete_state_space};
 

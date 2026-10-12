@@ -161,6 +161,14 @@
       "bytes": 183407,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "discrete-frequency.gif",
+      "frames": 135,
+      "duration_seconds": 13.5,
+      "bytes": 234466,
+      "width": 960,
+      "height": 737
     }
   ]
 }

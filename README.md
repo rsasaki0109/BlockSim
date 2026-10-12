@@ -142,6 +142,12 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <sub>離散行列を抽出 → 単位円の内側・円上・外側を確認 → 周期と結果を保存。</sub>
 </p>
 
+<p align="center">
+  <strong>20 — Samples. Frequencies. One model.</strong><br>
+  <a href="docs/media/discrete-frequency.gif"><img src="docs/media/discrete-frequency.gif" width="960" alt="同一周期の離散負帰還と1サンプルDelayのBode応答を実WASMで計算。周期とNyquist周波数、振幅1・Nyquistで位相−180度、全201点CSVを確認"></a><br>
+  <sub>単位円上で離散応答を計算 → 周期とNyquist上限を確認 → 全点を保存。</sub>
+</p>
+
 ## さらに使いやすく
 
 - **コピー・複製**：選択内の接続と内部設定を保持。Ctrl/Cmd+A・C・V・D、Undo／Redo に対応し、設定は元モデルから独立します。
@@ -157,7 +163,7 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
 - **グループ解除**：サブシステムの境界をつなぎ直して展開。設定・ベクトル幅・分岐・フィードバックを保持し、Undo／Redo に対応します。
 - **モデルを追加読み込み**：読み込み方法を「既存モデルに追加」にすると、元のモデルを残して取り込めます。ID の衝突を回避し、既存の時計・終了時刻を保持します。
 
-連続線形モデルでは、選択した Scope 成分に関係する接続から [状態空間行列と内部安定性](docs/state-space.md) を解析できます。最大8状態の A・B・C・D、固有値と残差を表示し、設定の保存／復元、行列・極の CSV／結果 JSON に対応します。同じ周期のDelay・離散PIDでは [離散状態空間と単位円](docs/discrete-state-space.md) を選択できます。Scope に関係しない枝を含むモデル全体の安定性判定は対象外です。
+連続線形モデルでは、選択した Scope 成分に関係する接続から [状態空間行列と内部安定性](docs/state-space.md) を解析できます。最大8状態の A・B・C・D、固有値と残差を表示し、設定の保存／復元、行列・極の CSV／結果 JSON に対応します。同じ周期のDelay・離散PIDでは [離散状態空間と単位円](docs/discrete-state-space.md)、[離散BodeとNyquist上限](docs/discrete-frequency.md) を選択できます。Scope に関係しない枝を含むモデル全体の安定性判定は対象外です。
 
 ## 開発環境
 

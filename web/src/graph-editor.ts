@@ -1,4 +1,4 @@
-import { normalize_graph, diagnose_graph, validate_graph, validate_frequency, validate_pole_zero, validate_state_space, validate_discrete_state_space } from './wasm/blocksim';
+import { normalize_graph, diagnose_graph, validate_graph, validate_frequency, validate_discrete_frequency, validate_pole_zero, validate_state_space, validate_discrete_state_space } from './wasm/blocksim';
 import { parseNumber } from './document';
 import { copySelection, pasteSelection, connectPorts, mergeGraph, ungroupBlock, inputWidth, nodeHeight, portY, wirePath } from './graph-edit';
 import {
@@ -499,7 +499,7 @@ if(event.key==='Escape'&&pendingWire){event.preventDefault();cancelWire();return
   let savedError:string|null=null;
   try{const text=localStorage.getItem(GRAPH_STORAGE_KEY);if(text!==null)history.replace(decodeGraphDocument(text,normalize_graph));}catch(error){savedError=String(error);}
   sweep=mountSweep(get('graph-sweep-host'),{model:()=>history.graph,normalize:validate_graph,busy:()=>!!worker||archiveBusy||(!!frequency?.running()||(!!poleZero?.running()||!!stateSpace?.running())),onBusy:renderComparison,download,replace,apply:(model,data)=>{if(replace(model))showResult(data,structuredClone(history.graph));},reference:(model,data)=>{referenceRun=snapshotRun(model,data);comparison=result?compareResults(result,data):null;comparisonPage=0;get<HTMLDetailsElement>('graph-comparison').open=true;renderComparison();plotResult();cursor();say('掃引結果を基準として保持しました');}});
-  frequency=mountFrequency(get('graph-frequency-host'),{model:()=>history.graph,normalize:validate_graph,check:validate_frequency,busy:()=>!!worker||archiveBusy||!!sweep?.running()||(!!poleZero?.running()||!!stateSpace?.running()),onBusy:renderComparison,download,replace});
+  frequency=mountFrequency(get('graph-frequency-host'),{model:()=>history.graph,normalize:validate_graph,check:(model,request,domain)=>domain==='discrete'?validate_discrete_frequency(model,request):validate_frequency(model,request),busy:()=>!!worker||archiveBusy||!!sweep?.running()||(!!poleZero?.running()||!!stateSpace?.running()),onBusy:renderComparison,download,replace});
   poleZero=mountPoleZero(get('graph-pole-zero-host'),{model:()=>history.graph,normalize:validate_graph,check:validate_pole_zero,busy:()=>!!worker||archiveBusy||!!sweep?.running()||!!frequency?.running()||!!stateSpace?.running(),onBusy:renderComparison,download,replace});
   stateSpace=mountStateSpace(get('graph-state-space-host'),{model:()=>history.graph,normalize:validate_graph,check:(model,request,domain)=>domain==='discrete'?validate_discrete_state_space(model,request):validate_state_space(model,request),busy:()=>!!worker||archiveBusy||!!sweep?.running()||!!frequency?.running()||!!poleZero?.running(),onBusy:renderComparison,download,replace});
   baseline=JSON.stringify(history.graph);render();if(savedError)say(`保存モデルの読み込みに失敗: ${savedError}`,true);else run();
