@@ -1,4 +1,4 @@
-import { normalize_graph, diagnose_graph, validate_graph } from './wasm/blocksim';
+import { normalize_graph, diagnose_graph, validate_graph, validate_frequency } from './wasm/blocksim';
 import { parseNumber } from './document';
 import { copySelection, pasteSelection, connectPorts, mergeGraph, ungroupBlock, inputWidth, nodeHeight, portY, wirePath } from './graph-edit';
 import {
@@ -14,6 +14,9 @@ import { snapshotRun, compareResults, differenceCsv, type RunSnapshot, type Comp
 import { checkArchiveSize, decodeRunArchive, encodeRunArchive, verifyArchivedResult } from './graph-run-archive';
 import { solverStatistics } from './graph-statistics';
 import { mountSweep } from './graph-sweep-ui';
+import { mountFrequency } from './frequency-ui';
+import lowpass from '../../samples/frequency/lowpass.json';
+import linearFeedback from '../../samples/frequency/feedback.json';
 import firstOrder from '../../samples/numerics/first-order.json';
 import oscillator from '../../samples/numerics/oscillator.json';
 import offGridStep from '../../samples/numerics/off-grid-step.json';
@@ -23,7 +26,7 @@ import mixed from '../../samples/graphs/mixed-pid.json';
 import vector from '../../samples/graphs/vector.json';
 import subsystem from '../../samples/graphs/subsystem.json';
 
-const SAMPLES: Record<string,GraphModel>={continuous:continuous as GraphModel,mixed:mixed as GraphModel,vector:vector as GraphModel,subsystem:subsystem as GraphModel,firstOrder:firstOrder as GraphModel,oscillator:oscillator as GraphModel,offGridStep:offGridStep as GraphModel,adaptiveMixed:adaptiveMixed as GraphModel};
+const SAMPLES: Record<string,GraphModel>={continuous:continuous as GraphModel,mixed:mixed as GraphModel,vector:vector as GraphModel,subsystem:subsystem as GraphModel,firstOrder:firstOrder as GraphModel,oscillator:oscillator as GraphModel,offGridStep:offGridStep as GraphModel,adaptiveMixed:adaptiveMixed as GraphModel,lowpass:lowpass as GraphModel,linearFeedback:linearFeedback as GraphModel};
 function download(text:string,name:string,type:string){const url=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);}
 function button(text:string,action:()=>void){const b=document.createElement('button');b.type='button';b.textContent=text;b.addEventListener('click',action);return b;}
 export function mountEditor(host:HTMLElement) {
@@ -63,12 +66,12 @@ export function mountEditor(host:HTMLElement) {
           <div class="comparison-pages"><button id="graph-comparison-prev">前の系列</button><span id="graph-comparison-page"></span><button id="graph-comparison-next">次の系列</button><button id="graph-difference-csv" disabled>差分 CSV</button></div>
         </details>
       </section>
-      <div id="graph-sweep-host"></div>
+      <div id="graph-sweep-host"></div><div id="graph-frequency-host"></div>
     </section><aside>
       <section class="panel"><h2>ブロック設定</h2><div id="graph-inspector"><p class="hint">ブロックを選択してください</p></div></section>
       <section class="panel"><h2>接続</h2><form id="graph-connect"><label>接続元<select id="edge-from"></select></label><label>出力ポート<select id="edge-from-port"></select></label><label>接続先<select id="edge-to"></select></label><label>入力ポート<select id="edge-to-port"></select></label><button>接続する</button></form><div id="graph-edges"></div></section>
       <section class="panel"><h2>シミュレーション設定</h2><form id="graph-clock"><label>計算方式<select id="graph-solver"><option value="rk4">固定刻み RK4</option><option value="rk45">可変刻み RK45</option></select></label><label>グラフ刻み幅 (s)<input id="graph-dt" type="number" step="any" required></label><label>グラフ終了時刻 (s)<input id="graph-duration" type="number" step="any" required></label><fieldset id="graph-rk45-settings" hidden disabled><legend>RK45 の精度と内部刻み</legend><label>絶対許容誤差<input id="graph-atol" type="number" step="any" required></label><label>相対許容誤差<input id="graph-rtol" type="number" step="any" required></label><label>最小内部刻み (s)<input id="graph-min-step" type="number" step="any" required></label><label>最大内部刻み (s)<input id="graph-max-step" type="number" step="any" required></label></fieldset><button>時間設定を適用</button></form><p class="hint">RK45 ではグラフ刻み幅は記録時計です。離散の周期はこの整数倍。計算方式はモデル全体で共有し、Step と離散更新で積分区間を分けます。</p></section>
-      <section class="panel"><h2>モデルとサンプル</h2><label>モデルサンプル<select id="graph-sample"><option value="continuous">連続 PID の復帰</option><option value="mixed">離散 PID + 連続プラント</option><option value="vector">ベクトル + Saturation</option><option value="subsystem">Sine + Subsystem</option><option value="firstOrder">RK45: 一次遅れ解析解</option><option value="oscillator">RK45: 結合振動子</option><option value="offGridStep">RK45: 時計の間の Step</option><option value="adaptiveMixed">RK45: 連続／離散 PID</option></select></label>
+      <section class="panel"><h2>モデルとサンプル</h2><label>モデルサンプル<select id="graph-sample"><option value="continuous">連続 PID の復帰</option><option value="mixed">離散 PID + 連続プラント</option><option value="vector">ベクトル + Saturation</option><option value="subsystem">Sine + Subsystem</option><option value="firstOrder">RK45: 一次遅れ解析解</option><option value="oscillator">RK45: 結合振動子</option><option value="offGridStep">RK45: 時計の間の Step</option><option value="adaptiveMixed">RK45: 連続／離散 PID</option><option value="lowpass">伝達関数：2次ローパス</option><option value="linearFeedback">線形 PI 閉ループ</option></select></label>
         <label>読み込み方法<select id="graph-import-mode"><option value="replace">モデルを置き換える</option><option value="merge">既存モデルに追加</option></select></label><div class="buttons"><button id="graph-load-sample">サンプルを読み込む</button><button id="graph-empty">新しいモデル</button><button id="graph-save">モデルを保存</button><button id="graph-restore">モデルを復元</button><button id="graph-export">モデル JSON</button><label class="file-button">モデルを読み込む<input id="graph-import" type="file" accept=".json,application/json"></label></div><p class="hint">未接続の作成途中モデルも保存できます。コピーはこのタブ内の専用クリップボードを使い、外部の接続と境界 Input / Output は含めません。追加読み込みでは既存の時計・終了時刻を保持し、同じ刻み幅のモデルを取り込めます。既存の PID Lab 設定は別に保持します。</p>
       </section>
     </aside></div><footer>成熟度比較：目標は Simulink 比30%。評価は主観的な開発評価で、機能網羅率や客観的なベンチマークではありません。</footer>`;
@@ -84,6 +87,7 @@ export function mountEditor(host:HTMLElement) {
   let resultModel:GraphModel|null=null,referenceRun:RunSnapshot|null=null,comparison:ComparisonReport|null=null,comparisonPage=0;
   let archiveWorker:Worker|null=null,archiveRequest=0,archiveBusy=false;
   let sweep:ReturnType<typeof mountSweep>|undefined;
+  let frequency:ReturnType<typeof mountFrequency>|undefined;
   let diagnosticSnapshot:string|null=null,diagnosticPage=0,runtimeError:string|null=null;
   let validation:GraphValidation={runnable:false,diagnostics:[]};
   const problemBlocks=new Map<string,number>(),problemPorts=new Set<string>();
@@ -123,14 +127,14 @@ export function mountEditor(host:HTMLElement) {
     }
   }
   function renderComparison(){
-    sweep?.sync();
-    get<HTMLButtonElement>('graph-run').disabled=!!worker||archiveBusy||!!sweep?.running();
-    get<HTMLButtonElement>('graph-reference-set').disabled=!result||!resultModel||!!worker||archiveBusy||!!sweep?.running();
+    sweep?.sync();frequency?.sync();
+    get<HTMLButtonElement>('graph-run').disabled=!!worker||archiveBusy||(!!sweep?.running()||!!frequency?.running());
+    get<HTMLButtonElement>('graph-reference-set').disabled=!result||!resultModel||!!worker||archiveBusy||(!!sweep?.running()||!!frequency?.running());
     get('graph-reference-set').textContent=referenceRun?'基準を置き換える':'基準として保持';
     get<HTMLButtonElement>('graph-reference-clear').disabled=!referenceRun||archiveBusy;get<HTMLButtonElement>('graph-reference-export').disabled=!referenceRun;
-    get<HTMLButtonElement>('graph-run-export').disabled=!result||!resultModel||!!worker||archiveBusy||!!sweep?.running();
-    get<HTMLButtonElement>('graph-reference-save').disabled=!referenceRun||!!worker||archiveBusy||!!sweep?.running();
-    get<HTMLInputElement>('graph-reference-import').disabled=!!worker||archiveBusy||!!sweep?.running();
+    get<HTMLButtonElement>('graph-run-export').disabled=!result||!resultModel||!!worker||archiveBusy||(!!sweep?.running()||!!frequency?.running());
+    get<HTMLButtonElement>('graph-reference-save').disabled=!referenceRun||!!worker||archiveBusy||(!!sweep?.running()||!!frequency?.running());
+    get<HTMLInputElement>('graph-reference-import').disabled=!!worker||archiveBusy||(!!sweep?.running()||!!frequency?.running());
     get<HTMLButtonElement>('graph-reference-cancel').disabled=!archiveBusy;
     get<HTMLInputElement>('graph-reference-show').disabled=!referenceRun;
     get('graph-reference-state').textContent=referenceRun?`基準: dt=${referenceRun.model.dt}s · 終了=${referenceRun.model.duration}s · ${referenceRun.result.traces.length} Scope · ${referenceRun.result.times.length} 点。${result?'設定と結果を保持しています。':'再実行して比較してください。'} このタブ内のみ保持し、再読み込みで解除します。`:'実行結果を基準として保持すると、設定変更後の波形と差分を比較できます。';
@@ -179,7 +183,7 @@ export function mountEditor(host:HTMLElement) {
     viewport.scrollLeft=Math.max(0,(left+32)*zoom-25);viewport.scrollTop=Math.max(0,(top+32)*zoom-25);
   }
   const cancel=()=>{request++;worker?.terminate();worker=null;get<HTMLButtonElement>('graph-run').disabled=false;get<HTMLButtonElement>('graph-cancel').disabled=true;renderComparison();};
-  const invalidate=()=>{sweep?.cancel();cancel();pendingWire=null;previewPoint=null;selectedEdge=null;result=null;resultModel=null;comparison=null;get('graph-statistics').textContent='';get('graph-plot').replaceChildren();get('graph-series').replaceChildren();get('graph-values').textContent='モデル変更後は再実行してください';get('graph-reference-values').textContent='';get<HTMLInputElement>('graph-cursor').disabled=true;get<HTMLButtonElement>('graph-csv').disabled=true;renderComparison();};
+  const invalidate=()=>{frequency?.invalidate();sweep?.cancel();cancel();pendingWire=null;previewPoint=null;selectedEdge=null;result=null;resultModel=null;comparison=null;get('graph-statistics').textContent='';get('graph-plot').replaceChildren();get('graph-series').replaceChildren();get('graph-values').textContent='モデル変更後は再実行してください';get('graph-reference-values').textContent='';get<HTMLInputElement>('graph-cursor').disabled=true;get<HTMLButtonElement>('graph-csv').disabled=true;renderComparison();};
   const current=()=>graphContext(history.graph,path);
   // Transfer metadata uses the root solver while retaining the context arrays.
   const transfer=(graph:GraphModel)=>({...graph,solver:history.graph.solver});
@@ -239,7 +243,7 @@ export function mountEditor(host:HTMLElement) {
       control.name=name;controls.set(name,control);l.append(control);form.append(l);
     }
     field('label','表示名',b.label,'text');field('width','信号幅',b.width);field('x','位置 X',b.position[0]);field('y','位置 Y',b.position[1]);
-    const labels:Record<string,string>={value:'値 (JSON 配列)',before:'変更前 (JSON 配列)',after:'変更後 (JSON 配列)',step_time:'変更時刻 (s)',gain:'ゲイン',tau:'時定数 (s)',initial:'初期値 (JSON 配列)',signs:'入力係数 (JSON 配列)',inputs:'入力数',indices:'抽出インデックス (JSON 配列)',sample_time:'サンプル周期 (s)',frequency:'周波数 (Hz)',phase:'位相 (rad)',amplitude:'振幅',offset:'オフセット',port:'境界ポート番号',mode:'PID 更新方式'};
+    const labels:Record<string,string>={numerator:'分子係数 (降べき順 JSON)',denominator:'分母係数 (降べき順 JSON)',value:'値 (JSON 配列)',before:'変更前 (JSON 配列)',after:'変更後 (JSON 配列)',step_time:'変更時刻 (s)',gain:'ゲイン',tau:'時定数 (s)',initial:'初期値 (JSON 配列)',signs:'入力係数 (JSON 配列)',inputs:'入力数',indices:'抽出インデックス (JSON 配列)',sample_time:'サンプル周期 (s)',frequency:'周波数 (Hz)',phase:'位相 (rad)',amplitude:'振幅',offset:'オフセット',port:'境界ポート番号',mode:'PID 更新方式'};
     for(const [key,value]of Object.entries(b.params)) {
       if(['kind','model','config','limits'].includes(key))continue;
       field(`p.${key}`,labels[key]||key,value,key==='mode'?'mode':undefined);
@@ -247,6 +251,7 @@ export function mountEditor(host:HTMLElement) {
     if(b.params.config){const cfg=b.params.config as Record<string,unknown>;for(const [key,value]of Object.entries(cfg))if(key!=='limits')field(`c.${key}`,key==='anti_windup'?'anti-windup':key,value);
       const limits=cfg.limits as Record<string,unknown>;field('c.lower','PID 出力下限',limits.lower);field('c.upper','PID 出力上限',limits.upper);}
     if(b.params.limits){const limits=b.params.limits as Record<string,unknown>;field('p.lower','出力下限',limits.lower);field('p.upper','出力上限',limits.upper);}
+    if(b.params.kind==='transfer_function'){const hint=document.createElement('p');hint.className='hint';hint.textContent='係数は s の降べき順、分子次数 ≤ 分母次数 ≤ 8。初期値は各信号成分につき分母次数個を、成分ごとに並べます。分母の先頭係数は0以外。';form.append(hint);}
     const submit=document.createElement('button');submit.textContent='ブロック設定を適用';form.append(submit);
     form.addEventListener('submit',event=>{event.preventDefault();edit(graph=>{
       const target=graph.blocks.find(n=>n.id===b.id)!;
@@ -346,7 +351,7 @@ export function mountEditor(host:HTMLElement) {
     const kinds=get<HTMLSelectElement>('block-kind');const previous=kinds.value;kinds.replaceChildren();
     for(const kind of Object.keys(KIND_NAMES) as Kind[])if(path.length||!['input','output'].includes(kind))kinds.add(new Option(KIND_NAMES[kind],kind));if([...kinds.options].some(o=>o.value===previous))kinds.value=previous;
     for(const id of ['edge-from','edge-to']){const select=get<HTMLSelectElement>(id),previous=select.value;select.replaceChildren();for(const b of current().blocks)select.add(new Option(`${b.label} (${b.id})`,b.id));if(current().blocks.some(b=>b.id===previous))select.value=previous;}
-    refreshDiagnostics();renderPorts();renderNodes();renderInspector();syncCopy();syncDirty();renderSearch();renderDiagnostics();renderComparison();sweep?.refresh();
+    refreshDiagnostics();renderPorts();renderNodes();renderInspector();syncCopy();syncDirty();renderSearch();renderDiagnostics();renderComparison();sweep?.refresh();frequency?.refresh();
     const edges=get('graph-edges');edges.replaceChildren();current().edges.forEach((e,i)=>{
       const row=document.createElement('div');row.className='edge-row';const text=document.createElement('span');text.textContent=`${e.from}:${e.from_port} → ${e.to}:${e.to_port}`;
       const remove=button('×',()=>edit(g=>{g.edges.splice(i,1);},'接続を削除しました'));remove.setAttribute('aria-label',`接続を削除 ${e.from} ${e.to} ${e.to_port}`);row.append(text,remove);edges.append(row);
@@ -372,7 +377,7 @@ export function mountEditor(host:HTMLElement) {
     renderComparison();plotResult();cursor();say(`完了 · ${data.times.length} 点 · ${data.traces.length} Scope · Rust / WASM`);
   }
   function run(){guard(()=>{
-    if(archiveBusy||sweep?.running())throw new Error('実行結果ファイルの確認が終わるか、中止してから実行してください');
+    if(archiveBusy||(sweep?.running()||frequency?.running()))throw new Error('実行結果ファイルの確認が終わるか、中止してから実行してください');
     refreshDiagnostics(true);renderNodes();renderDiagnostics();
     if(!validation.runnable){get<HTMLDetailsElement>('graph-diagnostics').open=true;throw new Error(validation.diagnostics[0].message);}
     const json=JSON.stringify(history.graph);cancel();const id=++request;
@@ -442,7 +447,7 @@ if(event.key==='Escape'&&pendingWire){event.preventDefault();cancelWire();return
   get('graph-restore').addEventListener('click',()=>guard(()=>{const text=localStorage.getItem(GRAPH_STORAGE_KEY);if(text===null)throw new Error('保存済みモデルがありません');if(replace(decodeGraphDocument(text,normalize_graph))){baseline=JSON.stringify(history.graph);syncDirty();say('モデルを復元しました');}}));
   get('graph-export').addEventListener('click',()=>download(encodeGraphDocument(history.graph),'blocksim-graph.json','application/json'));
   get('graph-csv').addEventListener('click',()=>{if(result)download(resultCsv(result),'blocksim-signals.csv','text/csv');});
-  get('graph-reference-set').addEventListener('click',()=>guard(()=>{if(!result||!resultModel||worker||archiveBusy||sweep?.running())throw new Error('実行・読み込みが完了してから基準を保持してください');referenceRun=snapshotRun(resultModel,result);comparison=compareResults(result,referenceRun.result);comparisonPage=0;get<HTMLDetailsElement>('graph-comparison').open=true;renderComparison();plotResult();cursor();}));
+  get('graph-reference-set').addEventListener('click',()=>guard(()=>{if(!result||!resultModel||worker||archiveBusy||(sweep?.running()||frequency?.running()))throw new Error('実行・読み込みが完了してから基準を保持してください');referenceRun=snapshotRun(resultModel,result);comparison=compareResults(result,referenceRun.result);comparisonPage=0;get<HTMLDetailsElement>('graph-comparison').open=true;renderComparison();plotResult();cursor();}));
   get('graph-reference-clear').addEventListener('click',()=>{if(archiveBusy)return;referenceRun=null;comparison=null;comparisonPage=0;renderComparison();plotResult();cursor();});
   get('graph-reference-export').addEventListener('click',()=>{if(referenceRun)download(encodeGraphDocument(referenceRun.model),'blocksim-reference-model.json','application/json');});
   get('graph-reference-show').addEventListener('change',plotResult);
@@ -455,7 +460,7 @@ if(event.key==='Escape'&&pendingWire){event.preventDefault();cancelWire();return
   get('graph-reference-cancel').addEventListener('click',()=>{finishArchive();archiveState('実行結果ファイルの読み込みを中止しました');});
   get<HTMLInputElement>('graph-reference-import').addEventListener('change',async event=>{
     const target=event.target as HTMLInputElement,file=target.files?.[0];if(!file)return;
-    if(worker||archiveBusy||sweep?.running()){target.value='';return;}
+    if(worker||archiveBusy||(sweep?.running()||frequency?.running())){target.value='';return;}
     const id=++archiveRequest;archiveBusy=true;get<HTMLDetailsElement>('graph-run-files').open=true;archiveState('実行結果ファイルを読み込み中…');renderComparison();
     try{
       checkArchiveSize(file.size);const text=await file.text();if(id!==archiveRequest)return;
@@ -486,6 +491,7 @@ if(event.key==='Escape'&&pendingWire){event.preventDefault();cancelWire();return
   host.addEventListener('graph-visible',renderNodes);
   let savedError:string|null=null;
   try{const text=localStorage.getItem(GRAPH_STORAGE_KEY);if(text!==null)history.replace(decodeGraphDocument(text,normalize_graph));}catch(error){savedError=String(error);}
-  sweep=mountSweep(get('graph-sweep-host'),{model:()=>history.graph,normalize:validate_graph,busy:()=>!!worker||archiveBusy,onBusy:renderComparison,download,replace,apply:(model,data)=>{if(replace(model))showResult(data,structuredClone(history.graph));},reference:(model,data)=>{referenceRun=snapshotRun(model,data);comparison=result?compareResults(result,data):null;comparisonPage=0;get<HTMLDetailsElement>('graph-comparison').open=true;renderComparison();plotResult();cursor();say('掃引結果を基準として保持しました');}});
+  sweep=mountSweep(get('graph-sweep-host'),{model:()=>history.graph,normalize:validate_graph,busy:()=>!!worker||archiveBusy||!!frequency?.running(),onBusy:renderComparison,download,replace,apply:(model,data)=>{if(replace(model))showResult(data,structuredClone(history.graph));},reference:(model,data)=>{referenceRun=snapshotRun(model,data);comparison=result?compareResults(result,data):null;comparisonPage=0;get<HTMLDetailsElement>('graph-comparison').open=true;renderComparison();plotResult();cursor();say('掃引結果を基準として保持しました');}});
+  frequency=mountFrequency(get('graph-frequency-host'),{model:()=>history.graph,normalize:validate_graph,check:validate_frequency,busy:()=>!!worker||archiveBusy||!!sweep?.running(),onBusy:renderComparison,download,replace});
   baseline=JSON.stringify(history.graph);render();if(savedError)say(`保存モデルの読み込みに失敗: ${savedError}`,true);else run();
 }

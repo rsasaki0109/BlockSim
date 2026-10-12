@@ -61,6 +61,28 @@ pub fn graph_budget_json(json: &str, limit: usize) -> Result<String, String> {
         &graph, limit,
     )?)
 }
+pub fn frequency_json(model: &str, request: &str) -> Result<String, String> {
+    let graph = decode(model)?;
+    let request = decode(request)?;
+    encode(&blocksim_core::graph::frequency::analyze_frequency(
+        &graph, &request,
+    )?)
+}
+pub fn frequency_check_json(model: &str, request: &str) -> Result<String, String> {
+    let graph = decode(model)?;
+    let request = decode(request)?;
+    encode(&blocksim_core::graph::frequency::validate_frequency(
+        &graph, &request,
+    )?)
+}
+#[wasm_bindgen]
+pub fn analyze_frequency(model: &str, request: &str) -> Result<String, JsValue> {
+    frequency_json(model, request).map_err(|e| JsValue::from_str(&e))
+}
+#[wasm_bindgen]
+pub fn validate_frequency(model: &str, request: &str) -> Result<String, JsValue> {
+    frequency_check_json(model, request).map_err(|e| JsValue::from_str(&e))
+}
 #[wasm_bindgen]
 pub fn run_graph_budgeted(json: &str, limit: usize) -> Result<String, JsValue> {
     graph_budget_json(json, limit).map_err(|e| JsValue::from_str(&e))
@@ -98,6 +120,40 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn frequency_boundary_checks_linear_models_and_reports_zero_singular_and_finite_points() {
+        let model = include_str!("../../../samples/frequency/lowpass.json");
+        let request = r#"{"source":"source","source_component":0,"scope":"output","scope_component":0,"min_omega":1,"max_omega":2,"points":2}"#;
+        let check: serde_json::Value =
+            serde_json::from_str(&frequency_check_json(model, request).unwrap()).unwrap();
+        assert_eq!(check["variables"], 3);
+        let result: serde_json::Value =
+            serde_json::from_str(&frequency_json(model, request).unwrap()).unwrap();
+        assert!((result["points"][0]["imag"].as_f64().unwrap() + 0.5).abs() < 1e-12);
+        assert!((result["points"][0]["phase_deg"].as_f64().unwrap() + 90.0).abs() < 1e-12);
+        assert!(frequency_json("{}", request).is_err());
+        assert!(frequency_json(model, "{}").is_err());
+        assert!(
+            frequency_check_json(model, &request.replace("\"points\":2", "\"points\":1")).is_err()
+        );
+        let mut singular: serde_json::Value = serde_json::from_str(model).unwrap();
+        singular["blocks"][1]["params"]["denominator"] = serde_json::json!([1, 0, 1]);
+        let result: serde_json::Value =
+            serde_json::from_str(&frequency_json(&singular.to_string(), request).unwrap()).unwrap();
+        assert!(result["points"][0]["error"].is_string());
+        assert!(result["points"][0]["magnitude_db"].is_null());
+        singular["blocks"][1]["params"]["numerator"] = serde_json::json!([0]);
+        let result: serde_json::Value = serde_json::from_str(
+            &frequency_json(
+                &singular.to_string(),
+                &request.replace("\"min_omega\":1", "\"min_omega\":1.5"),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(result["points"][0]["magnitude"], 0.0);
+        assert!(result["points"][0]["phase_deg"].is_null());
+    }
     #[test]
     fn batch_boundary_preserves_adaptive_result_and_rejects_insufficient_allowance() {
         let json = include_str!("../../../samples/numerics/first-order.json");

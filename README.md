@@ -112,6 +112,12 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <sub>設定を掃引 → IAE／ISE を比較 → 結果を基準やモデルに使う。</sub>
 </p>
 
+<p align="center">
+  <strong>15 — One model. Two views.</strong><br>
+  <a href="docs/media/frequency.gif"><img src="docs/media/frequency.gif" width="960" alt="同じ2次ローパスモデルを時間応答と Bode 線図で確認。角周波数1 rad/sの振幅−6.02 dB・位相−90度、全201点のCSVを実 WASM で計算"></a><br>
+  <sub>伝達関数を設定 → 周波数応答を解析 → カーソルと全点 CSV を確認。</sub>
+</p>
+
 ## さらに使いやすく
 
 - **コピー・複製**：選択内の接続と内部設定を保持。Ctrl/Cmd+A・C・V・D、Undo／Redo に対応し、設定は元モデルから独立します。
@@ -149,7 +155,7 @@ source scripts/rust-env.sh
 
 ## ブロック図エディタ
 
-画面上部の「ブロック図エディタ」でモデルを組めます。Constant、Step、Sine、Gain、Sum、Product、Saturation、Integrator、FirstOrder、Delay、PID、Mux、Selector、Scope、Subsystem を配置・接続できます。ブロックのチェックで複数選択しサブシステム化、内部を編集できます。Undo / Redo、モデル保存・復元、Scope の複数系列とカーソル、CSV 出力にも対応します。作成途中の保存は未接続を許可し、実行時に不足・幅不一致・代数ループを検証します。
+画面上部の「ブロック図エディタ」でモデルを組めます。Constant、Step、Sine、Gain、Sum、Product、Saturation、Integrator、FirstOrder、TransferFunction、Delay、PID、Mux、Selector、Scope、Subsystem を配置・接続できます。ブロックのチェックで複数選択しサブシステム化、内部を編集できます。Undo / Redo、モデル保存・復元、Scope の複数系列とカーソル、CSV 出力にも対応します。作成途中の保存は未接続を許可し、実行時に不足・幅不一致・代数ループを検証します。
 
 連続系の結合 RK4／可変刻み RK45 と整数倍の複数離散周期を混在させ、計算は中止可能な Web Worker で行います。詳細・保存形式・サンプルは [ブロック図仕様](docs/graph.md) を参照してください。
 
@@ -159,6 +165,8 @@ cargo run --locked -p blocksim-core --example graph -- samples/graphs/mixed-pid.
 ```
 
 「シミュレーション設定」で RK45 の許容誤差・最小／最大内部刻みを保存できます。「パラメータ掃引」は1パラメータを最大32通りで計算し、評価窓の最小／最大・終点・IAE／ISE、微分評価回数を比較します。設定ファイルの保存／復元、全ケースの CSV、結果の基準保持とモデルへの適用に対応します。記録時計と離散時計は保持します。詳しくは [数値計算と掃引](docs/numerics.md) を参照してください。
+
+「周波数応答 / Bode」では、連続線形モデルの信号源／Scope と各成分を選び、振幅・位相・複素応答を解析できます。解析設定の保存／復元、全点 CSV と中止に対応します。TransferFunction は8次までの実係数、直接伝達、独立したベクトル成分を扱います。対応範囲と検証は [伝達関数と周波数応答](docs/frequency.md) を参照してください。
 
 ## PID Lab の操作
 

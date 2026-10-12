@@ -1,5 +1,5 @@
 import type { PidConfig } from './types';
-export type Kind = 'constant'|'step'|'sine'|'gain'|'sum'|'product'|'saturation'|'integrator'|'first_order'|'delay'|'pid'|'mux'|'selector'|'scope'|'input'|'output'|'subsystem';
+export type Kind = 'constant'|'step'|'sine'|'gain'|'sum'|'product'|'saturation'|'integrator'|'first_order'|'transfer_function'|'delay'|'pid'|'mux'|'selector'|'scope'|'input'|'output'|'subsystem';
 export interface Params { kind: Kind; [key: string]: unknown }
 export interface GraphBlock { id: string; label: string; width: number; position: [number,number]; params: Params }
 export interface Edge { from: string; from_port: number; to: string; to_port: number }
@@ -13,7 +13,7 @@ export const GRAPH_STORAGE_KEY = 'blocksim.graph.v2';
 export const KIND_NAMES: Record<Kind,string> = {
   constant:'Constant', step:'Step', sine:'Sine', gain:'Gain', sum:'Sum', product:'Product', saturation:'Saturation',
   integrator:'Integrator', first_order:'FirstOrder', delay:'Unit Delay', pid:'PID', mux:'Mux', selector:'Selector',
-  scope:'Scope', input:'Input', output:'Output', subsystem:'Subsystem',
+  transfer_function:'TransferFunction', scope:'Scope', input:'Input', output:'Output', subsystem:'Subsystem',
 };
 export function graphContext(root: GraphModel, path: string[]): GraphModel {
   let graph = root;
@@ -48,6 +48,7 @@ export function newBlock(kind: Kind, graph: GraphModel): GraphBlock {
     constant:{kind,value:[1]}, step:{kind,before:[0],after:[1],step_time:1},
     sine:{kind,amplitude:1,frequency:1,phase:0,offset:0}, gain:{kind,gain:1}, sum:{kind,signs:[1,-1]},
     product:{kind,inputs:2}, saturation:{kind,limits:{lower:0,upper:1}}, integrator:{kind,initial:[0]},
+    transfer_function:{kind,numerator:[1],denominator:[1,1],initial:[0]},
     first_order:{kind,gain:1,tau:1,initial:[0]}, delay:{kind,initial:[0],sample_time:graph.dt},
     pid:{kind,config:pid,mode:'continuous',sample_time:graph.dt}, mux:{kind,inputs:2}, selector:{kind,indices:[0]},
     scope:{kind}, input:{kind,port:graph.blocks.filter(b=>b.params.kind==='input').length},

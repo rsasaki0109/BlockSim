@@ -1,0 +1,24 @@
+[
+  {
+    "frequency_points": 201,
+    "max_complex_error": 2.482534153247273e-16,
+    "max_db_error": 1.4210854715202004e-14,
+    "max_phase_degrees_error": 2.842170943040401e-14,
+    "max_relative_residual": 0.0,
+    "max_time_error": 5.032828598316996e-10,
+    "related_variables": 3,
+    "sample": "lowpass",
+    "time_points": 1001
+  },
+  {
+    "frequency_points": 201,
+    "max_complex_error": 2.703108886647537e-16,
+    "max_db_error": 5.329070518200751e-15,
+    "max_phase_degrees_error": 4.689582056016661e-13,
+    "max_relative_residual": 1.3230760142257815e-16,
+    "max_time_error": 3.175419927003986e-10,
+    "related_variables": 5,
+    "sample": "feedback",
+    "time_points": 1001
+  }
+]

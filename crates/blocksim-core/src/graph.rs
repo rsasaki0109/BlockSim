@@ -5,6 +5,8 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 mod adaptive;
+pub mod frequency;
+mod transfer;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "method", rename_all = "snake_case", deny_unknown_fields)]
@@ -108,6 +110,11 @@ pub enum BlockKind {
         tau: f64,
         initial: Vec<f64>,
     },
+    TransferFunction {
+        numerator: Vec<f64>,
+        denominator: Vec<f64>,
+        initial: Vec<f64>,
+    },
     Delay {
         initial: Vec<f64>,
         sample_time: f64,
@@ -186,7 +193,8 @@ impl BlockKind {
         matches!(
             self,
             Self::Integrator { .. } | Self::FirstOrder { .. } | Self::Delay { .. }
-        )
+        ) || matches!(self, Self::TransferFunction { numerator, denominator, .. }
+            if denominator.len() > 1 && (numerator.len() < denominator.len() || numerator.first() == Some(&0.0)))
     }
 }
 fn identifier(id: &str) -> bool {
@@ -275,6 +283,18 @@ fn validate_block(b: &Block, dt: f64, adaptive: bool) -> Result<()> {
             if !adaptive && dt > tau / 2.0 {
                 return Err("RK4 requires dt <= plant tau/2".into());
             }
+        }
+        BlockKind::TransferFunction {
+            numerator,
+            denominator,
+            initial,
+        } => {
+            transfer::coefficients(numerator, denominator)?;
+            vector(
+                "TransferFunction initial state",
+                initial,
+                b.width * (denominator.len() - 1),
+            )?;
         }
         BlockKind::Delay {
             initial,
@@ -744,6 +764,7 @@ struct Runtime {
     held: Vec<Vec<f64>>,
     pending: Vec<Option<Vec<f64>>>,
     discrete: Vec<Vec<DiscretePid>>,
+    transfer: Vec<Option<transfer::Coefficients>>,
 }
 fn runtime(graph: &Compiled) -> Result<Runtime> {
     let mut rt = Runtime {
@@ -751,12 +772,14 @@ fn runtime(graph: &Compiled) -> Result<Runtime> {
         held: vec![],
         pending: vec![],
         discrete: vec![],
+        transfer: vec![],
     };
     for b in &graph.flat.blocks {
         let state = match &b.params {
             BlockKind::Integrator { initial } | BlockKind::FirstOrder { initial, .. } => {
                 initial.clone()
             }
+            BlockKind::TransferFunction { initial, .. } => initial.clone(),
             BlockKind::Pid {
                 mode: PidMode::Continuous,
                 ..
@@ -764,6 +787,18 @@ fn runtime(graph: &Compiled) -> Result<Runtime> {
             _ => vec![],
         };
         rt.state.push(state);
+        rt.transfer.push(
+            if let BlockKind::TransferFunction {
+                numerator,
+                denominator,
+                ..
+            } = &b.params
+            {
+                Some(transfer::coefficients(numerator, denominator)?)
+            } else {
+                None
+            },
+        );
         rt.held
             .push(if let BlockKind::Delay { initial, .. } = &b.params {
                 initial.clone()
@@ -843,6 +878,22 @@ fn evaluate(
                 .collect(),
             BlockKind::Saturation { limits } => first().iter().map(|v| limits.clamp(*v)).collect(),
             BlockKind::Integrator { .. } | BlockKind::FirstOrder { .. } => rt.state[i].clone(),
+            BlockKind::TransferFunction { .. } => {
+                let coefficients = rt.transfer[i].as_ref().unwrap();
+                (0..b.width)
+                    .map(|c| {
+                        coefficients.output(
+                            &rt.state[i],
+                            c,
+                            if coefficients.direct == 0.0 {
+                                0.0
+                            } else {
+                                values[inputs[0]][c]
+                            },
+                        )
+                    })
+                    .collect()
+            }
             BlockKind::Delay { .. } => rt.held[i].clone(),
             BlockKind::Pid {
                 config,
@@ -913,6 +964,10 @@ fn rates(
                     .zip(&rt.state[i])
                     .map(|(u, y)| (gain * u - y) / tau)
                     .collect(),
+                BlockKind::TransferFunction { .. } => {
+                    let coefficients = rt.transfer[i].as_ref().unwrap();
+                    coefficients.rates(&rt.state[i], input())
+                }
                 BlockKind::Pid {
                     config,
                     mode: PidMode::Continuous,

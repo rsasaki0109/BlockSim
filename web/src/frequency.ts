@@ -1,0 +1,40 @@
+import {type GraphModel} from './graph-model';
+export interface FrequencyRequest { source:string;source_component:number;scope:string;scope_component:number;min_omega:number;max_omega:number;points:number }
+export interface FrequencyCheck { source_label:string;scope_label:string;variables:number }
+export interface FrequencyPoint { omega:number;real:number|null;imag:number|null;magnitude:number|null;magnitude_db:number|null;phase_deg:number|null;relative_residual:number|null;error:string|null }
+export interface FrequencyResult { request:FrequencyRequest;check:FrequencyCheck;points:FrequencyPoint[];method:string }
+export interface FrequencyPlan { format:'blocksim.frequency';version:1;model:GraphModel;request:FrequencyRequest }
+export type FrequencyValidator=(model:string,request:string)=>string;
+export function frequencySources(model:GraphModel,prefix:string[]=[]):Array<{id:string,label:string,width:number}>{return model.blocks.flatMap(b=>['constant','step','sine'].includes(b.params.kind)?[{id:[...prefix,b.id].join('/'),label:b.label,width:b.width}]:b.params.kind==='subsystem'?frequencySources(b.params.model as GraphModel,[...prefix,b.id]):[]);}
+function object(value:unknown,keys:string[]){if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).some(k=>!keys.includes(k))||keys.some(k=>!Object.hasOwn(value,k)))throw new Error('周波数解析の保存形式が不正です');return value as Record<string,unknown>;}
+export function validateFrequencyPlan(value:unknown,normalize:(model:string)=>string,check:FrequencyValidator):FrequencyPlan{
+ const raw=object(value,['format','version','model','request']);if(raw.format!=='blocksim.frequency'||raw.version!==1)throw new Error('未対応の周波数解析形式です');
+ const json=JSON.stringify(raw.model);if(new TextEncoder().encode(json).length>1_000_000)throw new Error('モデルは1 MB以下にしてください');const model=JSON.parse(normalize(json)) as GraphModel;
+ const q=object(raw.request,['source','source_component','scope','scope_component','min_omega','max_omega','points']);
+ if(typeof q.source!=='string'||typeof q.scope!=='string'||['source_component','scope_component','points'].some(k=>!Number.isSafeInteger(q[k])||(q[k] as number)<0)||['min_omega','max_omega'].some(k=>typeof q[k]!=='number'||!Number.isFinite(q[k]))||(q.min_omega as number)<1e-9||(q.max_omega as number)>1e9||(q.max_omega as number)<=(q.min_omega as number)||(q.points as number)<2||(q.points as number)>2048)throw new Error('解析条件は1e-9 ≤ 最小 < 最大 ≤ 1e9 rad/s、2〜2048点で指定してください');
+ if((Math.log(q.max_omega as number)-Math.log(q.min_omega as number))/((q.points as number)-1)<=64*Number.EPSILON)throw new Error('周波数範囲が浮動小数点の分解能に対して狭すぎます');
+ const request=Object.fromEntries(Object.keys(q).map(k=>[k,q[k]])) as unknown as FrequencyRequest;check(JSON.stringify(model),JSON.stringify(request));return {format:'blocksim.frequency',version:1,model,request};
+}
+export function encodeFrequencyPlan(plan:FrequencyPlan){const text=JSON.stringify(plan);if(new TextEncoder().encode(text).length>1_000_000)throw new Error('周波数解析設定は1 MB以下にしてください');return text;}
+export function decodeFrequencyPlan(text:string,normalize:(model:string)=>string,check:FrequencyValidator){if(new TextEncoder().encode(text).length>1_000_000)throw new Error('周波数解析設定は1 MB以下にしてください');return validateFrequencyPlan(JSON.parse(text),normalize,check);}
+export function frequencyCsv(data:FrequencyResult){
+ const quote=(s:string)=>'"'+(/^\s*[=+\-@]/.test(s)?"'":'')+s.replaceAll('"','""')+'"';
+ const q=data.request;return '\uFEFF'+[['source','input_component','scope','output_component','omega_rad_s','real','imag','magnitude','magnitude_db','phase_deg','status','relative_residual','error'].map(quote).join(','),...data.points.map(p=>[quote(q.source),q.source_component,quote(q.scope),q.scope_component,p.omega,p.real??'',p.imag??'',p.magnitude??'',p.magnitude_db??'',p.phase_deg??'',quote(p.error?'error':p.magnitude===0?'zero':'ok'),p.relative_residual??'',quote(p.error||'')].join(','))].join('\r\n');
+}
+export function frequencyGeometry(data:FrequencyResult,field:'magnitude_db'|'phase_deg'){
+ const values=data.points.flatMap(p=>p[field]!==null&&!p.error?[p[field]!]:[]);const lo=values.length?Math.min(...values):0,hi=values.length?Math.max(...values):1;const padding=(hi-lo||1)*.08;const min=lo-padding,max=hi+padding;
+ const first=Math.log10(data.points[0].omega),last=Math.log10(data.points.at(-1)!.omega);
+ if(!Number.isFinite(first)||!Number.isFinite(last)||last<=first)throw new Error('周波数の対数軸を描画できません');
+ const x=(omega:number)=>65+710*(Math.log10(omega)-first)/(last-first),y=(v:number)=>175-150*(v-min)/(max-min);
+ const segments:string[]=[];let current='';for(const p of data.points){const v=p[field];if(v===null||p.error){if(current)segments.push(current);current='';}else current+=(current?' L':'M')+x(p.omega).toFixed(3)+','+y(v).toFixed(3);}if(current)segments.push(current);
+ return {segments,min,max,x,y,empty:!values.length};
+}
+export function plotFrequency(host:HTMLElement,data:FrequencyResult,field:'magnitude_db'|'phase_deg'){
+ const geometry=frequencyGeometry(data,field),ns='http://www.w3.org/2000/svg';
+ const make=(tag:string,attrs:Record<string,string>)=>{const el=document.createElementNS(ns,tag);for(const [k,v]of Object.entries(attrs))el.setAttribute(k,v);return el;};
+ const svg=make('svg',{viewBox:'0 0 800 215',role:'img','aria-label':field==='magnitude_db'?'Bode 振幅 (dB)':'Bode 位相 (度)'});
+ for(let i=0;i<=4;i++){const v=geometry.min+(geometry.max-geometry.min)*i/4,y=geometry.y(v);svg.append(make('line',{x1:'65',x2:'775',y1:String(y),y2:String(y),stroke:'#29374d'}));const text=make('text',{x:'57',y:String(y+4),fill:'#9facc5','text-anchor':'end','font-size':'11'});text.textContent=v.toPrecision(4);svg.append(text);}
+ const first=data.request.min_omega,last=data.request.max_omega;for(let i=0;i<=4;i++){const w=10**(Math.log10(first)+(Math.log10(last)-Math.log10(first))*i/4),text=make('text',{x:String(geometry.x(w)),y:'201',fill:'#9facc5','text-anchor':'middle','font-size':'11'});text.textContent=w.toPrecision(3);svg.append(text);}
+ for(const d of geometry.segments)svg.append(make('path',{d,fill:'none',stroke:field==='magnitude_db'?'#63e3bc':'#ffa96b','stroke-width':'2'}));
+ if(geometry.empty){const text=make('text',{x:'400',y:'95',fill:'#9facc5','text-anchor':'middle','font-size':'13'});text.textContent='この範囲に描画可能な値がありません';svg.append(text);}host.replaceChildren(svg);
+}

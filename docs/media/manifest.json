@@ -121,6 +121,14 @@
       "bytes": 182094,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "frequency.gif",
+      "frames": 99,
+      "duration_seconds": 9.9,
+      "bytes": 133997,
+      "width": 960,
+      "height": 737
     }
   ]
 }
