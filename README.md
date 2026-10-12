@@ -1,8 +1,8 @@
 # BlockSim
 
-Rust + WebAssembly による PID 制御実験環境です。連続／離散 PID の出力制限、条件付き積分による anti-windup、ベクトル対応 Saturation ブロックを実装しています。ブラウザ GUI でモデルを設定し、目標値を下げた後の復帰を有効／無効で比較できます。
+Rust + WebAssembly によるブロック図モデリング・PID 制御実験環境です。連続／離散 PID の出力制限、条件付き積分による anti-windup、ベクトル対応 Saturation ブロックを実装しています。ブラウザ GUI でモデルを設定し、目標値を下げた後の復帰を有効／無効で比較できます。
 
-**成熟度比較コメント：目標は Simulink 比 30% のままです。これは主観的な開発評価であり、機能網羅率や客観的なベンチマークではありません。現在は限定的な PID 実験環境で、30% の到達を証明するものではありません。** 汎用ブロック図編集、任意の接続、可変刻みソルバ、コード生成などは未実装です。
+**成熟度比較コメント：目標は Simulink 比30%を維持。現在の概算は Simulink 比約30%、Scilab/Xcos 比約35%です。これは主観的な開発評価であり、機能網羅率や客観的なベンチマークではありません。** 基本ブロック図・サブシステム・ベクトル・同期した連続／離散混在を実装しました。可変刻みソルバ、物理領域、コード生成、Simulink ファイル互換は未実装です。評価の根拠は [成熟度評価](docs/maturity.md) に記載しています。
 
 ## 開発環境
 
@@ -24,7 +24,18 @@ source scripts/rust-env.sh
 
 クラウドのタスクは既に分離されています。既存チェックアウトを使い、明示的に依頼されない限り Git worktree は作成しません。公開後や次のタスクではプロセスの再起動が必要です。
 
-## 操作
+## ブロック図エディタ
+
+画面上部の「ブロック図エディタ」でモデルを組めます。Constant、Step、Sine、Gain、Sum、Product、Saturation、Integrator、FirstOrder、Delay、PID、Mux、Selector、Scope、Subsystem を配置・接続できます。ブロックのチェックで複数選択しサブシステム化、内部を編集できます。Undo / Redo、モデル保存・復元、Scope の複数系列とカーソル、CSV 出力にも対応します。作成途中の保存は未接続を許可し、実行時に不足・幅不一致・代数ループを検証します。
+
+連続系の結合 RK4 と整数倍の複数離散周期を混在させ、計算は中止可能な Web Worker で行います。詳細・保存形式・サンプルは [ブロック図仕様](docs/graph.md) を参照してください。
+
+```bash
+source scripts/rust-env.sh
+cargo run --locked -p blocksim-core --example graph -- samples/graphs/mixed-pid.json
+```
+
+## PID Lab の操作
 
 - PID の下限／上限は空欄で制限なし。片側だけの制限や同じ上下限も設定できます。制限は連続／離散の両方に適用されます。
 - `anti-windup` チェックで実行対象を選択し、「シミュレーション実行」で比較します。有効／無効の両方を同じモデルで計算し、選択側を太線で示します。
@@ -58,9 +69,9 @@ cargo run --locked -p blocksim-core --example recovery -- samples/pid-recovery.j
 
 ## 構成
 
-- `crates/blocksim-core`：Rust PID、Saturation、閉ループ実験、メトリクス。
-- `crates/blocksim-wasm`：モデル JSON の検証／正規化、実行、比較、ベクトル制限の WASM API。
-- `web`：TypeScript / Vite GUI、設定の保存・復元、グラフ、Vitest / Playwright。
+- `crates/blocksim-core`：Rust PID、Saturation、閉ループ実験、グラフと混在ソルバ、メトリクス。
+- `crates/blocksim-wasm`：PID とグラフ JSON の検証／正規化、実行、比較、ベクトル制限の WASM API。
+- `web`：TypeScript / Vite GUI、モデル編集・保存・復元、グラフ、Worker、Vitest / Playwright。
 - `samples/pid-recovery.json`：再現可能な復帰比較サンプル。
 
 CI は Rust のテスト・fmt・Clippy、WASM ビルド、GUI 型チェックとビルド、設定単体テスト、実際の WASM を使う Chromium GUI テストを実行します。

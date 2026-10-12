@@ -1,3 +1,4 @@
+import { mountEditor } from './graph-editor';
 import init, { default_model, validate_model, run_model, compare_model, saturate_vector } from './wasm/blocksim';
 import { decodeDocument, encodeDocument, parseLimit, parseNumber, parseVector, STORAGE_KEY } from './document';
 import { drawChart } from './chart';
@@ -7,8 +8,10 @@ import './style.css';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML = `
-  <header><a class="brand" href="./">▦ <span>BlockSim</span></a><span class="pill">PID LAB · 0.1</span></header>
-  <main>
+  <header><a class="brand" href="./">▦ <span>BlockSim</span></a><span class="pill">CONTROL WORKSPACE · 0.1</span></header>
+  <nav class="app-tabs" role="tablist" aria-label="開発画面"><button id="pid-tab" role="tab" aria-selected="true" aria-controls="pid-main">PID Lab</button><button id="editor-tab" role="tab" aria-selected="false" aria-controls="graph-main" disabled>ブロック図エディタ</button></nav>
+  <main id="graph-main" role="tabpanel" aria-labelledby="editor-tab" hidden></main>
+  <main id="pid-main" role="tabpanel" aria-labelledby="pid-tab">
     <section class="intro"><p class="eyebrow">CONTROL SYSTEMS / 実験室</p><h1>飽和から、すばやく戻る。</h1>
       <p>出力制限と条件付き積分で PID の復帰を比較。Rust + WASM で計算します。</p></section>
     <div class="workspace"><aside>
@@ -51,8 +54,18 @@ app.innerHTML = `
         <button id="saturate" disabled>ブロックを実行</button><output id="vector-output" aria-label="Saturation 出力" aria-live="polite"></output>
       </section>
     </article></div>
-    <footer>成熟度比較：Simulink 比 30% を目標としています。現時点の実装は限定的な PID 実験環境です。この比較は主観的な開発評価であり、機能網羅率や客観的なベンチマークではありません。</footer>
+    <footer>成熟度比較：Simulink 比 30% を目標としています。現時点の実装は基本的なブロック図と PID 実験環境です。この比較は主観的な開発評価であり、機能網羅率や客観的なベンチマークではありません。</footer>
   </main>`;
+let editorMounted = false;
+function selectTab(editor: boolean) {
+  document.getElementById('pid-main')!.hidden = editor;
+  document.getElementById('graph-main')!.hidden = !editor;
+  document.getElementById('pid-tab')!.setAttribute('aria-selected', String(!editor));
+  document.getElementById('editor-tab')!.setAttribute('aria-selected', String(editor));
+  if (editor && !editorMounted) { mountEditor(document.getElementById('graph-main')!); editorMounted = true; }
+}
+document.getElementById('pid-tab')!.addEventListener('click', () => selectTab(false));
+document.getElementById('editor-tab')!.addEventListener('click', () => selectTab(true));
 const form = document.querySelector<HTMLFormElement>('#model-form')!;
 const status = document.querySelector<HTMLDivElement>('#status')!;
 const input = (name: string) => form.elements.namedItem(name) as HTMLInputElement;

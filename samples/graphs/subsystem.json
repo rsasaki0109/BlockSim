@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "dt": 0.01,
+  "duration": 2,
+  "blocks": [
+    {
+      "id": "wave",
+      "label": "wave",
+      "width": 1,
+      "position": [
+        30,
+        100
+      ],
+      "params": {
+        "kind": "sine",
+        "amplitude": 1.0,
+        "frequency": 0.5,
+        "phase": 0.0,
+        "offset": 0.0
+      }
+    },
+    {
+      "id": "amplifier",
+      "label": "amplifier",
+      "width": 1,
+      "position": [
+        270,
+        100
+      ],
+      "params": {
+        "kind": "subsystem",
+        "model": {
+          "version": 1,
+          "dt": 0.01,
+          "duration": 2,
+          "blocks": [
+            {
+              "id": "in",
+              "label": "in",
+              "width": 1,
+              "position": [
+                30,
+                100
+              ],
+              "params": {
+                "kind": "input",
+                "port": 0
+              }
+            },
+            {
+              "id": "gain",
+              "label": "gain",
+              "width": 1,
+              "position": [
+                260,
+                100
+              ],
+              "params": {
+                "kind": "gain",
+                "gain": 3.0
+              }
+            },
+            {
+              "id": "out",
+              "label": "out",
+              "width": 1,
+              "position": [
+                500,
+                100
+              ],
+              "params": {
+                "kind": "output",
+                "port": 0
+              }
+            }
+          ],
+          "edges": [
+            {
+              "from": "in",
+              "from_port": 0,
+              "to": "gain",
+              "to_port": 0
+            },
+            {
+              "from": "gain",
+              "from_port": 0,
+              "to": "out",
+              "to_port": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "wave-output",
+      "label": "wave-output",
+      "width": 1,
+      "position": [
+        510,
+        100
+      ],
+      "params": {
+        "kind": "scope"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "wave",
+      "from_port": 0,
+      "to": "amplifier",
+      "to_port": 0
+    },
+    {
+      "from": "amplifier",
+      "from_port": 0,
+      "to": "wave-output",
+      "to_port": 0
+    }
+  ]
+}

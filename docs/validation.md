@@ -4,7 +4,30 @@
 
 元リポジトリはソース・コミット・未コミット変更がなく、`main` の fetch は `fatal: couldn't find remote ref main`。ユーザーの新規実装指示に従って作成しました。既存版との比較は未実施です。
 
-## 実行済み
+## ブロック図拡張の検証（2026-10-12）
+
+最新コードで以下を実行しました。
+
+| 検証 | 結果 |
+|---|---|
+| Rust core PID | 10件成功、従来の無制限・AW・復帰比較を維持 |
+| Rust graph | 12件成功、結合 RK4・Step 区間分割・Delay 同期・ベクトル・階層・複数ポート・計算予算 |
+| WASM JSON境界（ネイティブ） | 4件成功、グラフ API の追加を含む |
+| TypeScript / Vitest | 13件成功、編集履歴・グループ化・保存・CSVを含む |
+| Chromium / Playwright | 10件成功、実 WASM・Worker・編集・サブシステム内部・保存復元・中止・接続エラー |
+| fmt / Clippy | 両方成功。Clippy は `-D warnings` |
+| wasm32 release / wasm-bindgen | 成功 |
+| TypeScript 型チェック / Vite 本番ビルド | 成功、Worker と WASM を静的配信用成果物に含む |
+| Vite 本番 preview + `smoke.mjs` | PID・エディタ・Worker・ベクトル4系列を実ブラウザで確認 |
+| Rust graph example | 混在サンプル 4001点・3 Scope、出力制限 `[0,1]`、最終プラント出力約0.4999995 |
+
+合計49件（Rust 26、TypeScript 13、ブラウザ10）が成功。失敗・無視・スキップは最終実行で0件です。空の unit / doc-test ターゲットは件数に含めていません。GitHub Actions の実行自体、他ブラウザ・他OS・新規クラウドタスクへの復元は未検証です。
+
+現在の通常サンドボックスでは Vite の待ち受けが `listen EPERM: operation not permitted 0.0.0.0:5173` で拒否されました。権限を持つ実行でローカルサーバーと Chromium テストを実行して成功しています。単にサーバー起動失敗を合格にしたものではありません。
+
+グラフ連続 PID と既存 PID Lab のプラント出力は、AW有効／無効の両方で各点の差が `1e-8` 未満。一次遅れの RK4 は解析解への誤差 `1e-6` 未満、刻みを半減すると誤差が10分の1未満。刻み途中の Step + Integrator は厳密な面積との差 `1e-10` 未満。これらは固定したモデル・条件での検証で、任意モデルの安定性を保証しません。
+
+## 初回 PID 実装時の実行済み記録
 
 | 検証 | 結果 |
 |---|---|

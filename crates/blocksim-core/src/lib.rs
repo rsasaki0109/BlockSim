@@ -1,4 +1,6 @@
 //! PID controllers, elementwise saturation and a reproducible closed-loop experiment.
+pub mod graph;
+
 use serde::{Deserialize, Serialize};
 
 pub type Result<T> = std::result::Result<T, String>;

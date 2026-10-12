@@ -51,9 +51,50 @@ pub fn default_model() -> String {
     serde_json::to_string(&ModelConfig::default()).expect("finite default config")
 }
 
+pub fn graph_json(json: &str) -> Result<String, String> {
+    let graph: blocksim_core::graph::GraphModel = decode(json)?;
+    encode(&blocksim_core::graph::simulate_graph(&graph)?)
+}
+pub fn normalize_graph_json(json: &str, runnable: bool) -> Result<String, String> {
+    let graph: blocksim_core::graph::GraphModel = decode(json)?;
+    if runnable {
+        blocksim_core::graph::validate_graph(&graph)?;
+    } else {
+        blocksim_core::graph::validate_draft(&graph)?;
+    }
+    encode(&graph)
+}
+#[wasm_bindgen]
+pub fn run_graph(json: &str) -> Result<String, JsValue> {
+    graph_json(json).map_err(|e| JsValue::from_str(&e))
+}
+#[wasm_bindgen]
+pub fn validate_graph(json: &str) -> Result<String, JsValue> {
+    normalize_graph_json(json, true).map_err(|e| JsValue::from_str(&e))
+}
+#[wasm_bindgen]
+pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
+    normalize_graph_json(json, false).map_err(|e| JsValue::from_str(&e))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn graph_boundary_executes_vectors_and_draft_validation() {
+        let json = include_str!("../../../samples/graphs/vector.json");
+        let run: serde_json::Value = serde_json::from_str(&graph_json(json).unwrap()).unwrap();
+        assert_eq!(
+            run["traces"][0]["values"][0],
+            serde_json::json!([-1.0, 1.0, 1.0])
+        );
+        let normalized = normalize_graph_json(json, true).unwrap();
+        assert_eq!(
+            normalize_graph_json(&normalized, false).unwrap(),
+            normalized
+        );
+        assert!(graph_json("{}").is_err());
+    }
     #[test]
     fn boundary_runs_and_roundtrips() {
         let json = default_model();
