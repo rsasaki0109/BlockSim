@@ -201,6 +201,14 @@
       "bytes": 240844,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "conversion-comparison.gif",
+      "frames": 185,
+      "duration_seconds": 18.5,
+      "bytes": 229370,
+      "width": 960,
+      "height": 737
     }
   ]
 }

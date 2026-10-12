@@ -195,6 +195,14 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
 
 [ZOH離散化](docs/zoh.md) で保持入力に対する応答を離散モデルへ変換できます。
 
+<p align="center">
+  <strong>25 — Convert. Compare. Measure.</strong><br>
+  <a href="docs/media/conversion-comparison.gif"><img src="docs/media/conversion-comparison.gif" width="960" alt="選択した伝達関数の単位ステップを連続と離散で比較し、ZOHのサンプル時刻の一致とTustinの初回差を数値確認、設定と全点CSVを保存"></a><br>
+  <sub>同じサンプル時刻で重ねる。最大差・RMS差を確認して、実行条件と全点を保存。</sub>
+</p>
+
+[離散化前後の比較](docs/conversion-comparison.md) で、選択した伝達関数の単位ステップ応答を変換前に確認できます。
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。

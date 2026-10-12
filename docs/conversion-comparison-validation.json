@@ -1,0 +1,101 @@
+{
+  "cases": [
+    {
+      "continuous_equation_max_error": 2.0418111645881254e-12,
+      "discrete_equation_max_error": 5.551115123125783e-16,
+      "initial_continuous": 0.0,
+      "initial_discrete": 0.0,
+      "max_abs_delta": 2.0415891199832004e-12,
+      "method": "zoh",
+      "order": 1,
+      "rms_delta": 3.5051312578879737e-13,
+      "sample_time": 0.4,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 2.0418111645881254e-12,
+      "discrete_equation_max_error": 3.3306690738754696e-16,
+      "initial_continuous": 0.0,
+      "initial_discrete": 0.16666666666666669,
+      "max_abs_delta": 0.16666666666666669,
+      "method": "tustin",
+      "order": 1,
+      "rms_delta": 0.02285471580122261,
+      "sample_time": 0.4,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 3.3872904481313526e-13,
+      "discrete_equation_max_error": 4.440892098500626e-16,
+      "initial_continuous": 0.0,
+      "initial_discrete": 0.0,
+      "max_abs_delta": 3.3872904481313526e-13,
+      "method": "zoh",
+      "order": 1,
+      "rms_delta": 1.0232407022582991e-13,
+      "sample_time": 0.2,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 3.3872904481313526e-13,
+      "discrete_equation_max_error": 4.440892098500626e-16,
+      "initial_continuous": 0.0,
+      "initial_discrete": 0.09090909090909091,
+      "max_abs_delta": 0.09090909090909091,
+      "method": "tustin",
+      "order": 1,
+      "rms_delta": 0.01597096361574971,
+      "sample_time": 0.2,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 1.0547118733938987e-14,
+      "discrete_equation_max_error": 7.771561172376096e-16,
+      "initial_continuous": 0.0,
+      "initial_discrete": 0.0,
+      "max_abs_delta": 1.0769163338864018e-14,
+      "method": "zoh",
+      "order": 1,
+      "rms_delta": 4.754484630330724e-15,
+      "sample_time": 0.1,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 1.0547118733938987e-14,
+      "discrete_equation_max_error": 1.4432899320127035e-15,
+      "initial_continuous": 0.0,
+      "initial_discrete": 0.047619047619047616,
+      "max_abs_delta": 0.047619047619047616,
+      "method": "tustin",
+      "order": 1,
+      "rms_delta": 0.011213296738835723,
+      "sample_time": 0.1,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 1.2818149319748784e-12,
+      "discrete_equation_max_error": 4.9960036108132044e-15,
+      "initial_continuous": 0.0,
+      "initial_discrete": 0.0,
+      "max_abs_delta": 1.2818635042322057e-12,
+      "method": "zoh",
+      "order": 2,
+      "rms_delta": 1.9589089296171666e-13,
+      "sample_time": 0.2,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 1.2818149319748784e-12,
+      "discrete_equation_max_error": null,
+      "initial_continuous": 0.0,
+      "initial_discrete": 0.008264462809917357,
+      "max_abs_delta": 0.035458156290802345,
+      "method": "tustin",
+      "order": 2,
+      "rms_delta": 0.01092648651507739,
+      "sample_time": 0.2,
+      "samples": 101
+    }
+  ],
+  "scope": "isolated scalar unit step, zero initial state, sample instants only"
+}
