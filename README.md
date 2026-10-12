@@ -2,7 +2,67 @@
 
 Rust + WebAssembly によるブロック図モデリング・PID 制御実験環境です。連続／離散 PID の出力制限、条件付き積分による anti-windup、ベクトル対応 Saturation ブロックを実装しています。ブラウザ GUI でモデルを設定し、目標値を下げた後の復帰を有効／無効で比較できます。
 
+<p align="center">
+  <strong>MODEL · SIMULATE · UNDERSTAND</strong><br>
+  <sub>Rust × WebAssembly — ブロックをつなぎ、信号の動きを確かめる。</sub>
+</p>
+
+<p align="center">
+  <a href="docs/media/hero.gif"><img src="docs/media/hero.gif" width="960" alt="BlockSim hero：PID ブロック図、連続・離散混在、ベクトル、サブシステムを実画面で紹介"></a>
+</p>
+
+<p align="center">
+  <strong>ブロック図</strong> · <strong>連続／離散</strong> · <strong>ベクトル</strong> · <strong>サブシステム</strong> · <strong>anti-windup</strong>
+</p>
+
+
 **成熟度比較コメント：目標は Simulink 比30%を維持。現在の概算は Simulink 比約30%、Scilab/Xcos 比約35%です。これは主観的な開発評価であり、機能網羅率や客観的なベンチマークではありません。** 基本ブロック図・サブシステム・ベクトル・同期した連続／離散混在を実装しました。可変刻みソルバ、物理領域、コード生成、Simulink ファイル互換は未実装です。評価の根拠は [成熟度評価](docs/maturity.md) に記載しています。
+
+
+## 動く BlockSim
+
+GIF をクリックすると大きく表示できます。すべて実際の GUI 操作と WASM 計算から録画しています。録画では見やすいレイアウト・見出し・波形の描画演出を加えています。波形の描画演出は録画用で、リアルタイムのシミュレーション再生機能ではありません。
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <strong>01 — Build your own signal flow</strong><br>
+      <a href="docs/media/build.gif"><img src="docs/media/build.gif" width="460" alt="Constant・Gain・Scope を追加して接続し、入力2×ゲイン3の出力6を計算"></a><br>
+      <sub>追加 → 接続 → 実行。小さなモデルから始める。</sub>
+    </td>
+    <td width="50%" align="center">
+      <strong>02 — Compose with subsystems</strong><br>
+      <a href="docs/media/subsystems.gif"><img src="docs/media/subsystems.gif" width="460" alt="PID とプラントをサブシステム化し、内部モデルを開き、Undo で戻す"></a><br>
+      <sub>接続を保ったまま階層化。内部モデルも編集。</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <strong>03 — Saturate. Recover.</strong><br>
+      <a href="docs/media/anti-windup.gif"><img src="docs/media/anti-windup.gif" width="460" alt="anti-windup 有効・無効の波形と数値を比較。整定時間26.85秒から7.01秒に改善"></a><br>
+      <sub>同じモデルで復帰比較。整定 26.85 s → 7.01 s。</sub>
+    </td>
+    <td width="50%" align="center">
+      <strong>04 — Every component. Every limit.</strong><br>
+      <a href="docs/media/vectors.gif"><img src="docs/media/vectors.gif" width="460" alt="3成分のベクトルを Gain・Saturation・Selector で処理し、Scope の表示系列とカーソルを切り替える"></a><br>
+      <sub>各成分を独立に制限。必要な系列を選んで確認。</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <strong>05 — Two clocks. One model.</strong><br>
+      <a href="docs/media/hybrid.gif"><img src="docs/media/hybrid.gif" width="460" alt="50ms の離散 PID と連続プラント、100ms の Delay 観測を同じモデルで実行"></a><br>
+      <sub>50 ms PID × 連続 RK4 × 100 ms 観測。</sub>
+    </td>
+    <td width="50%" align="center">
+      <strong>06 — Edit without regret</strong><br>
+      <a href="docs/media/history.gif"><img src="docs/media/history.gif" width="460" alt="内部 Gain を変更し、Undo・Redo でモデルと波形を戻し、モデルを保存する"></a><br>
+      <sub>ゲイン変更、Undo／Redo、保存。試行錯誤を軽く。</sub>
+    </td>
+  </tr>
+</table>
+
+[GIF の生成方法とサイズ](docs/media/README.md) · [ブロック図の仕様](docs/graph.md) · [数値検証](docs/validation.md)
 
 ## 開発環境
 

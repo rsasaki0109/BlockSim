@@ -1,0 +1,62 @@
+{
+  "source": "Real BlockSim Chromium/WASM capture; presentation layout and path reveal only.",
+  "fps": 10,
+  "clips": [
+    {
+      "file": "hero.gif",
+      "frames": 120,
+      "duration_seconds": 12,
+      "bytes": 200990,
+      "width": 960,
+      "height": 737
+    },
+    {
+      "file": "build.gif",
+      "frames": 96,
+      "duration_seconds": 9.6,
+      "bytes": 132927,
+      "width": 960,
+      "height": 737
+    },
+    {
+      "file": "subsystems.gif",
+      "frames": 87,
+      "duration_seconds": 8.7,
+      "bytes": 264564,
+      "width": 960,
+      "height": 737
+    },
+    {
+      "file": "anti-windup.gif",
+      "frames": 88,
+      "duration_seconds": 8.8,
+      "bytes": 111433,
+      "width": 960,
+      "height": 737
+    },
+    {
+      "file": "vectors.gif",
+      "frames": 94,
+      "duration_seconds": 9.4,
+      "bytes": 117065,
+      "width": 960,
+      "height": 737
+    },
+    {
+      "file": "hybrid.gif",
+      "frames": 90,
+      "duration_seconds": 9,
+      "bytes": 126300,
+      "width": 960,
+      "height": 737
+    },
+    {
+      "file": "history.gif",
+      "frames": 106,
+      "duration_seconds": 10.6,
+      "bytes": 313864,
+      "width": 960,
+      "height": 737
+    }
+  ]
+}
