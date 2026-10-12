@@ -146,15 +146,7 @@ fn record(
     result: &mut GraphResult,
     limit: usize,
 ) -> Result<()> {
-    for (i, b) in graph.flat.blocks.iter().enumerate() {
-        if let BlockKind::Delay { sample_time, .. } = &b.params {
-            if tick.is_multiple_of(period(*sample_time, dt)?) {
-                if let Some(pending) = rt.pending[i].take() {
-                    rt.held[i] = pending;
-                }
-            }
-        }
-    }
+    sampled::commit(graph, rt, tick, dt)?;
     let time = tick as f64 * dt;
     let stats = result.statistics.as_mut().unwrap();
     stats.output_evaluations += 1;
@@ -164,13 +156,7 @@ fn record(
         limit,
     )?;
     let values = evaluate(graph, rt, time, Some(tick), dt, false)?;
-    for (i, b) in graph.flat.blocks.iter().enumerate() {
-        if let BlockKind::Delay { sample_time, .. } = &b.params {
-            if tick.is_multiple_of(period(*sample_time, dt)?) {
-                rt.pending[i] = Some(values[graph.incoming[i][0]].clone());
-            }
-        }
-    }
+    sampled::capture(graph, rt, &values, tick, dt)?;
     result.times.push(time);
     for (trace, i) in result.traces.iter_mut().zip(&graph.scopes) {
         trace.values.push(values[*i].clone());
@@ -226,6 +212,7 @@ pub(super) fn simulate(
                 events.push(*step_time)
             }
             BlockKind::Delay { sample_time, .. }
+            | BlockKind::DiscreteTransferFunction { sample_time, .. }
             | BlockKind::Pid {
                 mode: PidMode::Discrete,
                 sample_time,

@@ -1,0 +1,138 @@
+{
+  "format": "blocksim.frequency",
+  "version": 1,
+  "domain": "discrete",
+  "model": {
+    "version": 1,
+    "dt": 0.02,
+    "duration": 5,
+    "blocks": [
+      {
+        "id": "source",
+        "label": "Unit step",
+        "width": 1,
+        "position": [
+          40,
+          180
+        ],
+        "params": {
+          "kind": "step",
+          "before": [
+            0
+          ],
+          "after": [
+            1
+          ],
+          "step_time": 0
+        }
+      },
+      {
+        "id": "direct",
+        "label": "Direct low-pass: 0.2z/(z-0.8)",
+        "width": 1,
+        "position": [
+          300,
+          80
+        ],
+        "params": {
+          "kind": "discrete_transfer_function",
+          "numerator": [
+            0.2,
+            0
+          ],
+          "denominator": [
+            1,
+            -0.8
+          ],
+          "initial": [
+            0
+          ],
+          "sample_time": 0.1
+        }
+      },
+      {
+        "id": "delayed",
+        "label": "Delayed low-pass: 0.2/(z-0.8)",
+        "width": 1,
+        "position": [
+          300,
+          290
+        ],
+        "params": {
+          "kind": "discrete_transfer_function",
+          "numerator": [
+            0.2
+          ],
+          "denominator": [
+            1,
+            -0.8
+          ],
+          "initial": [
+            0
+          ],
+          "sample_time": 0.1
+        }
+      },
+      {
+        "id": "output",
+        "label": "Direct output",
+        "width": 1,
+        "position": [
+          590,
+          80
+        ],
+        "params": {
+          "kind": "scope"
+        }
+      },
+      {
+        "id": "delayed-output",
+        "label": "Delayed output",
+        "width": 1,
+        "position": [
+          590,
+          290
+        ],
+        "params": {
+          "kind": "scope"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "source",
+        "from_port": 0,
+        "to": "direct",
+        "to_port": 0
+      },
+      {
+        "from": "source",
+        "from_port": 0,
+        "to": "delayed",
+        "to_port": 0
+      },
+      {
+        "from": "direct",
+        "from_port": 0,
+        "to": "output",
+        "to_port": 0
+      },
+      {
+        "from": "delayed",
+        "from_port": 0,
+        "to": "delayed-output",
+        "to_port": 0
+      }
+    ]
+  },
+  "request": {
+    "source": "source",
+    "source_component": 0,
+    "scope": "output",
+    "scope_component": 0,
+    "min_omega": 0.01,
+    "max_omega": 31.41592653589793,
+    "points": 201,
+    "open_loop": false
+  }
+}

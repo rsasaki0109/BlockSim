@@ -8,7 +8,7 @@
 
 Scopeの選択成分からフィードバックを含む祖先をたどり、階層は完全なID、Mux／Selectorは成分で区別します。関連成分128変数、内部連続状態8個まで。超えた場合は解析前に拒否し、状態を黙って減らしません。
 
-Gain／Sum、Integrator／FirstOrder／TransferFunction、無制限の連続PID、Mux／Selector、境界Input／Output、Scopeが対象です。無制限Saturationと入力1本のProductは恒等写像。関連する制限付きPID／Saturation、多入力Product、離散PID／Delay、代数ループは拒否します。
+Gain／Sum、Integrator／FirstOrder／TransferFunction、無制限の連続PID、Mux／Selector、境界Input／Output、Scopeが対象です。無制限Saturationと入力1本のProductは恒等写像。関連する制限付きPID／Saturation、多入力Product、離散PID／Delay／Discrete TransferFunction、代数ループは拒否します。
 
 無関係な枝・選択外の成分は除外するため、**モデル全体の安定性ではありません。** 選択外に不安定な状態や非線形の枝があっても対象外です。モデル全体は既存の実行前検証を通る必要があり、時計・記録予算・RK4の条件は維持します。
 

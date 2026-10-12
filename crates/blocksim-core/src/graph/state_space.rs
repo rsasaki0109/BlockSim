@@ -124,7 +124,8 @@ fn prepare_with_domain(
         b.width = 1;
         let count = match &b.params {
             BlockKind::Integrator { .. } | BlockKind::FirstOrder { .. } => 1,
-            BlockKind::TransferFunction { denominator, .. } => denominator.len() - 1,
+            BlockKind::TransferFunction { denominator, .. }
+            | BlockKind::DiscreteTransferFunction { denominator, .. } => denominator.len() - 1,
             BlockKind::Pid { .. } => {
                 if discrete {
                     3
@@ -146,6 +147,7 @@ fn prepare_with_domain(
                     _ => "PID derivative filter",
                 },
                 BlockKind::Delay { .. } => "previous sampled input",
+                BlockKind::DiscreteTransferFunction { .. } => "discrete transfer companion state",
                 BlockKind::Pid { .. } => {
                     if state == 0 {
                         "weighted PID integral"
@@ -183,6 +185,17 @@ fn prepare_with_domain(
             } => BlockKind::TransferFunction {
                 numerator,
                 denominator,
+                initial: vec![0.0; count],
+            },
+            BlockKind::DiscreteTransferFunction {
+                numerator,
+                denominator,
+                sample_time,
+                ..
+            } => BlockKind::DiscreteTransferFunction {
+                numerator,
+                denominator,
+                sample_time,
                 initial: vec![0.0; count],
             },
             BlockKind::Delay { sample_time, .. } => BlockKind::Delay {

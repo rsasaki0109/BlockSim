@@ -1,0 +1,135 @@
+{
+  "cases": [
+    {
+      "a": [
+        [
+          0.8
+        ]
+      ],
+      "b": [
+        1.0
+      ],
+      "c": [
+        0.16000000000000003
+      ],
+      "case": "direct_iir",
+      "d": 0.2,
+      "frequency_imag": -0.22243531454550947,
+      "frequency_real": 0.17077848368072157,
+      "harmonic_complex_error": 1.668338681331951e-15,
+      "harmonic_imag": -0.2224353145455083,
+      "harmonic_omega_rad_s": 7.853981633974483,
+      "harmonic_real": 0.17077848368072276,
+      "harmonic_samples": 160,
+      "harmonic_window_s": [
+        24,
+        40
+      ],
+      "internal_stability": {
+        "classification": "stable",
+        "method": "unit-circle bilinear polynomial / scaled Routh",
+        "notes": [
+          "Unit-circle test uses z=(1+s)/(1-s), independently of approximate eigenvalue coordinates; no stability proof",
+          "Numerical internal stability of selected Scope ancestry at sample instants; unrelated branches excluded; no cancellation or state removal"
+        ],
+        "outside_unit_circle_poles": 0,
+        "right_half_plane_poles": null,
+        "tolerance": 1e-10
+      },
+      "max_complex_error_vs_independent_formula": 4.742874840267547e-16,
+      "max_step_error": 5.551115123125783e-16,
+      "recorded_step_points": 251,
+      "sample_time_s": 0.1
+    },
+    {
+      "a": [
+        [
+          0.8
+        ]
+      ],
+      "b": [
+        1.0
+      ],
+      "c": [
+        0.2
+      ],
+      "case": "delayed_iir",
+      "d": 0.0,
+      "frequency_imag": -0.2780441431818868,
+      "frequency_real": -0.036526895399098036,
+      "harmonic_complex_error": 2.6558837364083264e-16,
+      "harmonic_imag": -0.278044143181887,
+      "harmonic_omega_rad_s": 7.853981633974483,
+      "harmonic_real": -0.03652689539909818,
+      "harmonic_samples": 160,
+      "harmonic_window_s": [
+        24,
+        40
+      ],
+      "internal_stability": {
+        "classification": "stable",
+        "method": "unit-circle bilinear polynomial / scaled Routh",
+        "notes": [
+          "Unit-circle test uses z=(1+s)/(1-s), independently of approximate eigenvalue coordinates; no stability proof",
+          "Numerical internal stability of selected Scope ancestry at sample instants; unrelated branches excluded; no cancellation or state removal"
+        ],
+        "outside_unit_circle_poles": 0,
+        "right_half_plane_poles": null,
+        "tolerance": 1e-10
+      },
+      "max_complex_error_vs_independent_formula": 3.7238012298709097e-16,
+      "max_step_error": 4.440892098500626e-16,
+      "recorded_step_points": 251,
+      "sample_time_s": 0.1
+    },
+    {
+      "a": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0
+        ]
+      ],
+      "b": [
+        1.0,
+        0.0
+      ],
+      "c": [
+        0.5,
+        0.25
+      ],
+      "case": "fir",
+      "d": 0.25,
+      "frequency_imag": -0.6035533905932737,
+      "frequency_real": 0.6035533905932737,
+      "harmonic_complex_error": 6.049442158684427e-15,
+      "harmonic_imag": -0.6035533905932693,
+      "harmonic_omega_rad_s": 7.853981633974483,
+      "harmonic_real": 0.6035533905932778,
+      "harmonic_samples": 160,
+      "harmonic_window_s": [
+        24,
+        40
+      ],
+      "internal_stability": {
+        "classification": "stable",
+        "method": "unit-circle bilinear polynomial / scaled Routh",
+        "notes": [
+          "Unit-circle test uses z=(1+s)/(1-s), independently of approximate eigenvalue coordinates; no stability proof",
+          "Numerical internal stability of selected Scope ancestry at sample instants; unrelated branches excluded; no cancellation or state removal"
+        ],
+        "outside_unit_circle_poles": 0,
+        "right_half_plane_poles": null,
+        "tolerance": 1e-10
+      },
+      "max_complex_error_vs_independent_formula": 3.3335590258932494e-16,
+      "max_step_error": 0.0,
+      "recorded_step_points": 251,
+      "sample_time_s": 0.1
+    }
+  ],
+  "reference": "z-descending proper coefficients; direct step 1-.8^(n+1), delayed step 1-.8^n, FIR step [.25,.75,1,...]; independent polynomial unit-circle evaluation and actual time sine fit, no hold reconstruction"
+}

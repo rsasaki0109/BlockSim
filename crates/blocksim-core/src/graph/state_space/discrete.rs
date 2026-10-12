@@ -5,7 +5,7 @@ mod unit_circle;
 pub(super) fn dependencies(graph: &Compiled, node: (usize, usize)) -> Result<Vec<(usize, usize)>> {
     let b = &graph.flat.blocks[node.0];
     match &b.params {
-        BlockKind::Delay { .. } => Ok(vec![(graph.incoming[node.0][0], node.1)]),
+        BlockKind::Delay { .. } | BlockKind::DiscreteTransferFunction { .. } => Ok(vec![(graph.incoming[node.0][0], node.1)]),
         BlockKind::Pid { config, mode: PidMode::Discrete, .. }
             if config.limits.lower.is_none() && config.limits.upper.is_none() =>
                 Ok(vec![(graph.incoming[node.0][0], node.1)]),
@@ -21,9 +21,9 @@ fn prepare_discrete(model: &GraphModel, q: &StateSpaceRequest) -> Result<(Prepar
     let mut clock = None;
     for b in &p.graph.flat.blocks {
         let t = match b.params {
-            BlockKind::Delay { sample_time, .. } | BlockKind::Pid { sample_time, .. } => {
-                sample_time
-            }
+            BlockKind::Delay { sample_time, .. }
+            | BlockKind::DiscreteTransferFunction { sample_time, .. }
+            | BlockKind::Pid { sample_time, .. } => sample_time,
             _ => continue,
         };
         // Match the actual validated integer recording-clock period, not a fuzzy float comparison.
@@ -36,8 +36,9 @@ fn prepare_discrete(model: &GraphModel, q: &StateSpaceRequest) -> Result<(Prepar
     // Even approximately equal sample_time values change PID arithmetic; require the same value.
     let sample_time = clock.map(|(_, t)| t).unwrap_or(model.dt);
     for b in &p.graph.flat.blocks {
-        if let BlockKind::Delay { sample_time: t, .. } | BlockKind::Pid { sample_time: t, .. } =
-            b.params
+        if let BlockKind::Delay { sample_time: t, .. }
+        | BlockKind::DiscreteTransferFunction { sample_time: t, .. }
+        | BlockKind::Pid { sample_time: t, .. } = b.params
         {
             if t != sample_time {
                 return Err(
@@ -68,12 +69,19 @@ pub(in crate::graph) struct DiscreteRealization {
     pub c: Vec<f64>,
     pub d: f64,
     pub sample_time: f64,
+    pub has_discrete_transfer: bool,
 }
 pub(in crate::graph) fn discrete_realization(
     model: &GraphModel,
     q: &StateSpaceRequest,
 ) -> Result<DiscreteRealization> {
     let (mut p, sample_time) = prepare_discrete(model, q)?;
+    let has_discrete_transfer = p
+        .graph
+        .flat
+        .blocks
+        .iter()
+        .any(|b| matches!(b.params, BlockKind::DiscreteTransferFunction { .. }));
     let n = p.states.len();
     let base = runtime(&p.graph)?;
     let mut a = vec![vec![0.0; n]; n];
@@ -91,6 +99,7 @@ pub(in crate::graph) fn discrete_realization(
             let (i, state) = p.offsets[column];
             match p.graph.flat.blocks[i].params {
                 BlockKind::Delay { .. } => rt.held[i][0] = 1.0,
+                BlockKind::DiscreteTransferFunction { .. } => rt.sampled_state[i][state] = 1.0,
                 BlockKind::Pid { .. } => {
                     let mut values = [0.0; 3];
                     values[state] = 1.0;
@@ -105,6 +114,9 @@ pub(in crate::graph) fn discrete_realization(
             // Capture ALL Delay inputs from the same evaluation: synchronous, never in-place updates.
             let next = match p.graph.flat.blocks[i].params {
                 BlockKind::Delay { .. } => values[p.graph.incoming[i][0]][0],
+                BlockKind::DiscreteTransferFunction { .. } => {
+                    sampled::next_transfer(&p.graph, &rt, &values, i)?[state]
+                }
                 BlockKind::Pid { .. } => rt.discrete[i][0].analysis_state()[state],
                 _ => unreachable!(),
             };
@@ -125,6 +137,7 @@ pub(in crate::graph) fn discrete_realization(
         c,
         d,
         sample_time,
+        has_discrete_transfer,
     })
 }
 pub fn analyze_discrete_state_space(
@@ -139,6 +152,7 @@ pub fn analyze_discrete_state_space(
         c,
         d,
         sample_time,
+        has_discrete_transfer,
     } = discrete_realization(model, q)?;
     let (characteristic, pole_scale, characteristic_residual, poles, matrix_residuals, _) =
         spectrum::analyze(&a);
@@ -153,5 +167,5 @@ pub fn analyze_discrete_state_space(
     Ok(StateSpaceResult { request: q.clone(), check, states, a, b, c, d,
         characteristic, pole_scale, characteristic_residual, poles, matrix_residuals, stability,
         sample_time: Some(sample_time),
-        method: "discrete LTI Scope ancestry / actual synchronous sample-instant PID and Delay unit basis / x[k+1]=Ax[k]+Bu[k],y[k]=Cx[k]+Du[k] / unit-circle bilinear polynomial and Routh / no state removal".into() })
+        method: format!("discrete LTI Scope ancestry / actual synchronous sample-instant {} unit basis / x[k+1]=Ax[k]+Bu[k],y[k]=Cx[k]+Du[k] / unit-circle bilinear polynomial and Routh / no state removal", if has_discrete_transfer { "PID, Delay and discrete transfer" } else { "PID and Delay" }) })
 }

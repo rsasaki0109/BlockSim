@@ -25,7 +25,7 @@ export function stateSpaceCsv(r:StateSpaceResult){
  for(const [i,p]of r.poles.roots.entries())rows.push([...prefix,quote('eigenvalue'),i,'','',p.real,p.imag,p.relative_residual,quote(`matrix determinant residual=${r.matrix_residuals[i]} | ${r.poles.warnings.join(' | ')}`),'']);
  if(!r.poles.roots.length)rows.push([...prefix,quote('eigenvalue_set'),'','','','','','',quote(r.poles.status+(r.check.states===0?' · no dynamic states':' · '+r.poles.warnings.join(' | '))),'']);
  rows.push([...prefix,quote('characteristic'),'','','','','',r.characteristic_residual??'',quote(`det(zI-A/scale), scale=${r.pole_scale}, coefficients=${JSON.stringify(r.characteristic)}`),'']);
- if(discrete)rows.push([...prefix,quote('sample_time'),'','',r.sample_time!,'','','',quote('seconds; states before sample update, output after PID update and before next Delay commit'),'']);
+ if(discrete)rows.push([...prefix,quote('sample_time'),'','',r.sample_time!,'','','',quote(r.states.some(s=>s.description==='discrete transfer companion state')?'seconds; states before sample update, output after PID update and before next Delay/discrete-transfer state commit':'seconds; states before sample update, output after PID update and before next Delay commit'),'']);
  const headers=['source','input_component','scope','output_component','stability','record','row_or_index','column','value',discrete?'real_dimensionless':'real_per_s',discrete?'imag_dimensionless':'imag_rad_s','relative_residual','note',discrete?'outside_unit_circle_poles':'right_half_plane_poles'];
  return '\uFEFF'+[headers.map(quote).join(','),...rows.map(x=>x.join(','))].join('\r\n');
 }

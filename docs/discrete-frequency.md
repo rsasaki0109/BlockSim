@@ -11,7 +11,7 @@ G(z) = C (zI − A)⁻¹ B + D
 
 ## 対象・範囲
 
-Scope祖先の関連128成分変数・最大8状態、同じsample_timeのDelay／無制限離散PID、静的TransferFunction・Gain／Sum・境界・Mux／Selectorなどが対象です。周期はdtの整数倍で、値自体も同じである必要があります。静的な系だけならTs=モデルdtです。連続状態、異なる周期、非線形・制限付きPID／Saturation、多入力Product、代数ループは解析前に拒否します。選択外の枝と成分は除外します。
+Scope祖先の関連128成分変数・最大8状態、同じsample_timeのDelay／Discrete TransferFunction／無制限離散PID、静的TransferFunction・Gain／Sum・境界・Mux／Selectorなどが対象です。周期はdtの整数倍で、値自体も同じである必要があります。離散時計を持たない静的な系だけならTs=モデルdtです。次数0の離散伝達関数も設定周期を使います。連続状態、異なる周期、非線形・制限付きPID／Saturation、多入力Product、代数ループは解析前に拒否します。選択外の枝と成分は除外します。
 
 他の信号源の変動と初期条件はゼロです。選択信号源の振幅・位相・オフセット・Step設定は、この単位変動の応答を変えません。元モデル、時間応答、状態空間結果、編集履歴は変更しません。
 
@@ -53,3 +53,5 @@ Worker中止、古い返答・遅延ファイルの無視、他の計算との�
 [数値JSON](discrete-frequency-validation.json) に詳細を保存しています。離散PIDの後退Euler積分と後退差分フィルターの独立式、正弦波による実更新、単位円上・Nyquistの特異点、無影響の内部状態、静的・零応答、階層・ベクトル・上限・形式・GUI保存をテストしています。上記は選んだ有限周波数・時間窓の結果で、任意モデルの精度を保証しません。
 
 Nyquist安定性判別、異なる周期のlifting、連続プラントとの混在解析、Discrete TransferFunctionブロック、9状態以上・MIMO・全モデル解析、非線形の線形化、最小実現は未実装です。
+
+[Discrete TransferFunction](discrete-transfer.md) を使って離散IIR／FIRの係数と初期状態を直接指定できます。

@@ -171,6 +171,14 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
 
 連続線形モデルでは、選択した Scope 成分に関係する接続から [状態空間行列と内部安定性](docs/state-space.md) を解析できます。最大8状態の A・B・C・D、固有値と残差を表示し、設定の保存／復元、行列・極の CSV／結果 JSON に対応します。同じ周期のDelay・離散PIDでは [離散状態空間と単位円](docs/discrete-state-space.md)、[離散BodeとNyquist上限](docs/discrete-frequency.md)、[離散開ループの余裕](docs/discrete-margins.md) を選択できます。Scope に関係しない枝を含むモデル全体の安定性判定は対象外です。
 
+<p align="center">
+  <strong>22 — Coefficients in. Samples out.</strong><br>
+  <a href="docs/media/discrete-transfer.gif"><img src="docs/media/discrete-transfer.gif" width="960" alt="離散伝達関数の直接項と1サンプル遅れのStep応答を比較し、実WASMの離散Bodeと周期付きCSVを確認"></a><br>
+  <sub>離散IIR／FIRの係数・初期状態・周期を設定。サンプル時刻と保持を確認。</sub>
+</p>
+
+[離散伝達関数](docs/discrete-transfer.md) で離散フィルターの係数を直接指定できます。
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。

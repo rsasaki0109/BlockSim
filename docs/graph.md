@@ -2,6 +2,9 @@
 
 「ブロック図エディタ」タブで任意の接続を持つ小規模な制御モデルを作れます。既存の PID Lab は独立した画面として維持します。
 
+
+[Discrete TransferFunction](discrete-transfer.md) でzの降べき順の離散IIR／FIRを設定できます。周期・companion初期状態・直接項とサンプル間保持に対応し、同一周期の離散解析にも接続できます。
+
 ## 編集と実行
 
 1. ブロック種類を選び「ブロックを追加」。ドラッグまたは位置 X / Y で配置します。
@@ -102,6 +105,7 @@ Scope の結果の「実行結果ファイル」を開き、「現行の結果�
 | Saturation | 各成分を任意の上下限で制限 |
 | Integrator | 連続積分、ベクトルの初期状態 |
 | TransferFunction | 0〜8次の実係数連続伝達関数、各成分を独立に処理 |
+| Discrete TransferFunction | zの降べき順の0〜8次の離散IIR／FIR、companion初期状態、周期付き取得／保持 |
 | FirstOrder | `y'=(gain*u-y)/tau`、ベクトルの初期状態 |
 | Unit Delay | 指定周期の1サンプル遅延、初期出力 |
 | PID | 連続／離散 PID、任意制限と条件付き積分、成分ごとに独立した状態 |
@@ -172,6 +176,7 @@ WASM の `diagnose_graph(model_json)` は同じ実行前検証を行い、JSON �
 | `samples/graphs/mixed-pid.json` | 50 ms の離散 PID、連続プラント、100 ms の Delay 観測 |
 | `samples/graphs/vector.json` | 3成分の Gain / Saturation / Selector、複数系列 |
 | `samples/graphs/subsystem.json` | 正弦波入力と内部 Gain を持つ Subsystem |
+| `samples/discrete/transfer.json` | 直接IIRと1サンプル遅れるIIRを同じStepで比較 |
 
 ブラウザ以外でも実行できます。
 

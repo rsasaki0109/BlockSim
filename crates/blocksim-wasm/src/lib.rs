@@ -201,6 +201,30 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 mod tests {
     use super::*;
     #[test]
+    fn discrete_transfer_roundtrip_execution_analysis_and_invalid_period_boundary() {
+        let model = include_str!("../../../samples/discrete/transfer.json");
+        let normalized = normalize_graph_json(model, true).unwrap();
+        assert_eq!(
+            normalize_graph_json(&normalized, false).unwrap(),
+            normalized
+        );
+        let r: serde_json::Value = serde_json::from_str(&graph_json(&normalized).unwrap()).unwrap();
+        assert!((r["traces"][0]["values"][0][0].as_f64().unwrap() - 0.2).abs() < 1e-14);
+        assert_eq!(r["traces"][1]["values"][0][0], 0.0);
+        let q = r#"{"source":"source","source_component":0,"scope":"output","scope_component":0}"#;
+        let ss: serde_json::Value =
+            serde_json::from_str(&discrete_state_space_json(&normalized, q).unwrap()).unwrap();
+        assert_eq!(ss["sample_time"], 0.1);
+        assert_eq!(ss["stability"]["classification"], "stable");
+        assert!(state_space_json(&normalized, q).is_err());
+        let mut bad: serde_json::Value = serde_json::from_str(&normalized).unwrap();
+        bad["blocks"][1]["params"]["sample_time"] = serde_json::json!(0.03);
+        assert!(normalize_graph_json(&bad.to_string(), false).is_err());
+        bad["blocks"][1]["params"]["sample_time"] = serde_json::json!(0.1);
+        bad["blocks"][1]["params"]["initial"] = serde_json::json!([]);
+        assert!(normalize_graph_json(&bad.to_string(), true).is_err());
+    }
+    #[test]
     fn discrete_margin_boundary_serializes_candidates_period_and_strict_open_loop_mode() {
         let p: serde_json::Value =
             serde_json::from_str(include_str!("../../../samples/discrete/margins-plan.json"))

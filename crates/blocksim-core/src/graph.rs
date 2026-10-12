@@ -7,6 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 mod adaptive;
 pub mod frequency;
 pub mod pole_zero;
+mod sampled;
 pub mod state_space;
 mod transfer;
 
@@ -117,6 +118,12 @@ pub enum BlockKind {
         denominator: Vec<f64>,
         initial: Vec<f64>,
     },
+    DiscreteTransferFunction {
+        numerator: Vec<f64>,
+        denominator: Vec<f64>,
+        initial: Vec<f64>,
+        sample_time: f64,
+    },
     Delay {
         initial: Vec<f64>,
         sample_time: f64,
@@ -195,7 +202,7 @@ impl BlockKind {
         matches!(
             self,
             Self::Integrator { .. } | Self::FirstOrder { .. } | Self::Delay { .. }
-        ) || matches!(self, Self::TransferFunction { numerator, denominator, .. }
+        ) || matches!(self, Self::TransferFunction { numerator, denominator, .. } | Self::DiscreteTransferFunction { numerator, denominator, .. }
             if denominator.len() > 1 && (numerator.len() < denominator.len() || numerator.first() == Some(&0.0)))
     }
 }
@@ -303,6 +310,21 @@ fn validate_block(b: &Block, dt: f64, adaptive: bool) -> Result<()> {
             sample_time,
         } => {
             vector("Initial delay", initial, b.width)?;
+            period(*sample_time, dt)?;
+        }
+        BlockKind::DiscreteTransferFunction {
+            numerator,
+            denominator,
+            initial,
+            sample_time,
+        } => {
+            transfer::coefficients(numerator, denominator)
+                .map_err(|e| e.replace("TransferFunction", "DiscreteTransferFunction"))?;
+            vector(
+                "DiscreteTransferFunction initial state",
+                initial,
+                b.width * (denominator.len() - 1),
+            )?;
             period(*sample_time, dt)?;
         }
         BlockKind::Pid {
@@ -763,6 +785,7 @@ pub fn validate_graph(model: &GraphModel) -> Result<()> {
 #[derive(Clone)]
 struct Runtime {
     state: Vec<Vec<f64>>,
+    sampled_state: Vec<Vec<f64>>,
     held: Vec<Vec<f64>>,
     pending: Vec<Option<Vec<f64>>>,
     discrete: Vec<Vec<DiscretePid>>,
@@ -771,6 +794,7 @@ struct Runtime {
 fn runtime(graph: &Compiled) -> Result<Runtime> {
     let mut rt = Runtime {
         state: vec![],
+        sampled_state: vec![],
         held: vec![],
         pending: vec![],
         discrete: vec![],
@@ -789,8 +813,20 @@ fn runtime(graph: &Compiled) -> Result<Runtime> {
             _ => vec![],
         };
         rt.state.push(state);
+        rt.sampled_state.push(
+            if let BlockKind::DiscreteTransferFunction { initial, .. } = &b.params {
+                initial.clone()
+            } else {
+                vec![]
+            },
+        );
         rt.transfer.push(
             if let BlockKind::TransferFunction {
+                numerator,
+                denominator,
+                ..
+            }
+            | BlockKind::DiscreteTransferFunction {
                 numerator,
                 denominator,
                 ..
@@ -897,6 +933,25 @@ fn evaluate(
                     .collect()
             }
             BlockKind::Delay { .. } => rt.held[i].clone(),
+            BlockKind::DiscreteTransferFunction { sample_time, .. } => {
+                if tick.is_some_and(|t| t % period(*sample_time, dt).unwrap() == 0) {
+                    let coefficients = rt.transfer[i].as_ref().unwrap();
+                    rt.held[i] = (0..b.width)
+                        .map(|c| {
+                            coefficients.output(
+                                &rt.sampled_state[i],
+                                c,
+                                if coefficients.direct == 0.0 {
+                                    0.0
+                                } else {
+                                    values[inputs[0]][c]
+                                },
+                            )
+                        })
+                        .collect();
+                }
+                rt.held[i].clone()
+            }
             BlockKind::Pid {
                 config,
                 mode: PidMode::Continuous,
@@ -1085,15 +1140,7 @@ fn simulate_graph_inner(model: &GraphModel, limit: Option<usize>) -> Result<Grap
     for tick in 0..=steps {
         let time = tick as f64 * model.dt;
         // Commit delayed samples before evaluating any direct-feedthrough blocks.
-        for (i, b) in graph.flat.blocks.iter().enumerate() {
-            if let BlockKind::Delay { sample_time, .. } = b.params {
-                if tick % period(sample_time, model.dt)? == 0 {
-                    if let Some(pending) = rt.pending[i].take() {
-                        rt.held[i] = pending;
-                    }
-                }
-            }
-        }
+        sampled::commit(&graph, &mut rt, tick, model.dt)?;
         used += width;
         if limit.is_some_and(|cap| used > cap) {
             return Err("Batch exceeds remaining block-component evaluations".into());
@@ -1102,13 +1149,7 @@ fn simulate_graph_inner(model: &GraphModel, limit: Option<usize>) -> Result<Grap
         if let Some(stats) = &mut result.statistics {
             stats.output_evaluations += 1;
         }
-        for (i, b) in graph.flat.blocks.iter().enumerate() {
-            if let BlockKind::Delay { sample_time, .. } = b.params {
-                if tick % period(sample_time, model.dt)? == 0 {
-                    rt.pending[i] = Some(values[graph.incoming[i][0]].clone());
-                }
-            }
-        }
+        sampled::capture(&graph, &mut rt, &values, tick, model.dt)?;
         result.times.push(time);
         for (trace, i) in result.traces.iter_mut().zip(&graph.scopes) {
             trace.values.push(values[*i].clone());

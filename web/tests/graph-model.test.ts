@@ -8,6 +8,9 @@ import vector from '../../samples/graphs/vector.json';
 const normalize=(json:string)=>json;
 const fresh=()=>structuredClone(sample) as GraphModel;
 describe('graph editing transactions',()=>{
+  it('discrete transfer defaults preserve coefficient order, companion state and recording clock through model files',()=>{
+    const g=fresh(),b=newBlock('discrete_transfer_function',g);expect(b.params).toEqual({kind:'discrete_transfer_function',numerator:[.2,0],denominator:[1,-.8],initial:[0],sample_time:g.dt});g.blocks.push(b);expect(decodeGraphDocument(encodeGraphDocument(g),normalize)).toEqual(g);expect(inputCount(b)).toBe(1);expect(outputCount(b)).toBe(1);
+  });
   it('undo/redo restores entire graph and a new edit invalidates redo',()=>{
     const history=new GraphHistory(fresh(),normalize);const original=structuredClone(history.graph);
     history.apply(g=>g.blocks.push(newBlock('constant',g)));expect(history.graph.blocks).toHaveLength(7);
