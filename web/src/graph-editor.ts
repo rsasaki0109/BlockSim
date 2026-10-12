@@ -10,6 +10,7 @@ import { plotGraph, seriesFrom } from './graph-chart';
 import { autoLayout } from './graph-layout';
 import { searchGraph, type GraphSearchHit } from './graph-search';
 import { diagnosticLinks, ISSUE_HINTS, type GraphDiagnostic, type GraphValidation } from './graph-diagnostics';
+import { snapshotRun, compareResults, differenceCsv, type RunSnapshot, type ComparisonReport } from './graph-comparison';
 import continuous from '../../samples/graphs/continuous-pid.json';
 import mixed from '../../samples/graphs/mixed-pid.json';
 import vector from '../../samples/graphs/vector.json';
@@ -44,8 +45,15 @@ export function mountEditor(host:HTMLElement) {
       <div class="graph-topline"><div id="graph-breadcrumb"></div><span id="graph-count" class="pill"></span><span id="graph-dirty" role="status"></span></div>
       <p class="hint">ブロックはドラッグで移動。チェックで複数選択。出力ポート→入力ポートをクリックして配線。Escape で中止。線を選ぶと削除できます。右のフォームも使えます。</p>
       <div class="graph-view-tools"><button id="graph-layout">自動配置</button><button id="graph-zoom-out" aria-label="縮小">−</button><output id="graph-zoom" aria-label="表示倍率">100%</output><button id="graph-zoom-in" aria-label="拡大">＋</button><button id="graph-zoom-reset">100% 表示</button><button id="graph-fit">全体を表示</button></div><div class="graph-viewport"><div id="graph-surface"><div id="graph-board" aria-label="ブロック図キャンバス"><svg id="graph-wires" width="1800" height="1000" aria-label="接続線"></svg><div id="graph-nodes"></div></div></div></div>
-      <section class="panel graph-results"><h2>Scope の結果</h2><div id="graph-series" class="legend"></div><p class="hint">表示は最大16系列。CSV は全 Scope・全記録点を出力します。</p><div id="graph-plot"></div>
-        <label>記録点カーソル<input id="graph-cursor" type="range" min="0" max="0" value="0" disabled></label><output id="graph-values" aria-live="polite"></output><button id="graph-csv" disabled>CSV を書き出す</button>
+      <section class="panel graph-results"><h2>Scope の結果</h2>
+        <div class="graph-reference-tools"><button id="graph-reference-set" disabled>基準として保持</button><button id="graph-reference-clear" disabled>基準を解除</button><button id="graph-reference-export" disabled>基準のモデル JSON</button><label class="check"><input id="graph-reference-show" type="checkbox" checked disabled>基準を重ねる</label></div>
+        <p id="graph-reference-state" class="hint" role="status"></p>
+        <div id="graph-series" class="legend"></div><p class="hint">表示は最大16系列。実線が現行、破線が基準。CSV は現行の全 Scope・全記録点を出力します。</p><div id="graph-plot"></div>
+        <label>記録点カーソル<input id="graph-cursor" type="range" min="0" max="0" value="0" disabled></label><output id="graph-values" aria-live="polite"></output><output id="graph-reference-values" hidden></output><button id="graph-csv" disabled>CSV を書き出す</button>
+        <details id="graph-comparison" hidden><summary id="graph-comparison-summary">比較結果</summary><p class="hint">Δ = 現行 − 基準。同じ Scope ID・幅・記録時刻で比較。RMSE は記録点の平均、∫|Δ|dt は台形則です。比較は表示の選択によらず全対応成分を含みます。</p>
+          <ul id="graph-comparison-notices"></ul><div class="table-wrap"><table aria-label="基準との差分"><thead><tr><th>Scope / 成分</th><th>最大 |Δ|</th><th>RMSE</th><th>終点 Δ</th><th>∫|Δ|dt</th></tr></thead><tbody id="graph-comparison-rows"></tbody></table></div>
+          <div class="comparison-pages"><button id="graph-comparison-prev">前の系列</button><span id="graph-comparison-page"></span><button id="graph-comparison-next">次の系列</button><button id="graph-difference-csv" disabled>差分 CSV</button></div>
+        </details>
       </section>
     </section><aside>
       <section class="panel"><h2>ブロック設定</h2><div id="graph-inspector"><p class="hint">ブロックを選択してください</p></div></section>
@@ -64,6 +72,7 @@ export function mountEditor(host:HTMLElement) {
   let pendingWire:{from:string,from_port:number,path:string}|null=null, previewPoint:[number,number]|null=null, selectedEdge:number|null=null;
   let worker:Worker|null=null, request=0;
   let clipboard:GraphModel|null=null, pasteCount=0, zoom=1;
+  let resultModel:GraphModel|null=null,referenceRun:RunSnapshot|null=null,comparison:ComparisonReport|null=null,comparisonPage=0;
   let diagnosticSnapshot:string|null=null,diagnosticPage=0,runtimeError:string|null=null;
   let validation:GraphValidation={runnable:false,diagnostics:[]};
   const problemBlocks=new Map<string,number>(),problemPorts=new Set<string>();
@@ -102,6 +111,29 @@ export function mountEditor(host:HTMLElement) {
       row.append(title,message,hint,actions);list.append(row);
     }
   }
+  function renderComparison(){
+    get<HTMLButtonElement>('graph-reference-set').disabled=!result||!resultModel||!!worker;
+    get('graph-reference-set').textContent=referenceRun?'基準を置き換える':'基準として保持';
+    get<HTMLButtonElement>('graph-reference-clear').disabled=!referenceRun;get<HTMLButtonElement>('graph-reference-export').disabled=!referenceRun;
+    get<HTMLInputElement>('graph-reference-show').disabled=!referenceRun;
+    get('graph-reference-state').textContent=referenceRun?`基準: dt=${referenceRun.model.dt}s · 終了=${referenceRun.model.duration}s · ${referenceRun.result.traces.length} Scope · ${referenceRun.result.times.length} 点。${result?'設定と結果を保持しています。':'再実行して比較してください。'} このタブ内のみ保持し、再読み込みで解除します。`:'実行結果を基準として保持すると、設定変更後の波形と差分を比較できます。';
+    get('graph-comparison').hidden=!referenceRun||!result;get('graph-reference-values').hidden=!referenceRun||!result;
+    get<HTMLButtonElement>('graph-difference-csv').disabled=!comparison?.rows.length||comparison.rows.some(r=>r.status!=='ok');
+    get('graph-comparison-summary').textContent=`比較結果 · ${comparison?.rows.length||0} 対応系列`;
+    const notices=get('graph-comparison-notices');notices.replaceChildren();for(const notice of comparison?.notices||[]){const li=document.createElement('li');li.textContent=notice;notices.append(li);}
+    if(comparison&&!comparison.rows.length){const li=document.createElement('li');li.textContent='同じ Scope ID と信号幅の系列がありません。';notices.append(li);}
+    const pages=Math.max(1,Math.ceil((comparison?.rows.length||0)/50));comparisonPage=Math.max(0,Math.min(comparisonPage,pages-1));
+    get<HTMLButtonElement>('graph-comparison-prev').disabled=comparisonPage===0;get<HTMLButtonElement>('graph-comparison-next').disabled=comparisonPage===pages-1;
+    get('graph-comparison-page').textContent=comparison?.rows.length?`${comparisonPage+1} / ${pages} ページ（全${comparison.rows.length}系列）`:'';
+    const rows=get('graph-comparison-rows');rows.replaceChildren();
+    for(const row of comparison?.rows.slice(comparisonPage*50,(comparisonPage+1)*50)||[]){
+      const tr=document.createElement('tr');tr.dataset.series=row.key;const label=document.createElement('td');label.textContent=`${row.label} (${row.id}) [${row.component}]`;label.title=`基準の表示名: ${row.referenceLabel}`;tr.append(label);
+      if(row.metrics)for(const key of ['maxAbs','rms','final','area'] as const){const cell=document.createElement('td');cell.dataset.metric=key;cell.textContent=row.metrics[key].toPrecision(6);tr.append(cell);}
+      else {const cell=document.createElement('td');cell.colSpan=4;cell.textContent=row.status==='time_grid'?'記録時刻が異なります':'差分の計算が有限値の範囲外です';tr.append(cell);}
+      rows.append(tr);
+    }
+  }
+  function plotResult(){if(result)plotGraph(get('graph-plot'),result,visible,get<HTMLInputElement>('graph-reference-show').checked?referenceRun?.result:undefined);}
   let baseline=JSON.stringify(history.graph);
   const dirty=()=>JSON.stringify(history.graph)!==baseline;
   function syncDirty(){get('graph-dirty').textContent=dirty()?'未保存の変更あり':'変更なし';}
@@ -129,8 +161,8 @@ export function mountEditor(host:HTMLElement) {
     setZoom(Math.min(1,(viewport.clientWidth-50)/(right-left),(viewport.clientHeight-50)/(bottom-top)));
     viewport.scrollLeft=Math.max(0,(left+32)*zoom-25);viewport.scrollTop=Math.max(0,(top+32)*zoom-25);
   }
-  const cancel=()=>{request++;worker?.terminate();worker=null;get<HTMLButtonElement>('graph-run').disabled=false;get<HTMLButtonElement>('graph-cancel').disabled=true;};
-  const invalidate=()=>{cancel();pendingWire=null;previewPoint=null;selectedEdge=null;result=null;get('graph-plot').replaceChildren();get('graph-series').replaceChildren();get('graph-values').textContent='モデル変更後は再実行してください';get<HTMLInputElement>('graph-cursor').disabled=true;get<HTMLButtonElement>('graph-csv').disabled=true;};
+  const cancel=()=>{request++;worker?.terminate();worker=null;get<HTMLButtonElement>('graph-run').disabled=false;get<HTMLButtonElement>('graph-cancel').disabled=true;renderComparison();};
+  const invalidate=()=>{cancel();pendingWire=null;previewPoint=null;selectedEdge=null;result=null;resultModel=null;comparison=null;get('graph-plot').replaceChildren();get('graph-series').replaceChildren();get('graph-values').textContent='モデル変更後は再実行してください';get('graph-reference-values').textContent='';get<HTMLInputElement>('graph-cursor').disabled=true;get<HTMLButtonElement>('graph-csv').disabled=true;renderComparison();};
   const current=()=>graphContext(history.graph,path);
   let searchHits:GraphSearchHit[]=[];
   function renderSearch(){
@@ -295,20 +327,25 @@ export function mountEditor(host:HTMLElement) {
     const kinds=get<HTMLSelectElement>('block-kind');const previous=kinds.value;kinds.replaceChildren();
     for(const kind of Object.keys(KIND_NAMES) as Kind[])if(path.length||!['input','output'].includes(kind))kinds.add(new Option(KIND_NAMES[kind],kind));if([...kinds.options].some(o=>o.value===previous))kinds.value=previous;
     for(const id of ['edge-from','edge-to']){const select=get<HTMLSelectElement>(id),previous=select.value;select.replaceChildren();for(const b of current().blocks)select.add(new Option(`${b.label} (${b.id})`,b.id));if(current().blocks.some(b=>b.id===previous))select.value=previous;}
-    refreshDiagnostics();renderPorts();renderNodes();renderInspector();syncCopy();syncDirty();renderSearch();renderDiagnostics();
+    refreshDiagnostics();renderPorts();renderNodes();renderInspector();syncCopy();syncDirty();renderSearch();renderDiagnostics();renderComparison();
     const edges=get('graph-edges');edges.replaceChildren();current().edges.forEach((e,i)=>{
       const row=document.createElement('div');row.className='edge-row';const text=document.createElement('span');text.textContent=`${e.from}:${e.from_port} → ${e.to}:${e.to_port}`;
       const remove=button('×',()=>edit(g=>{g.edges.splice(i,1);},'接続を削除しました'));remove.setAttribute('aria-label',`接続を削除 ${e.from} ${e.to} ${e.to_port}`);row.append(text,remove);edges.append(row);
     });
     get<HTMLInputElement>('graph-dt').value=String(history.graph.dt);get<HTMLInputElement>('graph-duration').value=String(history.graph.duration);
   }
-  function cursor(){if(!result)return;const index=Number(get<HTMLInputElement>('graph-cursor').value);get('graph-values').textContent=`t=${result.times[index].toFixed(4)}s · `+seriesFrom(result).filter(s=>visible.has(s.key)).map(s=>`${s.label}=${s.values[index].toPrecision(6)}`).join(' / ');}
-  function showResult(data:GraphResult){
-    result=data;visible=new Set(seriesFrom(data).slice(0,16).map(s=>s.key));const area=get('graph-series');area.replaceChildren();
+  function cursor(){if(!result)return;const index=Number(get<HTMLInputElement>('graph-cursor').value);get('graph-values').textContent=`t=${result.times[index].toFixed(4)}s · `+seriesFrom(result).filter(s=>visible.has(s.key)).map(s=>`${s.label}=${s.values[index].toPrecision(6)}`).join(' / ');
+    if(referenceRun&&comparison){
+      const previous=new Map(referenceRun.result.traces.map(t=>[t.id,t])),current=new Map(result.traces.map(t=>[t.id,t]));
+      get('graph-reference-values').textContent=comparison.sameTimes?comparison.rows.filter(r=>visible.has(r.key)).map(r=>{const a=current.get(r.id)!.values[index][r.component],b=previous.get(r.id)!.values[index][r.component],delta=a-b;return `${r.label} (${r.id}) [${r.component}]: 基準=${b.toPrecision(6)} · Δ=${Number.isFinite(delta)?delta.toPrecision(6):'範囲外'}`;}).join(' / '):'記録時刻が異なるため、カーソルの数値差分は比較できません。';
+    }else get('graph-reference-values').textContent='';
+  }
+  function showResult(data:GraphResult,model:GraphModel){
+    result=data;resultModel=model;comparison=referenceRun?compareResults(data,referenceRun.result):null;comparisonPage=0;visible=new Set(seriesFrom(data).slice(0,16).map(s=>s.key));const area=get('graph-series');area.replaceChildren();
     for(const series of seriesFrom(data)){const label=document.createElement('label');label.className='check';label.style.color=series.color;const check=document.createElement('input');check.type='checkbox';check.checked=visible.has(series.key);check.setAttribute('aria-label',`表示 ${series.label}`);
-      check.addEventListener('change',()=>{if(check.checked&&visible.size>=16){check.checked=false;say('表示は最大16系列です',true);return;}if(check.checked)visible.add(series.key);else visible.delete(series.key);plotGraph(get('graph-plot'),data,visible);cursor();});label.append(check,document.createTextNode(series.label));area.append(label);}
+      check.addEventListener('change',()=>{if(check.checked&&visible.size>=16){check.checked=false;say('表示は最大16系列です',true);return;}if(check.checked)visible.add(series.key);else visible.delete(series.key);plotResult();cursor();});label.append(check,document.createTextNode(series.label));area.append(label);}
     const slider=get<HTMLInputElement>('graph-cursor');slider.disabled=false;slider.max=String(data.times.length-1);slider.value=String(data.times.length-1);get<HTMLButtonElement>('graph-csv').disabled=false;
-    plotGraph(get('graph-plot'),data,visible);cursor();say(`完了 · ${data.times.length} 点 · ${data.traces.length} Scope · Rust / WASM`);
+    renderComparison();plotResult();cursor();say(`完了 · ${data.times.length} 点 · ${data.traces.length} Scope · Rust / WASM`);
   }
   function run(){guard(()=>{
     refreshDiagnostics(true);renderNodes();renderDiagnostics();
@@ -316,8 +353,8 @@ export function mountEditor(host:HTMLElement) {
     const json=JSON.stringify(history.graph);cancel();const id=++request;
     get<HTMLButtonElement>('graph-run').disabled=true;get<HTMLButtonElement>('graph-cancel').disabled=false;say('モデルを計算中…');
     worker=new Worker(new URL('./graph-worker.ts',import.meta.url),{type:'module'});
-    worker.onmessage=(event:MessageEvent<{id:number,result?:GraphResult,error?:string}>)=>{if(event.data.id!==request)return;cancel();if(event.data.error){runtimeError=event.data.error;renderDiagnostics();get<HTMLDetailsElement>('graph-diagnostics').open=true;say(event.data.error,true);}else if(event.data.result)showResult(event.data.result);};
-    worker.onerror=event=>{if(id!==request)return;cancel();runtimeError=`計算ワーカーの起動に失敗: ${event.message}`;renderDiagnostics();get<HTMLDetailsElement>('graph-diagnostics').open=true;say(runtimeError,true);};worker.postMessage({id,json});
+    worker.onmessage=(event:MessageEvent<{id:number,result?:GraphResult,error?:string}>)=>{if(event.data.id!==request)return;cancel();if(event.data.error){runtimeError=event.data.error;renderDiagnostics();get<HTMLDetailsElement>('graph-diagnostics').open=true;say(event.data.error,true);}else if(event.data.result)showResult(event.data.result,JSON.parse(json) as GraphModel);};
+    worker.onerror=event=>{if(id!==request)return;cancel();runtimeError=`計算ワーカーの起動に失敗: ${event.message}`;renderDiagnostics();get<HTMLDetailsElement>('graph-diagnostics').open=true;say(runtimeError,true);};worker.postMessage({id,json});renderComparison();
   });}
   get('block-add').addEventListener('click',()=>edit(g=>{const block=newBlock(get<HTMLSelectElement>('block-kind').value as Kind,g);g.blocks.push(block);selected=new Set([block.id]);},'ブロックを追加しました'));
   get('graph-delete').addEventListener('click',()=>edit(g=>deleteBlocks(g,selected),'選択と接続を削除しました'));
@@ -374,6 +411,12 @@ if(event.key==='Escape'&&pendingWire){event.preventDefault();cancelWire();return
   get('graph-restore').addEventListener('click',()=>guard(()=>{const text=localStorage.getItem(GRAPH_STORAGE_KEY);if(text===null)throw new Error('保存済みモデルがありません');if(replace(decodeGraphDocument(text,normalize_graph))){baseline=JSON.stringify(history.graph);syncDirty();say('モデルを復元しました');}}));
   get('graph-export').addEventListener('click',()=>download(encodeGraphDocument(history.graph),'blocksim-graph.json','application/json'));
   get('graph-csv').addEventListener('click',()=>{if(result)download(resultCsv(result),'blocksim-signals.csv','text/csv');});
+  get('graph-reference-set').addEventListener('click',()=>guard(()=>{if(!result||!resultModel||worker)throw new Error('実行が完了してから基準を保持してください');referenceRun=snapshotRun(resultModel,result);comparison=compareResults(result,referenceRun.result);comparisonPage=0;get<HTMLDetailsElement>('graph-comparison').open=true;renderComparison();plotResult();cursor();}));
+  get('graph-reference-clear').addEventListener('click',()=>{referenceRun=null;comparison=null;comparisonPage=0;renderComparison();plotResult();cursor();});
+  get('graph-reference-export').addEventListener('click',()=>{if(referenceRun)download(encodeGraphDocument(referenceRun.model),'blocksim-reference-model.json','application/json');});
+  get('graph-reference-show').addEventListener('change',plotResult);
+  get('graph-comparison-prev').addEventListener('click',()=>{comparisonPage--;renderComparison();});get('graph-comparison-next').addEventListener('click',()=>{comparisonPage++;renderComparison();});
+  get('graph-difference-csv').addEventListener('click',()=>guard(()=>{if(result&&referenceRun&&comparison)download(differenceCsv(result,referenceRun.result,comparison),'blocksim-difference.csv','text/csv');}));
   get<HTMLInputElement>('graph-import').addEventListener('change',async event=>{
     const target=event.target as HTMLInputElement,file=target.files?.[0];if(!file)return;
     try{if(file.size>1_000_000)throw new Error('モデルは1 MB以下にしてください');const incoming=decodeGraphDocument(await file.text(),normalize_graph);if(get<HTMLSelectElement>('graph-import-mode').value==='merge'){edit(g=>{selected=new Set(mergeGraph(g,incoming));},'モデルを追加しました（既存の時計・終了時刻を保持）');}else if(replace(incoming))say('モデル JSON を読み込みました');}

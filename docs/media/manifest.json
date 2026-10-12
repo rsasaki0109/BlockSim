@@ -89,6 +89,14 @@
       "bytes": 199085,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "comparison.gif",
+      "frames": 98,
+      "duration_seconds": 9.8,
+      "bytes": 170049,
+      "width": 960,
+      "height": 737
     }
   ]
 }

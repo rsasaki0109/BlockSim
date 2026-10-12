@@ -80,19 +80,26 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <sub>階層をまたいで検索 → 内部へ移動 → 設定を編集。</sub>
 </p>
 
-[GIF の生成方法とサイズ](docs/media/README.md) · [ブロック図の仕様](docs/graph.md) · [数値検証](docs/validation.md)
-
 <p align="center">
   <strong>10 — Find the problem. Fix the flow.</strong><br>
   <a href="docs/media/diagnostics.gif"><img src="docs/media/diagnostics.gif" width="960" alt="未接続の Scope 入力をモデル診断で見つけ、対象ポートへ移動して接続し、実 WASM の出力6を確認・保存"></a><br>
   <sub>問題を一覧で確認 → 対象ポートへ移動 → 修正して再実行。</sub>
 </p>
 
+<p align="center">
+  <strong>11 — Keep a baseline. See the change.</strong><br>
+  <a href="docs/media/comparison.gif"><img src="docs/media/comparison.gif" width="960" alt="ゲイン3の波形を基準として保持し、ゲイン5の波形を重ね、t=0.5秒の出力3と5・差2を確認する"></a><br>
+  <sub>変更前を保持 → 波形を重ねる → 差分と CSV を確認。</sub>
+</p>
+
+[GIF の生成方法とサイズ](docs/media/README.md) · [ブロック図の仕様](docs/graph.md) · [数値検証](docs/validation.md)
+
 ## さらに使いやすく
 
 - **コピー・複製**：選択内の接続と内部設定を保持。Ctrl/Cmd+A・C・V・D、Undo／Redo に対応し、設定は元モデルから独立します。
 - **ブロック検索**：名前・ID・種類で階層内も検索。結果からブロックへ移動して設定を開けます。Ctrl/Cmd+K に対応します。
 - **モデル診断**：未接続・幅不一致・代数ループなどを一覧表示。内部ブロックや親の入力へ移動し、修正すると診断が更新されます。
+- **結果の比較**：実行結果と設定を基準として保持。変更後の波形・カーソル値・最大差・RMSE を比較し、全対応成分の差分 CSV を書き出せます。
 - **自動配置**：表示中の階層を信号の流れに沿って整理。独立したモデルを分け、閉ループ・Undo／Redo に対応します。
 - **ズームと全体表示**：2〜200% 表示。縮小・拡大中もモデル座標で移動でき、全体表示にはフィードバック線も含めます。
 - **未保存変更の保護**：モデル置き換えとページ離脱で確認し、Undo で保存時点へ戻ると確認を解除します。
