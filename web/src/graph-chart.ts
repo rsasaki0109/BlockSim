@@ -2,7 +2,8 @@ import type { GraphResult } from './graph-model';
 export interface Series { key:string; label:string; values:number[]; color:string }
 const COLORS=['#63e3bc','#ffa96b','#b3a1ff','#67c8ff','#f5d66c','#fa87ac','#e9f0f9','#78d381'];
 export function seriesFrom(result:GraphResult):Series[] {
-  return result.traces.flatMap(t=>t.values[0].map((_,i)=>({key:`${t.id}:${i}`,label:`${t.label} [${i}]`,values:t.values.map(v=>v[i]),color:''}))).map((s,i)=>({...s,color:COLORS[i%COLORS.length]}));
+  const duplicates=new Set(result.traces.filter((t,i,list)=>list.some((other,j)=>i!==j&&other.label===t.label)).map(t=>t.label));
+  return result.traces.flatMap(t=>t.values[0].map((_,i)=>({key:`${t.id}:${i}`,label:`${t.label}${duplicates.has(t.label)?` (${t.id})`:''} [${i}]`,values:t.values.map(v=>v[i]),color:''}))).map((s,i)=>({...s,color:COLORS[i%COLORS.length]}));
 }
 export function plotGraph(host:HTMLElement,result:GraphResult,selected:Set<string>) {
   const list=seriesFrom(result).filter(s=>selected.has(s.key)).slice(0,16);

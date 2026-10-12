@@ -12,17 +12,17 @@
     },
     {
       "file": "build.gif",
-      "frames": 96,
-      "duration_seconds": 9.6,
-      "bytes": 132927,
+      "frames": 113,
+      "duration_seconds": 11.3,
+      "bytes": 152907,
       "width": 960,
       "height": 737
     },
     {
       "file": "subsystems.gif",
-      "frames": 87,
-      "duration_seconds": 8.7,
-      "bytes": 264564,
+      "frames": 93,
+      "duration_seconds": 9.3,
+      "bytes": 223708,
       "width": 960,
       "height": 737
     },

@@ -12,7 +12,7 @@ Chromium、ffmpeg（palettegen / paletteuse）、インストール済みの `we
 cd /workspace/BlockSim
 ./scripts/build-wasm.sh
 node web/scripts/record-demos.mjs
-# 1本だけの更新も可能です（全体の manifest は全録画時に更新）。
+# 1本だけの更新も可能です（対象クリップの manifest 情報も更新）。
 node web/scripts/record-demos.mjs anti-windup
 ```
 

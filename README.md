@@ -27,13 +27,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <tr>
     <td width="50%" align="center">
       <strong>01 — Build your own signal flow</strong><br>
-      <a href="docs/media/build.gif"><img src="docs/media/build.gif" width="460" alt="Constant・Gain・Scope を追加して接続し、入力2×ゲイン3の出力6を計算"></a><br>
-      <sub>追加 → 接続 → 実行。小さなモデルから始める。</sub>
+      <a href="docs/media/build.gif"><img src="docs/media/build.gif" width="460" alt="Constant・Gain・Scope を追加して接続し、ポートをクリックして配線し、入力2×ゲイン3の出力6を計算"></a><br>
+      <sub>追加 → ポートをクリックして接続 → 実行。</sub>
     </td>
     <td width="50%" align="center">
       <strong>02 — Compose with subsystems</strong><br>
-      <a href="docs/media/subsystems.gif"><img src="docs/media/subsystems.gif" width="460" alt="PID とプラントをサブシステム化し、内部モデルを開き、Undo で戻す"></a><br>
-      <sub>接続を保ったまま階層化。内部モデルも編集。</sub>
+      <a href="docs/media/subsystems.gif"><img src="docs/media/subsystems.gif" width="460" alt="PID とプラントをサブシステム化し、内部モデルを開き、グループ解除で元のブロック図へ戻す"></a><br>
+      <sub>接続を保ったまま階層化・グループ解除。</sub>
     </td>
   </tr>
   <tr>
@@ -63,6 +63,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
 </table>
 
 [GIF の生成方法とサイズ](docs/media/README.md) · [ブロック図の仕様](docs/graph.md) · [数値検証](docs/validation.md)
+
+## さらに使いやすく
+
+- **ポートから配線**：出力→入力をクリック。Escape で中止し、接続済み入力や幅不一致はその場で拒否します。右の接続フォームも使えます。
+- **線を選んで削除**：矢印付きの線をクリック／Enter で選択し、削除ボタンまたは Delete で削除。フィードバック線はブロックの下を通して表示します。
+- **グループ解除**：サブシステムの境界をつなぎ直して展開。設定・ベクトル幅・分岐・フィードバックを保持し、Undo／Redo に対応します。
+- **モデルを追加読み込み**：読み込み方法を「既存モデルに追加」にすると、元のモデルを残して取り込めます。ID の衝突を回避し、既存の時計・終了時刻を保持します。
 
 ## 開発環境
 

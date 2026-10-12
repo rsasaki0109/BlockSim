@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { chromium, expect } from '@playwright/test';
 import { spawn } from 'node:child_process';
-import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
@@ -34,7 +34,7 @@ try {
     body{overflow:hidden} .capture-banner{height:94px;padding:18px 28px;border-bottom:1px solid #2a3c52;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(115deg,#102528,#111a2a 72%)}
     .capture-brand{font-size:14px;color:#63e3bc;letter-spacing:2px;font-weight:700}.capture-title{font-size:28px;font-weight:750;letter-spacing:-.8px;line-height:1.25;color:#ecf5ff}.capture-sub{font-size:12px;color:#9fb7cd;margin-top:3px}.capture-chip{border:1px solid #3b6c64;border-radius:30px;padding:8px 12px;color:#63e3bc;font-size:11px;letter-spacing:2px}
     .capture-pointer{position:fixed;z-index:9999;width:14px;height:14px;border-radius:50%;background:#63e3bc;box-shadow:0 0 0 6px #63e3bc33;pointer-events:none;left:-50px;top:-50px;transition:box-shadow .16s}
-    .graph-toolbar{padding:9px;margin-bottom:9px;min-height:43px}.graph-toolbar label,.graph-toolbar button{display:none}.graph-toolbar #graph-run,.graph-toolbar #graph-undo,.graph-toolbar #graph-redo,.graph-toolbar #graph-group{display:block}.graph-toolbar .primary{margin-top:0!important;font-size:12px;padding:8px 16px}.graph-toolbar button{padding:8px 11px;font-size:11px}
+    .graph-toolbar{padding:9px;margin-bottom:9px;min-height:43px}.graph-toolbar label,.graph-toolbar button{display:none}.graph-toolbar #graph-run,.graph-toolbar #graph-undo,.graph-toolbar #graph-redo,.graph-toolbar #graph-group,.graph-toolbar #graph-ungroup{display:block}.graph-toolbar .primary{margin-top:0!important;font-size:12px;padding:8px 16px}.graph-toolbar button{padding:8px 11px;font-size:11px}
     .graph-workspace{grid-template-columns:minmax(0,1fr);gap:16px}.graph-center{min-width:0}.graph-workspace aside{display:none}.graph-topline{height:29px}.graph-center>.hint{display:none}
     .graph-viewport{height:280px;margin:8px 0 12px;overflow:hidden}#graph-board{transform:scale(.72);transform-origin:0 0}.graph-node strong{font-size:17px}.graph-node small{font-size:14px}.graph-node{padding:12px}
     #graph-status{font-size:12px;padding-bottom:4px}.graph-results{padding:12px 18px;margin:0}.graph-results h2{font-size:14px;margin:0 0 8px}.graph-results .hint{display:none}#graph-series label{font-size:11px;margin:0}#graph-plot svg{height:190px}#graph-series{gap:6px 16px}#graph-csv{display:none}#graph-values{margin:0;padding-top:6px;font-size:11px;line-height:1.5}
@@ -67,7 +67,11 @@ try {
   async function cursor(page,fraction){await page.evaluate(f=>{const el=document.getElementById('graph-cursor');el.value=Math.round(Number(el.max)*f);el.dispatchEvent(new Event('input',{bubbles:true}));},fraction);await sleep(180);}
   async function inspect(page,id){await page.locator(`[data-block="${id}"]`).evaluate(el=>el.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true})));await sleep(450);}
   async function gain(page,value){await page.locator('#block-properties [name="p.gain"]').fill(String(value));await page.locator('#block-properties').evaluate(form=>form.requestSubmit());await sleep(450);}
-  async function connect(page,from,to){await page.evaluate(({from,to})=>{document.getElementById('edge-from').value=from;document.getElementById('edge-from').dispatchEvent(new Event('change'));document.getElementById('edge-to').value=to;document.getElementById('edge-to').dispatchEvent(new Event('change'));document.getElementById('graph-connect').requestSubmit();},{from,to});await expect(page.locator('#graph-status')).toContainText('接続を追加');await sleep(700);}
+  async function connect(page,from,to){
+    await pulse(page,`port-out-${from}-0`);await page.getByRole('button',{name:`出力 ${from}:0`,exact:true}).click();await sleep(400);
+    await pulse(page,`port-in-${to}-0`);await page.getByRole('button',{name:`入力 ${to}:0`,exact:true}).click();
+    await expect(page.locator('#graph-status')).toContainText('ポートを接続');await sleep(700);
+  }
   async function record(name,setup,actions) {
     if(selected.length&&!selected.includes(name))return;
     const context=await browser.newContext({viewport:{width:1120,height:860},deviceScaleFactor:1});const page=await context.newPage();
@@ -99,7 +103,7 @@ try {
     await click(p,'graph-group');await run(p);await sleep(700);
     await p.locator('#graph-inspector button').last().evaluate(el=>el.click());await sleep(1300);
     await p.locator('#graph-breadcrumb button').first().evaluate(el=>el.click());await sleep(800);
-    await click(p,'graph-undo');await run(p);await sleep(800);
+    await inspect(p,'subsystem-1');await click(p,'graph-ungroup');await run(p);await sleep(800);
   });
   await record('anti-windup',async p=>{await ready(p,false);await p.evaluate(()=>document.body.classList.add('capture-pid'));await title(p,'SATURATE. RECOVER.','同じモデルで比較：整定 26.85 秒 → 7.01 秒','03 / ANTI-WINDUP');},async p=>{
     await reveal(p,'#output-chart path, #control-chart path');await sleep(1000);
@@ -118,7 +122,8 @@ try {
     await gain(p,5);await run(p);await sleep(1200);await click(p,'graph-undo');await run(p);await sleep(1200);await click(p,'graph-redo');await run(p);await sleep(1200);
     await p.locator('#graph-breadcrumb button').first().evaluate(el=>el.click());await click(p,'graph-save');await sleep(1000);
   });
-  if(!selected.length)await writeFile(join(MEDIA,'manifest.json'),JSON.stringify({source:'Real BlockSim Chromium/WASM capture; presentation layout and path reveal only.',fps:10,clips:manifest},null,2)+'\n');
+  if(selected.length){const previous=JSON.parse(await readFile(join(MEDIA,'manifest.json'),'utf8'));const updated=new Map(previous.clips.map(clip=>[clip.file,clip]));for(const clip of manifest)updated.set(clip.file,clip);manifest.splice(0,manifest.length,...updated.values());}
+  await writeFile(join(MEDIA,'manifest.json'),JSON.stringify({source:'Real BlockSim Chromium/WASM capture; presentation layout and path reveal only.',fps:10,clips:manifest},null,2)+'\n');
   console.log('Posters:',TMP);
 } finally {
   await browser?.close();server.kill('SIGTERM');
