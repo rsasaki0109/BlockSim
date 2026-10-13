@@ -5,6 +5,7 @@ import { parseNumber } from './document';
 import {decodeSampleTableCsv,sampleTableCsv} from './sampled-input-csv';
 import {mountSampleTableEditor} from './sampled-input-table-ui';
 import {mountInputPreview} from './sampled-input-preview-ui';
+import {mountInputGenerator} from './sampled-input-generator-ui';
 import { copySelection, pasteSelection, connectPorts, mergeGraph, ungroupBlock, inputWidth, nodeHeight, portY, wirePath } from './graph-edit';
 import {
   GraphHistory, graphContext, newBlock, groupBlocks, deleteBlocks, inputCount, outputCount, outputWidth, setClock, setSolver,
@@ -154,6 +155,7 @@ export function mountEditor(host:HTMLElement) {
     const conversionBusy=modelBusy();
     if(conversionBusy!==sampledInputIoBusy){sampledInputIoBusy=conversionBusy;sampledInputIoEpoch++;}
     const tableFields=host.querySelector<HTMLFieldSetElement>('#graph-input-table-fields');if(tableFields)tableFields.disabled=conversionBusy;
+    const generatorFields=host.querySelector<HTMLFieldSetElement>('#graph-input-generator-fields');if(generatorFields)generatorFields.disabled=conversionBusy;
     for(const id of ['graph-input-csv-import','graph-input-csv-export']){const control=host.querySelector<HTMLInputElement|HTMLButtonElement>('#'+id);if(control)control.disabled=conversionBusy;}
     const conversionFields=host.querySelector<HTMLFieldSetElement>('#graph-discretize-fields');if(conversionFields)conversionFields.disabled=conversionBusy;
     inputPreview?.sync();sweep?.sync();frequency?.sync();poleZero?.sync();stateSpace?.sync();conversionComparison?.sync();
@@ -281,6 +283,8 @@ export function mountEditor(host:HTMLElement) {
     }
     if(b.params.kind==='sampled_input')field('p.repeat','入力系列を繰り返す',b.params.repeat??false);
     if(b.params.kind==='sampled_input'){
+      const generatorHost=document.createElement('section');form.append(generatorHost);
+      mountInputGenerator(generatorHost,{values:controls.get('p.values') as HTMLTextAreaElement,width:controls.get('width') as HTMLInputElement,busy:modelBusy});
       const tableHost=document.createElement('section');form.append(tableHost);
       const tableEditor=mountSampleTableEditor(tableHost,{values:controls.get('p.values') as HTMLTextAreaElement,width:controls.get('width') as HTMLInputElement,period:controls.get('p.sample_time') as HTMLInputElement,busy:modelBusy,onSelect:row=>inputPreview?.seekRow(row)??false});
       const section=document.createElement('section');section.id='graph-input-csv';
@@ -313,7 +317,7 @@ export function mountEditor(host:HTMLElement) {
       }catch(error){message(String(error),true);}});
       const previewHost=document.createElement('section');form.append(previewHost);
       inputPreview=mountInputPreview(previewHost,{read:()=>({values:JSON.parse(values.value),width:parseNumber(width.value,'信号幅'),sample_time:parseNumber(controls.get('p.sample_time')!.value,'サンプル周期'),repeat:(controls.get('p.repeat') as HTMLInputElement).checked,record_dt:history.graph.dt}),normalize:validate_graph,busy:modelBusy,onBusy:renderComparison,onCursor:row=>tableEditor.selectRow(row),download});
-      const previewChanged=(event:Event)=>{if(event.target instanceof Node&&!previewHost.contains(event.target)&&event.target!==tableHost.querySelector('#graph-input-table-page'))inputPreview?.invalidate();};
+      const previewChanged=(event:Event)=>{if(event.target instanceof Node&&!previewHost.contains(event.target)&&!generatorHost.contains(event.target)&&event.target!==tableHost.querySelector('#graph-input-table-page'))inputPreview?.invalidate();};
       form.addEventListener('input',previewChanged);form.addEventListener('change',previewChanged);
     }
     if(b.params.config){const cfg=b.params.config as Record<string,unknown>;for(const [key,value]of Object.entries(cfg))if(key!=='limits')field(`c.${key}`,key==='anti_windup'?'anti-windup':key,value);

@@ -2,6 +2,10 @@ import {validateSampleTable} from './sampled-input-csv';
 import type {GraphModel,GraphResult} from './graph-model';
 export interface InputPreviewRequest {values:unknown;width:number;sample_time:number;repeat:boolean;record_dt:number;cycles:number}
 export interface InputPreviewReport {format:'blocksim.input-preview';version:1;request:InputPreviewRequest;model:GraphModel;result:GraphResult}
+// The unchanged native JSON parser can round decimals during validation and
+// execution. Accept only the precision of those round trips, retaining the
+// actual acquired value; a zero input must still be exactly zero.
+function sameInputValue(actual:number,requested:number){return Number.isFinite(actual)&&(actual===requested||actual!==0&&requested!==0&&Math.abs(actual-requested)<=Math.max(2*Number.MIN_VALUE,2*Number.EPSILON*Math.max(Math.abs(actual),Math.abs(requested))));}
 export function inputPreviewModels(request:InputPreviewRequest):{request:InputPreviewRequest;guard:GraphModel;model:GraphModel} {
  const q=structuredClone(request),rows=validateSampleTable(q.values,q.width);
  if(!Number.isFinite(q.sample_time)||q.sample_time<=0||!Number.isFinite(q.record_dt)||q.record_dt<=0||typeof q.repeat!=='boolean'||!Number.isInteger(q.cycles)||q.cycles<1||q.cycles>3)throw new Error('周期・モデル刻みは正の有限値、表示周期数は1〜3の整数です');
@@ -19,7 +23,7 @@ export function inputPreviewReport(request:InputPreviewRequest,model:GraphModel,
  for(let k=0;k<count;k++){
   const t=result.times[k],expected=k*request.sample_time;
   if(!Number.isFinite(t)||Math.abs(t-expected)>1e-10*Math.max(Math.abs(expected),Number.MIN_VALUE)||k>0&&t<=result.times[k-1])throw new Error('入力プレビューの時計が違います');
-  const index=request.repeat?k%rows.length:Math.min(k,rows.length-1),v=trace.values[k];if(v.length!==request.width||v.some((x,j)=>!Number.isFinite(x)||x!==rows[index][j]))throw new Error('実記録が指定した保持入力と違います');
+  const index=request.repeat?k%rows.length:Math.min(k,rows.length-1),v=trace.values[k];if(v.length!==request.width||v.some((x,j)=>!sameInputValue(x,rows[index][j])))throw new Error('実記録が指定した保持入力と違います');
  }
  return structuredClone({format:'blocksim.input-preview',version:1,request,model,result});
 }

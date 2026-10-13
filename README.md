@@ -262,6 +262,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <a href="docs/sampled-input.md">表と波形を対応させる</a>
 </p>
 
+<p align="center">
+  <a href="docs/media/input-generator.gif"><img src="docs/media/input-generator.gif" width="960" alt="成分ごとの定数・ステップ・ランプ・正弦波を入力表へ生成し、実WASMの保持波形を確認してモデルへ適用"></a><br>
+  <b>入力を作る。波形を確かめる。</b><br>
+  4種類の波形からベクトル入力表を生成。確認してからモデルへ適用。<br>
+  <a href="docs/sampled-input.md">入力表を生成する</a>
+</p>
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。

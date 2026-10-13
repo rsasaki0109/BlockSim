@@ -14,6 +14,12 @@ it('checks actual clock and input provenance including endpoint wrap without hid
  const r=inputPreviewReport(built.request,built.model,result);expect(r.result.traces[0].values[6]).toEqual([1,-1]);result.traces[0].values[0]=[99,99];expect(r.result.traces[0].values[0]).toEqual([1,-1]);
  for(const edit of [(r:GraphResult)=>r.times.pop(),(r:GraphResult)=>{r.times[3]+=.001;},(r:GraphResult)=>{r.traces[0].values[3]=[0,0];},(r:GraphResult)=>{r.traces[0].values[3]=[NaN,0];}]){const bad=structuredClone(r.result);edit(bad);expect(()=>inputPreviewReport(built.request,built.model,bad)).toThrow();}
 });
+it('retains actual decimal round-trip values while rejecting material differences and nonzero replacements of zero',()=>{
+ const requested=-.9021130325903073,actual=-.9021130325903072,built=inputPreviewModels({...q,values:[[requested,0]],cycles:1});
+ const result:GraphResult={solver:'rk4',times:[0,.1],traces:[{id:'output',label:'Input',values:[[actual,0],[actual,0]]}]};
+ const r=inputPreviewReport(built.request,built.model,result);expect(r.request.values).toEqual([[requested,0]]);expect(r.result.traces[0].values[0]).toEqual([actual,0]);
+ for(const row of [[requested+1e-10,0],[requested,Number.MIN_VALUE],[Infinity,0],[0,requested]]){const bad=structuredClone(result);bad.traces[0].values[0]=row;expect(()=>inputPreviewReport(built.request,built.model,bad)).toThrow();}
+});
 
 it('maps cycle rows and terminal acquisition points without inventing another hold interval',()=>{
  const built=inputPreviewModels(q),result:GraphResult={solver:'rk4',times:Array.from({length:7},(_,k)=>k*.1),traces:[{id:'output',label:'Input',values:Array.from({length:7},(_,k)=>(q.values as number[][])[k%3])}]},r=inputPreviewReport(built.request,built.model,result);
