@@ -5,6 +5,23 @@ const plan:ConversionPlan={format:'blocksim.conversion-comparison',version:1,met
 const converted={request:plan.request,numerator:[0,1-Math.exp(-.2)],denominator:[1,-Math.exp(-.2)],method:'zoh'};
 const result=(value:(t:number)=>number):GraphResult=>({times:Array.from({length:21},(_,i)=>i*.02),traces:[{id:'output',label:'output',values:Array.from({length:21},(_,i)=>[value(i*.02)])}],solver:'rk45'});
 describe('conversion comparison',()=>{
+ it('rejects invalid held input and off-clock or out-of-range change conditions',()=>{
+  const input={kind:'held_step',before:1,after:0,change_sample:1};
+  expect(decodeConversionPlan(JSON.stringify({...plan,input})).input).toEqual(input);
+  for(const u of [null,{}, {...input,extra:0},{...input,kind:'step'},{...input,before:null},{...input,after:'0'},{...input,change_sample:0},{...input,change_sample:3},{...input,change_sample:1.5}])expect(()=>decodeConversionPlan(JSON.stringify({...plan,input:u}))).toThrow();
+ });
+ it('builds the same held source for both graphs at an exact conversion instant',()=>{
+  const held={...plan,input:{kind:'held_step' as const,before:2,after:-.5,change_sample:2}};
+  const [a,b]=conversionModels(held,converted);
+  expect(a.blocks[0].params).toEqual({kind:'step',before:[2],after:[-.5],step_time:.4});expect(b.blocks[0].params).toEqual(a.blocks[0].params);
+  const [rounded]=conversionModels({...held,request:{...held.request,sample_time:.1},samples:101,input:{...held.input,change_sample:3}},converted);expect(rounded.blocks[0].params.step_time).toBe(.3);expect(rounded.blocks[0].params.step_time).not.toBe(3*.1);
+ });
+ it('includes the transition sample in post-change metrics and CSV input provenance',()=>{
+  const p={...plan,input:{kind:'held_step' as const,before:2,after:-.5,change_sample:1}};
+  const r=conversionReport(p,converted,result(()=>0),result(t=>t<.2?100:1));
+  expect(r.metrics.maxAbs).toBe(100);expect(r.post_change_metrics).toEqual({maxAbs:1,rms:1,final:1,area:.2});expect(r.input).toEqual([2,-.5,-.5]);
+  const rows=conversionCsv(r).split('\r\n');expect(rows[0]).toContain('input,change_sample,before,after');expect(rows[2].split(',').slice(6)).toEqual(['-0.5','1','2','-0.5']);p.input.after=99;expect(r.plan.input?.after).toBe(-.5);
+ });
  it('rejects unbounded, ambiguous and invalid plans',()=>{
   expect(decodeConversionPlan(JSON.stringify(plan))).toEqual(plan);
   for(const patch of [{version:2},{samples:2002},{samples:1},{samples:2.1},{extra:true},{request:{...plan.request,sample_time:0}},{request:{...plan.request,numerator:[1,2,3]}},{request:{...plan.request,denominator:[0,1]}},{request:{...plan.request,prewarp_omega:1}}])expect(()=>decodeConversionPlan(JSON.stringify({...plan,...patch}))).toThrow();

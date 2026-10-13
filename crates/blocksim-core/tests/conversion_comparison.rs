@@ -82,3 +82,100 @@ fn second_order_zoh_matches_the_continuous_reference_only_at_conversion_instants
     assert_eq!(b.traces[0].values[1][0], 0.0);
     assert!(a.traces[0].values[1][0] > 0.0001);
 }
+
+#[test]
+fn held_zoh_drop_and_direct_term_match_at_rounded_and_final_conversion_instants() {
+    for (ts, before, after, change, direct) in [
+        (0.2, 1.0, 0.0, 10, false),
+        (0.1, 2.0, -0.5, 3, true),
+        (0.2, 0.0, 1.0, 100, true),
+    ] {
+        let denominator = if direct {
+            vec![1.0, 1.0]
+        } else {
+            vec![1.0, 2.0, 1.0]
+        };
+        let numerator = if direct { vec![1.0, 2.0] } else { vec![1.0] };
+        let mut m = model(ts, denominator.clone());
+        // Match the recording clock's arithmetic, rather than rounding k*Ts
+        // independently (3*0.1 and 30*0.01 differ by one representable value).
+        m.blocks[0].params = BlockKind::Step {
+            before: vec![before],
+            after: vec![after],
+            step_time: (change * 10) as f64 * m.dt,
+        };
+        m.blocks[1].params = BlockKind::TransferFunction {
+            numerator: numerator.clone(),
+            denominator: denominator.clone(),
+            initial: vec![0.0; denominator.len() - 1],
+        };
+        let a = simulate_graph_with_budget(&m, 10_000_000).unwrap();
+        let r = discretize_zoh(&ZohRequest {
+            numerator,
+            denominator,
+            sample_time: ts,
+        })
+        .unwrap();
+        m.blocks[1].params = BlockKind::DiscreteTransferFunction {
+            numerator: r.numerator,
+            initial: vec![0.0; r.denominator.len() - 1],
+            denominator: r.denominator,
+            sample_time: ts,
+        };
+        let b = simulate_graph_with_budget(&m, 10_000_000).unwrap();
+        let step = |k: usize| {
+            let t = k as f64 * ts;
+            if direct {
+                2.0 - (-t).exp()
+            } else {
+                1.0 - (1.0 + t) * (-t).exp()
+            }
+        };
+        for k in 0..=100 {
+            let exact = before * step(k)
+                + if k >= change {
+                    (after - before) * step(k - change)
+                } else {
+                    0.0
+                };
+            assert!((a.traces[0].values[k * 10][0] - exact).abs() < 2e-10);
+            assert!((b.traces[0].values[k * 10][0] - exact).abs() < 2e-13);
+        }
+        if change == 100 {
+            assert_eq!(b.traces[0].values[1000][0], 1.0);
+            assert_eq!(a.traces[0].values[1000][0], 1.0);
+        }
+    }
+}
+
+#[test]
+fn held_tustin_pulse_matches_independently_derived_second_order_difference_equation() {
+    let ts = 0.2;
+    let mut m = model(ts, vec![1.0, 2.0, 1.0]);
+    m.blocks[0].params = BlockKind::Step {
+        before: vec![1.0],
+        after: vec![0.0],
+        step_time: 100.0 * m.dt,
+    };
+    let r = discretize_tustin(&TustinRequest {
+        numerator: vec![1.0],
+        denominator: vec![1.0, 2.0, 1.0],
+        sample_time: ts,
+        prewarp_omega: None,
+    })
+    .unwrap();
+    m.blocks[1].params = BlockKind::DiscreteTransferFunction {
+        numerator: r.numerator,
+        denominator: r.denominator,
+        initial: vec![0.0; 2],
+        sample_time: ts,
+    };
+    let b = simulate_graph_with_budget(&m, 10_000_000).unwrap();
+    let (mut y1, mut y2, mut u1, mut u2) = (0.0, 0.0, 0.0, 0.0);
+    for k in 0..=100 {
+        let u = if k < 10 { 1.0 } else { 0.0 };
+        let y = 18.0 / 11.0 * y1 - 81.0 / 121.0 * y2 + (u + 2.0 * u1 + u2) / 121.0;
+        assert!((b.traces[0].values[k * 10][0] - y).abs() < 2e-13);
+        (y2, y1, u2, u1) = (y1, y, u1, u);
+    }
+}

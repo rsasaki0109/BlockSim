@@ -1,0 +1,8 @@
+{
+  "format": "blocksim.conversion-comparison",
+  "version": 1,
+  "method": "zoh",
+  "request": { "numerator": [1], "denominator": [1, 2, 1], "sample_time": 0.2 },
+  "samples": 101,
+  "input": { "kind": "held_step", "before": 1, "after": 0, "change_sample": 10 }
+}

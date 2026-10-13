@@ -209,6 +209,14 @@
       "bytes": 229370,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "held-comparison.gif",
+      "frames": 178,
+      "duration_seconds": 17.8,
+      "bytes": 257799,
+      "width": 960,
+      "height": 737
     }
   ]
 }

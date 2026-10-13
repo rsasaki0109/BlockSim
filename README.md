@@ -203,6 +203,14 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
 
 [離散化前後の比較](docs/conversion-comparison.md) で、選択した伝達関数の単位ステップ応答を変換前に確認できます。
 
+<p align="center">
+  <strong>26 — Drop the input. Compare the return.</strong><br>
+  <a href="docs/media/held-comparison.gif"><img src="docs/media/held-comparison.gif" width="960" alt="2秒で入力を1から0に下げ、ZOHとTustinの変更後の応答を実WASMで比較し、変更後の最大差とRMS差、入力条件付きCSVと設定を保存・復元"></a><br>
+  <sub>入力を途中で下げる。変更後の差を確かめて、入力条件ごと保存する。</sub>
+</p>
+
+[保持入力の比較](docs/conversion-comparison.md) では、入力の変更前・変更後・切り替えサンプルを設定できます。
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。

@@ -1,0 +1,307 @@
+{
+  "cases": [
+    {
+      "continuous_equation_max_error": 1.2935208459907699e-12,
+      "discrete_equation_max_error": 1.3322676295501878e-15,
+      "input": {
+        "after": 0.0,
+        "before": 1.0,
+        "change_sample": 10,
+        "change_time": 2.0
+      },
+      "max_abs_delta": 1.2925216452686072e-12,
+      "method": "zoh",
+      "name": "lowpass_drop",
+      "points": [
+        {
+          "continuous": 0.0,
+          "discrete": 0.0,
+          "input": 1.0,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": 0.5371631129800036,
+          "discrete": 0.5371631129795584,
+          "input": 1.0,
+          "sample": 9,
+          "time": 1.8
+        },
+        {
+          "continuous": 0.5939941502908588,
+          "discrete": 0.5939941502901629,
+          "input": 0.0,
+          "sample": 10,
+          "time": 2.0
+        },
+        {
+          "continuous": 0.627906796934443,
+          "discrete": 0.6279067969341109,
+          "input": 0.0,
+          "sample": 11,
+          "time": 2.2
+        },
+        {
+          "continuous": 2.460853890810143e-7,
+          "discrete": 2.460853890783387e-7,
+          "input": 0.0,
+          "sample": 100,
+          "time": 20.0
+        }
+      ],
+      "post_change_max_abs_delta": 1.2925216452686072e-12,
+      "post_change_rms_delta": 2.2857047828025593e-13,
+      "rms_delta": 2.796205238157612e-13,
+      "sample_time": 0.2,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 1.2935208459907699e-12,
+      "discrete_equation_max_error": 1.4988010832439613e-15,
+      "input": {
+        "after": 0.0,
+        "before": 1.0,
+        "change_sample": 10,
+        "change_time": 2.0
+      },
+      "max_abs_delta": 0.035458156290802345,
+      "method": "tustin",
+      "name": "lowpass_drop",
+      "points": [
+        {
+          "continuous": 0.0,
+          "discrete": 0.008264462809917357,
+          "input": 1.0,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": 0.5371631129800036,
+          "discrete": 0.5654767426284868,
+          "input": 1.0,
+          "sample": 9,
+          "time": 1.8
+        },
+        {
+          "continuous": 0.5939941502908588,
+          "discrete": 0.6115276869900087,
+          "input": 0.0,
+          "sample": 10,
+          "time": 2.0
+        },
+        {
+          "continuous": 0.627906796934443,
+          "discrete": 0.6304038501744982,
+          "input": 0.0,
+          "sample": 11,
+          "time": 2.2
+        },
+        {
+          "continuous": 2.460853890810143e-7,
+          "discrete": 2.1389870800510255e-7,
+          "input": 0.0,
+          "sample": 100,
+          "time": 20.0
+        }
+      ],
+      "post_change_max_abs_delta": 0.021853191444238917,
+      "post_change_rms_delta": 0.007343336766849647,
+      "rms_delta": 0.011707925891514145,
+      "sample_time": 0.2,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 1.2878587085651816e-14,
+      "discrete_equation_max_error": 8.881784197001252e-16,
+      "input": {
+        "after": -0.5,
+        "before": 2.0,
+        "change_sample": 3,
+        "change_time": 0.3
+      },
+      "max_abs_delta": 1.2434497875801753e-14,
+      "method": "zoh",
+      "name": "rounded_direct",
+      "points": [
+        {
+          "continuous": 2.0,
+          "discrete": 2.0,
+          "input": 2.0,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": 2.362538493844027,
+          "discrete": 2.362538493844036,
+          "input": 2.0,
+          "sample": 2,
+          "time": 0.2
+        },
+        {
+          "continuous": 0.01836355863655159,
+          "discrete": 0.018363558636564026,
+          "input": -0.5,
+          "sample": 3,
+          "time": 0.3
+        },
+        {
+          "continuous": -0.07854654698138863,
+          "discrete": -0.07854654698137986,
+          "input": -0.5,
+          "sample": 4,
+          "time": 0.4
+        },
+        {
+          "continuous": -0.999937591121892,
+          "discrete": -0.999937591121892,
+          "input": -0.5,
+          "sample": 100,
+          "time": 10.0
+        }
+      ],
+      "post_change_max_abs_delta": 1.2434497875801753e-14,
+      "post_change_rms_delta": 3.370828321320679e-15,
+      "rms_delta": 3.4817179485825582e-15,
+      "sample_time": 0.1,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 1.2878587085651816e-14,
+      "discrete_equation_max_error": 4.440892098500626e-16,
+      "input": {
+        "after": -0.5,
+        "before": 2.0,
+        "change_sample": 3,
+        "change_time": 0.3
+      },
+      "max_abs_delta": 0.09523809523809534,
+      "method": "tustin",
+      "name": "rounded_direct",
+      "points": [
+        {
+          "continuous": 2.0,
+          "discrete": 2.0952380952380953,
+          "input": 2.0,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": 2.362538493844027,
+          "discrete": 2.440773134650686,
+          "input": 2.0,
+          "sample": 2,
+          "time": 0.2
+        },
+        {
+          "continuous": 0.01836355863655159,
+          "discrete": -0.029776687696998594,
+          "input": -0.5,
+          "sample": 3,
+          "time": 0.3
+        },
+        {
+          "continuous": -0.07854654698138863,
+          "discrete": -0.12217890791633207,
+          "input": -0.5,
+          "sample": 4,
+          "time": 0.4
+        },
+        {
+          "continuous": -0.999937591121892,
+          "discrete": -0.9999410207278414,
+          "input": -0.5,
+          "sample": 100,
+          "time": 10.0
+        }
+      ],
+      "post_change_max_abs_delta": 0.048140246333550185,
+      "post_change_rms_delta": 0.011508900141177841,
+      "rms_delta": 0.018780246200556683,
+      "sample_time": 0.1,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 0.0,
+      "discrete_equation_max_error": 0.0,
+      "input": {
+        "after": 1.0,
+        "before": 0.0,
+        "change_sample": 100,
+        "change_time": 20.0
+      },
+      "max_abs_delta": 0.0,
+      "method": "zoh",
+      "name": "terminal_direct",
+      "points": [
+        {
+          "continuous": 0.0,
+          "discrete": 0.0,
+          "input": 0.0,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": 0.0,
+          "discrete": 0.0,
+          "input": 0.0,
+          "sample": 99,
+          "time": 19.8
+        },
+        {
+          "continuous": 1.0,
+          "discrete": 1.0,
+          "input": 1.0,
+          "sample": 100,
+          "time": 20.0
+        }
+      ],
+      "post_change_max_abs_delta": 0.0,
+      "post_change_rms_delta": 0.0,
+      "rms_delta": 0.0,
+      "sample_time": 0.2,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 0.0,
+      "discrete_equation_max_error": 0.0,
+      "input": {
+        "after": 1.0,
+        "before": 0.0,
+        "change_sample": 100,
+        "change_time": 20.0
+      },
+      "max_abs_delta": 0.09090909090909083,
+      "method": "tustin",
+      "name": "terminal_direct",
+      "points": [
+        {
+          "continuous": 0.0,
+          "discrete": 0.0,
+          "input": 0.0,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": 0.0,
+          "discrete": 0.0,
+          "input": 0.0,
+          "sample": 99,
+          "time": 19.8
+        },
+        {
+          "continuous": 1.0,
+          "discrete": 1.0909090909090908,
+          "input": 1.0,
+          "sample": 100,
+          "time": 20.0
+        }
+      ],
+      "post_change_max_abs_delta": 0.09090909090909083,
+      "post_change_rms_delta": 0.09090909090909083,
+      "rms_delta": 0.009045792638272621,
+      "sample_time": 0.2,
+      "samples": 101
+    }
+  ],
+  "scope": "isolated scalar zero-state held input, one sample-aligned change, sample instants only"
+}
