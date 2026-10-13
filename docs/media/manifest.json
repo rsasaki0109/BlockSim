@@ -297,6 +297,14 @@
       "bytes": 526977,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "input-periodic.gif",
+      "frames": 474,
+      "duration_seconds": 47.4,
+      "bytes": 735044,
+      "width": 960,
+      "height": 737
     }
   ]
 }

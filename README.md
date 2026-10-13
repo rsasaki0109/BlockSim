@@ -283,6 +283,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <a href="docs/sampled-input.md">位相付き入力を作る</a>
 </p>
 
+<p align="center">
+  <a href="docs/media/input-periodic.gif"><img src="docs/media/input-periodic.gif" width="960" alt="パルス列・矩形波・三角波を入力表へ生成し、成分別デューティ比と境界、条件保存復元、モデル適用後の実WASM値を確認"></a><br>
+  <b>切り替える。繰り返す。入力を試す。</b><br>
+  パルス列・矩形波・三角波。成分別デューティ比と実際の保持入力を確認。<br>
+  <a href="docs/sampled-input.md">周期波形の入力を作る</a>
+</p>
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。
