@@ -233,6 +233,14 @@
       "bytes": 269136,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "repeat-comparison.gif",
+      "frames": 176,
+      "duration_seconds": 17.6,
+      "bytes": 255088,
+      "width": 960,
+      "height": 737
     }
   ]
 }

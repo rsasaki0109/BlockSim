@@ -227,6 +227,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
 
 [Sampled Inputと系列比較](docs/sampled-input.md) はベクトルの保持と、任意のサンプル入力による離散化比較に対応します。
 
+<p align="center">
+  <a href="docs/media/repeat-comparison.gif"><img src="docs/media/repeat-comparison.gif" width="960" alt="3行の入力CSVを繰り返し101点のZOHとTustin応答を比較し、周期番号と行番号を保存して設定を復元"></a><br>
+  <b>短い入力を繰り返す。周期ごとの応答を比較する。</b><br>
+  ベクトル対応の周期再生、比較点数の指定、周期・行番号付きCSV、設定の保存と復元。<br>
+  <a href="docs/sampled-input.md">使い方と数値検証</a>
+</p>
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。

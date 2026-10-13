@@ -86,6 +86,8 @@ pub enum BlockKind {
     SampledInput {
         values: Vec<Vec<f64>>,
         sample_time: f64,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        repeat: bool,
     },
     Step {
         before: Vec<f64>,
@@ -261,6 +263,7 @@ fn validate_block(b: &Block, dt: f64, adaptive: bool) -> Result<()> {
         BlockKind::SampledInput {
             values,
             sample_time,
+            ..
         } => {
             if !(1..=2001).contains(&values.len()) {
                 return Err("SampledInput values must contain 1..2001 rows".into());
@@ -915,11 +918,17 @@ fn evaluate(
             BlockKind::SampledInput {
                 values,
                 sample_time,
+                repeat,
             } => {
                 if let Some(t) = tick {
                     let p = period(*sample_time, dt)?;
                     if t.is_multiple_of(p) {
-                        rt.held[i] = values[(t / p).min(values.len() - 1)].clone();
+                        let index = if *repeat {
+                            (t / p) % values.len()
+                        } else {
+                            (t / p).min(values.len() - 1)
+                        };
+                        rt.held[i] = values[index].clone();
                     }
                 }
                 rt.held[i].clone()

@@ -188,6 +188,8 @@ cargo run --locked -p blocksim-core --example graph -- samples/graphs/mixed-pid.
 cargo run --locked -p blocksim-core --example graph -- samples/graphs/vector.json /tmp/blocksim-vector-result.json
 ```
 
+Sampled Inputの`repeat: true`は入力表を周期再生します。GUIで切り替え、通常のモデルJSONへ保存できます。省略／falseは最終行を保持する従来動作です。入力時計だけを反復し、連続状態を維持します。詳細は[系列入力仕様](sampled-input.md#繰り返し再生の検証)を参照してください。
+
 ## 現在の範囲
 
 固定／可変刻みの常微分方程式と同期した離散処理、連続 LTI と同一周期の離散線形部分の周波数応答を扱います。剛性ソルバ、DAE、ゼロクロッシング一般処理、任意の非整数周期、代数ループ解法、物理領域ライブラリ、Simulink ファイル互換、コード生成、共同編集は未実装です。配線のドラッグ接続、OS クリップボード経由のモデル共有は今後の改善対象です。現在の直接配線はポートを順にクリックする方式です。
@@ -198,4 +200,4 @@ cargo run --locked -p blocksim-core --example graph -- samples/graphs/vector.jso
 
 [保持正弦波比較](sine-comparison.md)では周波数・振幅・位相・オフセットを設定できます。実際の入力を両モデルでScope記録し、全記録点の一致とサンプル間の保持を確認して、入力系列・実行条件をCSV／結果JSONへ保存します。周波数は0〜Nyquist Hzです。
 
-[Sampled Input](sampled-input.md) は1〜2001行・幅1〜64の表を周期ごとに保持し、最終行を継続します。整数時計で読み取り、RK45の棄却中は進みません。離散化比較では2〜2001点の任意スカラー系列をJSON／1列CSVから読み込み、実入力・サンプル番号付きCSVと設定／結果JSONを保存できます。
+[Sampled Input](sampled-input.md) は1〜2001行・幅1〜64の表を周期ごとに保持し、既定で最終行を継続します。`repeat: true`で最初の行へ戻ります。整数時計で読み取り、RK45の棄却中は進みません。離散化比較では2〜2001点の任意スカラー系列をJSON／1列CSVから読み込み、実入力・サンプル番号付きCSVと設定／結果JSONを保存できます。

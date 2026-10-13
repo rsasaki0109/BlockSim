@@ -36,6 +36,7 @@ fn adaptive_rejection_does_not_advance_table_and_direct_term_changes_on_clock() 
     let rows = [0.0, 1.0, -0.5, 0.25];
     m.blocks[0].params = BlockKind::SampledInput {
         values: rows.iter().map(|v| vec![*v]).collect(),
+        repeat: false,
         sample_time: 0.1,
     };
     m.blocks[1].params = BlockKind::TransferFunction {
@@ -77,6 +78,7 @@ fn table_rejects_empty_ragged_nonfinite_oversized_and_noninteger_clock() {
         let mut m = original.clone();
         m.blocks[0].params = BlockKind::SampledInput {
             values,
+            repeat: false,
             sample_time: ts,
         };
         assert!(validate_graph(&m).is_err());
@@ -89,6 +91,7 @@ fn aggregate_input_storage_is_bounded_before_simulation() {
     m.blocks[1].width = 64;
     m.blocks[0].params = BlockKind::SampledInput {
         values: vec![vec![0.0; 64]; 2001],
+        repeat: false,
         sample_time: 0.1,
     };
     for k in 1..=16 {
@@ -175,5 +178,97 @@ fn arbitrary_table_zoh_and_tustin_match_independent_cascade_and_iir_equations() 
             x1 = r * x1 + (1.0 - r) * u;
             (y2, y1, u2, u1) = (y1, y, u1, u);
         }
+    }
+}
+
+#[test]
+fn repeat_vector_wraps_on_integer_clock_and_one_row_stays_constant() {
+    let mut m = vector_model();
+    if let BlockKind::SampledInput { repeat, .. } = &mut m.blocks[0].params {
+        *repeat = true;
+    }
+    for solver in [
+        None,
+        Some(SolverConfig::Rk45 {
+            abs_tolerance: 1e-11,
+            rel_tolerance: 1e-11,
+            min_step: 1e-13,
+            max_step: 0.8,
+        }),
+    ] {
+        m.solver = solver;
+        let r = simulate_graph(&m).unwrap();
+        let rows = [vec![1.0, -1.0], vec![0.5, 2.0], vec![0.0, -0.5]];
+        for (i, v) in r.traces[0].values.iter().enumerate() {
+            assert_eq!(*v, rows[(i / 10) % 3]);
+        }
+        assert_eq!(r.traces[0].values[30], rows[0]);
+    }
+    m.blocks[0].params = BlockKind::SampledInput {
+        values: vec![vec![0.75, -0.25]],
+        repeat: true,
+        sample_time: 0.1,
+    };
+    let r = simulate_graph(&m).unwrap();
+    assert!(r.traces[0].values.iter().all(|v| *v == vec![0.75, -0.25]));
+}
+#[test]
+fn absent_or_false_repeat_preserves_legacy_model_and_rejects_nonboolean() {
+    let m = vector_model();
+    let old = serde_json::to_value(&m).unwrap();
+    assert!(old["blocks"][0]["params"].get("repeat").is_none());
+    let mut json = old.clone();
+    json["blocks"][0]["params"]["repeat"] = false.into();
+    let decoded: GraphModel = serde_json::from_value(json.clone()).unwrap();
+    assert_eq!(serde_json::to_value(decoded.clone()).unwrap(), old);
+    assert_eq!(
+        serde_json::to_value(simulate_graph(&decoded).unwrap()).unwrap(),
+        serde_json::to_value(simulate_graph(&m).unwrap()).unwrap()
+    );
+    for invalid in [
+        serde_json::json!("true"),
+        serde_json::json!(1),
+        serde_json::Value::Null,
+    ] {
+        json["blocks"][0]["params"]["repeat"] = invalid;
+        assert!(serde_json::from_value::<GraphModel>(json.clone()).is_err());
+    }
+}
+#[test]
+fn repeating_table_does_not_reset_continuous_state_or_advance_on_rejection() {
+    let mut m: GraphModel =
+        serde_json::from_str(include_str!("../../../samples/discrete/sequence.json")).unwrap();
+    m.dt = 0.01;
+    m.duration = 1.0;
+    m.solver = Some(SolverConfig::Rk45 {
+        abs_tolerance: 1e-12,
+        rel_tolerance: 1e-12,
+        min_step: 1e-13,
+        max_step: 0.8,
+    });
+    let rows = [0.0, 1.0, -0.5];
+    m.blocks[0].params = BlockKind::SampledInput {
+        values: rows.iter().map(|v| vec![*v]).collect(),
+        repeat: true,
+        sample_time: 0.1,
+    };
+    m.blocks[1].params = BlockKind::TransferFunction {
+        numerator: vec![0.01, 2.0],
+        denominator: vec![0.01, 1.0],
+        initial: vec![0.0],
+    };
+    let r = simulate_graph(&m).unwrap();
+    assert!(r.statistics.as_ref().unwrap().rejected_steps > 0);
+    let input = r.traces.iter().find(|t| t.id == "input_record").unwrap();
+    for i in 0..r.times.len() {
+        let index = i / 10;
+        let u = rows[index % 3];
+        assert_eq!(input.values[i][0], u);
+        let mut state = 0.0;
+        for k in 1..=index {
+            state += (rows[k % 3] - rows[(k - 1) % 3])
+                * (1.0 - (-(r.times[i] - (k * 10) as f64 * m.dt) / 0.01).exp());
+        }
+        assert!((r.traces[0].values[i][0] - u - state).abs() < 2e-9, "i={i}");
     }
 }

@@ -17,6 +17,21 @@ describe('conversion comparison',()=>{
   const p:ConversionPlan={...plan,input:{kind:'sample_sequence',values:[0,1,2]}},a=result(()=>0);a.traces.push({id:'input_record',label:'actual',values:a.times.map((_,i)=>[Math.floor(i/10)])});const b=structuredClone(a),r=conversionReport(p,converted,a,b);expect(r.input).toEqual([0,1,2]);expect(conversionCsv(r).split('\r\n')[2].split(',').slice(6)).toEqual(['1','1']);expect(conversionInputLabel(r)).toContain('3サンプル');
   expect(()=>conversionReport({...p,input:{kind:'sample_sequence',values:[0,9,2]}},converted,a,b)).toThrow(/指定した系列/);
  });
+ it('bounds repeat tables independently of the sample count and preserves legacy parameters',()=>{
+  const p:ConversionPlan={...plan,input:{kind:'sample_sequence',values:[1],repeat:true}};
+  expect(decodeConversionPlan(JSON.stringify(p))).toEqual(p);
+  expect(conversionModels(p,converted)[0].blocks[0].params).toEqual({kind:'sampled_input',values:[[1]],sample_time:.2,repeat:true});
+  for(const input of [{kind:'sample_sequence',values:[],repeat:true},{kind:'sample_sequence',values:[1],repeat:false},{kind:'sample_sequence',values:[1],repeat:'true'},{kind:'sample_sequence',values:Array(2002).fill(0),repeat:true}])expect(()=>decodeConversionPlan(JSON.stringify({...plan,input}))).toThrow();
+  expect(conversionModels({...plan,input:{kind:'sample_sequence',values:[0,1,0],repeat:false}},converted)[0].blocks[0].params).not.toHaveProperty('repeat');
+ });
+ it('checks cyclic input provenance and exports zero-based cycle and row indexes',()=>{
+  const p:ConversionPlan={...plan,input:{kind:'sample_sequence',values:[0,1],repeat:true}},a=result(()=>0);
+  a.traces.push({id:'input_record',label:'actual',values:a.times.map((_,i)=>[Math.floor(i/10)%2])});
+  const r=conversionReport(p,converted,a,structuredClone(a));expect(r.input).toEqual([0,1,0]);
+  expect(conversionCsv(r).split('\r\n')[0]).toContain('input,sample_index,cycle_index,row_index');
+  expect(conversionCsv(r).split('\r\n')[3].split(',').slice(6)).toEqual(['0','2','1','0']);expect(conversionInputLabel(r)).toContain('繰り返す');
+  expect(()=>conversionReport({...p,input:{kind:'sample_sequence',values:[0,9],repeat:true}},converted,a,a)).toThrow(/指定した系列/);
+ });
  it('bounds sampled-sine fields, Nyquist and ambiguous input formats',()=>{
   const input={kind:'sampled_sine',frequency_hz:2.5,amplitude:-1,phase_rad:.4,offset:.25};
   expect(decodeConversionPlan(JSON.stringify({...plan,input})).input).toEqual(input);

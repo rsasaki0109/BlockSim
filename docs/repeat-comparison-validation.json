@@ -1,0 +1,293 @@
+{
+  "cases": [
+    {
+      "continuous_equation_max_error": 3.6066635789033796e-13,
+      "cycle_rows": 3,
+      "direct": false,
+      "discrete_equation_max_error": 7.771561172376096e-16,
+      "held_between_samples": true,
+      "inputs_identical": true,
+      "max_abs_delta": 3.607912579806083e-13,
+      "method": "zoh",
+      "points": [
+        {
+          "continuous": 0.0,
+          "discrete": 0.0,
+          "input": 0.0,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": 0.0,
+          "discrete": 0.0,
+          "input": 1.0,
+          "sample": 1,
+          "time": 0.2
+        },
+        {
+          "continuous": 0.056654855296429725,
+          "discrete": 0.05665485529613889,
+          "input": -0.5,
+          "sample": 5,
+          "time": 1.0
+        },
+        {
+          "continuous": 0.1543740548018067,
+          "discrete": 0.1543740548016871,
+          "input": -0.5,
+          "sample": 20,
+          "time": 4.0
+        },
+        {
+          "continuous": 0.1692913931288116,
+          "discrete": 0.16929139312907981,
+          "input": 0.0,
+          "sample": 30,
+          "time": 6.0
+        },
+        {
+          "continuous": 0.16145342844303204,
+          "discrete": 0.1614534284433239,
+          "input": 1.0,
+          "sample": 55,
+          "time": 11.0
+        },
+        {
+          "continuous": 0.16147818714037931,
+          "discrete": 0.1614781871406712,
+          "input": 1.0,
+          "sample": 70,
+          "time": 14.0
+        },
+        {
+          "continuous": 0.16147981493392277,
+          "discrete": 0.1614798149342132,
+          "input": 1.0,
+          "sample": 100,
+          "time": 20.0
+        }
+      ],
+      "repeat": true,
+      "rms_delta": 2.3400359936940203e-13,
+      "sample_time": 0.2,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 3.6066635789033796e-13,
+      "cycle_rows": 3,
+      "direct": false,
+      "discrete_equation_max_error": 5.551115123125783e-16,
+      "held_between_samples": true,
+      "inputs_identical": true,
+      "max_abs_delta": 0.008799110555925041,
+      "method": "tustin",
+      "points": [
+        {
+          "continuous": 0.0,
+          "discrete": 0.0,
+          "input": 0.0,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": 0.0,
+          "discrete": 0.008264462809917357,
+          "input": 1.0,
+          "sample": 1,
+          "time": 0.2
+        },
+        {
+          "continuous": 0.056654855296429725,
+          "discrete": 0.06483519336901188,
+          "input": -0.5,
+          "sample": 5,
+          "time": 1.0
+        },
+        {
+          "continuous": 0.1543740548018067,
+          "discrete": 0.15758135314183103,
+          "input": -0.5,
+          "sample": 20,
+          "time": 4.0
+        },
+        {
+          "continuous": 0.1692913931288116,
+          "discrete": 0.16476811361710933,
+          "input": 0.0,
+          "sample": 30,
+          "time": 6.0
+        },
+        {
+          "continuous": 0.16145342844303204,
+          "discrete": 0.16400340385492249,
+          "input": 1.0,
+          "sample": 55,
+          "time": 11.0
+        },
+        {
+          "continuous": 0.16147818714037931,
+          "discrete": 0.1640254501006422,
+          "input": 1.0,
+          "sample": 70,
+          "time": 14.0
+        },
+        {
+          "continuous": 0.16147981493392277,
+          "discrete": 0.1640268822710763,
+          "input": 1.0,
+          "sample": 100,
+          "time": 20.0
+        }
+      ],
+      "repeat": true,
+      "rms_delta": 0.003852366723927071,
+      "sample_time": 0.2,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 2.9976021664879227e-15,
+      "cycle_rows": 3,
+      "direct": true,
+      "discrete_equation_max_error": 1.6653345369377348e-16,
+      "held_between_samples": true,
+      "inputs_identical": true,
+      "max_abs_delta": 2.831068712794149e-15,
+      "method": "zoh",
+      "points": [
+        {
+          "continuous": 0.75,
+          "discrete": 0.75,
+          "input": 0.75,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": -0.4286280635269716,
+          "discrete": -0.4286280635269697,
+          "input": -0.5,
+          "sample": 1,
+          "time": 0.1
+        },
+        {
+          "continuous": 0.2990697932547433,
+          "discrete": 0.29906979325474414,
+          "input": 0.25,
+          "sample": 5,
+          "time": 0.5
+        },
+        {
+          "continuous": 0.37028440478068225,
+          "discrete": 0.3702844047806825,
+          "input": 0.25,
+          "sample": 20,
+          "time": 2.0
+        },
+        {
+          "continuous": 0.8936114362988647,
+          "discrete": 0.8936114362988645,
+          "input": 0.75,
+          "sample": 30,
+          "time": 3.0
+        },
+        {
+          "continuous": -0.2924921619845604,
+          "discrete": -0.29249216198455963,
+          "input": -0.5,
+          "sample": 55,
+          "time": 5.5
+        },
+        {
+          "continuous": -0.2920123217065383,
+          "discrete": -0.2920123217065374,
+          "input": -0.5,
+          "sample": 70,
+          "time": 7.0
+        },
+        {
+          "continuous": -0.2918813650277302,
+          "discrete": -0.2918813650277291,
+          "input": -0.5,
+          "sample": 100,
+          "time": 10.0
+        }
+      ],
+      "repeat": true,
+      "rms_delta": 1.1291201136580112e-15,
+      "sample_time": 0.1,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 2.9976021664879227e-15,
+      "cycle_rows": 3,
+      "direct": true,
+      "discrete_equation_max_error": 2.220446049250313e-16,
+      "held_between_samples": true,
+      "inputs_identical": true,
+      "max_abs_delta": 0.03571428571428581,
+      "method": "tustin",
+      "points": [
+        {
+          "continuous": 0.75,
+          "discrete": 0.7857142857142858,
+          "input": 0.75,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": -0.4286280635269716,
+          "discrete": -0.4557823129251701,
+          "input": -0.5,
+          "sample": 1,
+          "time": 0.1
+        },
+        {
+          "continuous": 0.2990697932547433,
+          "discrete": 0.30865993694643135,
+          "input": 0.25,
+          "sample": 5,
+          "time": 0.5
+        },
+        {
+          "continuous": 0.37028440478068225,
+          "discrete": 0.3764740591845241,
+          "input": 0.25,
+          "sample": 20,
+          "time": 2.0
+        },
+        {
+          "continuous": 0.8936114362988647,
+          "discrete": 0.9224941466401386,
+          "input": 0.75,
+          "sample": 30,
+          "time": 3.0
+        },
+        {
+          "continuous": -0.2924921619845604,
+          "discrete": -0.3261475373909616,
+          "input": -0.5,
+          "sample": 55,
+          "time": 5.5
+        },
+        {
+          "continuous": -0.2920123217065383,
+          "discrete": -0.32569251218415707,
+          "input": -0.5,
+          "sample": 70,
+          "time": 7.0
+        },
+        {
+          "continuous": -0.2918813650277302,
+          "discrete": -0.3255685116393885,
+          "input": -0.5,
+          "sample": 100,
+          "time": 10.0
+        }
+      ],
+      "repeat": true,
+      "rms_delta": 0.025854827678945945,
+      "sample_time": 0.1,
+      "samples": 101
+    }
+  ],
+  "scope": "isolated scalar zero-state repeating held table; states continue across cycles; sample instants only"
+}

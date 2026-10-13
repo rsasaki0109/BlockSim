@@ -20,6 +20,7 @@ import { mountFrequency } from './frequency-ui';
 import { mountPoleZero } from './pole-zero-ui';
 import { mountStateSpace } from './state-space-ui';
 import inputSequence from '../../samples/discrete/sequence.json';
+import repeatInput from '../../samples/discrete/repeat.json';
 import heldSine from '../../samples/discrete/held-sine.json';
 import zohSample from '../../samples/discrete/zoh.json';
 import tustinSample from '../../samples/discrete/tustin.json';
@@ -39,7 +40,7 @@ import mixed from '../../samples/graphs/mixed-pid.json';
 import vector from '../../samples/graphs/vector.json';
 import subsystem from '../../samples/graphs/subsystem.json';
 
-const SAMPLES: Record<string,GraphModel>={continuous:continuous as GraphModel,mixed:mixed as GraphModel,vector:vector as GraphModel,subsystem:subsystem as GraphModel,firstOrder:firstOrder as GraphModel,oscillator:oscillator as GraphModel,offGridStep:offGridStep as GraphModel,adaptiveMixed:adaptiveMixed as GraphModel,lowpass:lowpass as GraphModel,linearFeedback:linearFeedback as GraphModel,openLoop:openLoop as GraphModel,connectedFeedback:connectedFeedback as GraphModel,discreteFeedback:discreteFeedback as GraphModel,discreteOpenLoop:discreteOpenLoop as GraphModel,discreteTransfer:discreteTransfer as GraphModel,tustin:tustinSample as GraphModel,zoh:zohSample as GraphModel,heldSine:heldSine as GraphModel,inputSequence:inputSequence as GraphModel};
+const SAMPLES: Record<string,GraphModel>={continuous:continuous as GraphModel,mixed:mixed as GraphModel,vector:vector as GraphModel,subsystem:subsystem as GraphModel,firstOrder:firstOrder as GraphModel,oscillator:oscillator as GraphModel,offGridStep:offGridStep as GraphModel,adaptiveMixed:adaptiveMixed as GraphModel,lowpass:lowpass as GraphModel,linearFeedback:linearFeedback as GraphModel,openLoop:openLoop as GraphModel,connectedFeedback:connectedFeedback as GraphModel,discreteFeedback:discreteFeedback as GraphModel,discreteOpenLoop:discreteOpenLoop as GraphModel,discreteTransfer:discreteTransfer as GraphModel,tustin:tustinSample as GraphModel,zoh:zohSample as GraphModel,heldSine:heldSine as GraphModel,inputSequence:inputSequence as GraphModel,repeatInput:repeatInput as GraphModel};
 function download(text:string,name:string,type:string){const url=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);}
 function button(text:string,action:()=>void){const b=document.createElement('button');b.type='button';b.textContent=text;b.addEventListener('click',action);return b;}
 export function mountEditor(host:HTMLElement) {
@@ -84,7 +85,7 @@ export function mountEditor(host:HTMLElement) {
       <section class="panel"><h2>ブロック設定</h2><div id="graph-inspector"><p class="hint">ブロックを選択してください</p></div></section>
       <section class="panel"><h2>接続</h2><form id="graph-connect"><label>接続元<select id="edge-from"></select></label><label>出力ポート<select id="edge-from-port"></select></label><label>接続先<select id="edge-to"></select></label><label>入力ポート<select id="edge-to-port"></select></label><button>接続する</button></form><div id="graph-edges"></div></section>
       <section class="panel"><h2>シミュレーション設定</h2><form id="graph-clock"><label>計算方式<select id="graph-solver"><option value="rk4">固定刻み RK4</option><option value="rk45">可変刻み RK45</option></select></label><label>グラフ刻み幅 (s)<input id="graph-dt" type="number" step="any" required></label><label>グラフ終了時刻 (s)<input id="graph-duration" type="number" step="any" required></label><fieldset id="graph-rk45-settings" hidden disabled><legend>RK45 の精度と内部刻み</legend><label>絶対許容誤差<input id="graph-atol" type="number" step="any" required></label><label>相対許容誤差<input id="graph-rtol" type="number" step="any" required></label><label>最小内部刻み (s)<input id="graph-min-step" type="number" step="any" required></label><label>最大内部刻み (s)<input id="graph-max-step" type="number" step="any" required></label></fieldset><button>時間設定を適用</button></form><p class="hint">RK45 ではグラフ刻み幅は記録時計です。離散の周期はこの整数倍。計算方式はモデル全体で共有し、Step と離散更新で積分区間を分けます。</p></section>
-      <section class="panel"><h2>モデルとサンプル</h2><label>モデルサンプル<select id="graph-sample"><option value="continuous">連続 PID の復帰</option><option value="mixed">離散 PID + 連続プラント</option><option value="vector">ベクトル + Saturation</option><option value="subsystem">Sine + Subsystem</option><option value="firstOrder">RK45: 一次遅れ解析解</option><option value="oscillator">RK45: 結合振動子</option><option value="offGridStep">RK45: 時計の間の Step</option><option value="adaptiveMixed">RK45: 連続／離散 PID</option><option value="lowpass">伝達関数：2次ローパス</option><option value="linearFeedback">線形 PI 閉ループ</option><option value="openLoop">開ループのゲイン／位相余裕</option><option value="connectedFeedback">接続済み負帰還の状態空間</option><option value="discreteFeedback">離散負帰還・単位円の極</option><option value="inputSequence">任意の保持入力系列</option><option value="heldSine">保持正弦波の離散化比較</option><option value="zoh">保持入力：ZOH離散化</option><option value="tustin">連続 → 離散：Tustin変換</option><option value="discreteTransfer">離散伝達関数：直接項と1サンプル遅れ</option><option value="discreteOpenLoop">離散開ループ・ゲイン／位相余裕</option></select></label>
+      <section class="panel"><h2>モデルとサンプル</h2><label>モデルサンプル<select id="graph-sample"><option value="continuous">連続 PID の復帰</option><option value="mixed">離散 PID + 連続プラント</option><option value="vector">ベクトル + Saturation</option><option value="subsystem">Sine + Subsystem</option><option value="firstOrder">RK45: 一次遅れ解析解</option><option value="oscillator">RK45: 結合振動子</option><option value="offGridStep">RK45: 時計の間の Step</option><option value="adaptiveMixed">RK45: 連続／離散 PID</option><option value="lowpass">伝達関数：2次ローパス</option><option value="linearFeedback">線形 PI 閉ループ</option><option value="openLoop">開ループのゲイン／位相余裕</option><option value="connectedFeedback">接続済み負帰還の状態空間</option><option value="discreteFeedback">離散負帰還・単位円の極</option><option value="repeatInput">繰り返す保持入力系列</option><option value="inputSequence">任意の保持入力系列</option><option value="heldSine">保持正弦波の離散化比較</option><option value="zoh">保持入力：ZOH離散化</option><option value="tustin">連続 → 離散：Tustin変換</option><option value="discreteTransfer">離散伝達関数：直接項と1サンプル遅れ</option><option value="discreteOpenLoop">離散開ループ・ゲイン／位相余裕</option></select></label>
         <label>読み込み方法<select id="graph-import-mode"><option value="replace">モデルを置き換える</option><option value="merge">既存モデルに追加</option></select></label><div class="buttons"><button id="graph-load-sample">サンプルを読み込む</button><button id="graph-empty">新しいモデル</button><button id="graph-save">モデルを保存</button><button id="graph-restore">モデルを復元</button><button id="graph-export">モデル JSON</button><label class="file-button">モデルを読み込む<input id="graph-import" type="file" accept=".json,application/json"></label></div><p class="hint">未接続の作成途中モデルも保存できます。コピーはこのタブ内の専用クリップボードを使い、外部の接続と境界 Input / Output は含めません。追加読み込みでは既存の時計・終了時刻を保持し、同じ刻み幅のモデルを取り込めます。既存の PID Lab 設定は別に保持します。</p>
       </section>
     </aside></div><footer>成熟度比較：目標は Simulink 比30%。評価は主観的な開発評価で、機能網羅率や客観的なベンチマークではありません。</footer>`;
@@ -264,9 +265,10 @@ export function mountEditor(host:HTMLElement) {
     field('label','表示名',b.label,'text');field('width','信号幅',b.width);field('x','位置 X',b.position[0]);field('y','位置 Y',b.position[1]);
     const labels:Record<string,string>={numerator:'分子係数 (降べき順 JSON)',denominator:'分母係数 (降べき順 JSON)',value:'値 (JSON 配列)',values:'入力系列（行=サンプル、列=成分 / JSON）',before:'変更前 (JSON 配列)',after:'変更後 (JSON 配列)',step_time:'変更時刻 (s)',gain:'ゲイン',tau:'時定数 (s)',initial:'初期値 (JSON 配列)',signs:'入力係数 (JSON 配列)',inputs:'入力数',indices:'抽出インデックス (JSON 配列)',sample_time:'サンプル周期 (s)',frequency:'周波数 (Hz)',phase:'位相 (rad)',amplitude:'振幅',offset:'オフセット',port:'境界ポート番号',mode:'PID 更新方式'};
     for(const [key,value]of Object.entries(b.params)) {
-      if(['kind','model','config','limits'].includes(key))continue;
+      if(['kind','model','config','limits','repeat'].includes(key))continue;
       field(`p.${key}`,labels[key]||key,value,key==='mode'?'mode':undefined);
     }
+    if(b.params.kind==='sampled_input')field('p.repeat','入力系列を繰り返す',b.params.repeat??false);
     if(b.params.config){const cfg=b.params.config as Record<string,unknown>;for(const [key,value]of Object.entries(cfg))if(key!=='limits')field(`c.${key}`,key==='anti_windup'?'anti-windup':key,value);
       const limits=cfg.limits as Record<string,unknown>;field('c.lower','PID 出力下限',limits.lower);field('c.upper','PID 出力上限',limits.upper);}
     if(b.params.limits){const limits=b.params.limits as Record<string,unknown>;field('p.lower','出力下限',limits.lower);field('p.upper','出力上限',limits.upper);}
@@ -284,7 +286,8 @@ export function mountEditor(host:HTMLElement) {
         return parseNumber(c.value,name);
       };
       target.label=String(read('label'));target.width=Number(read('width'));target.position=[Number(read('x')),Number(read('y'))];
-      for(const [key]of Object.entries(target.params))if(!['kind','model','config','limits'].includes(key))target.params[key]=read(`p.${key}`);
+      for(const [key]of Object.entries(target.params))if(!['kind','model','config','limits','repeat'].includes(key))target.params[key]=read(`p.${key}`);
+      if(target.params.kind==='sampled_input')target.params.repeat=read('p.repeat');
       if(target.params.config){const cfg=target.params.config as Record<string,unknown>;for(const key of Object.keys(cfg))if(key!=='limits')cfg[key]=read(`c.${key}`);cfg.limits={lower:read('c.lower'),upper:read('c.upper')};}
       if(target.params.limits)target.params.limits={lower:read('p.lower'),upper:read('p.upper')};
     },'ブロック設定を適用しました');});

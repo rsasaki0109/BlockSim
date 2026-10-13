@@ -31,6 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }]
                         })
                         .collect(),
+                    repeat: false,
                     sample_time: ts,
                 };
             }

@@ -1,0 +1,26 @@
+{
+  "format": "blocksim.conversion-comparison",
+  "version": 1,
+  "method": "zoh",
+  "request": {
+    "numerator": [
+      1
+    ],
+    "denominator": [
+      1,
+      2,
+      1
+    ],
+    "sample_time": 0.2
+  },
+  "samples": 101,
+  "input": {
+    "kind": "sample_sequence",
+    "values": [
+      0,
+      1,
+      -0.5
+    ],
+    "repeat": true
+  }
+}

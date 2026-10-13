@@ -250,6 +250,27 @@ mod tests {
         bad["blocks"][0]["params"]["values"] = serde_json::json!(vec![vec![0.0]; 2002]);
         assert!(graph_json(&bad.to_string()).is_err());
     }
+    #[test]
+    fn repeating_input_roundtrips_and_runs_every_cycle_through_json_boundary() {
+        let text = include_str!("../../../samples/discrete/repeat.json");
+        let normalized = normalize_graph_json(text, false).unwrap();
+        let stored: serde_json::Value = serde_json::from_str(&normalized).unwrap();
+        assert_eq!(stored["blocks"][0]["params"]["repeat"], true);
+        let result: serde_json::Value =
+            serde_json::from_str(&graph_json(&normalized).unwrap()).unwrap();
+        let input = result["traces"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|t| t["id"] == "input_record")
+            .unwrap();
+        for (i, row) in input["values"].as_array().unwrap().iter().enumerate() {
+            assert_eq!(row[0].as_f64().unwrap(), [0.0, 1.0, -0.5][(i / 10) % 3]);
+        }
+        let mut bad = stored;
+        bad["blocks"][0]["params"]["repeat"] = serde_json::json!(1);
+        assert!(normalize_graph_json(&bad.to_string(), true).is_err());
+    }
     use super::*;
     #[test]
     fn zoh_boundary_serializes_realization_and_refuses_prewarp_or_bad_request() {
