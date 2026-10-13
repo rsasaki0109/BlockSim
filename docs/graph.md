@@ -205,3 +205,5 @@ Sampled Inputの`repeat: true`は入力表を周期再生します。GUIで切�
 Sampled Inputの設定欄では[ベクトル入力表CSV](sampled-input.md#ブロックへ入力表csvを読み込む)を読み込み／書き出しできます。適用前の入力表を編集し、通常の適用・Undo・モデル保存を使います。
 
 Sampled Inputの[表編集](sampled-input.md#セルと行の編集)ではセル入力・行の追加／複製／削除と20行ごとのページ移動が使えます。JSON／CSVと同期し、通常のブロック設定適用で反映します。
+
+Sampled Inputの[入力プレビュー](sampled-input.md#入力波形のプレビュー)は未適用の表を1〜3周期まで計算し、保持波形・成分選択・取得値カーソル・結果JSONを表示します。元モデルやScope結果は保持します。

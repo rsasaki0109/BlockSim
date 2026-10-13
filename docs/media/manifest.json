@@ -257,6 +257,14 @@
       "bytes": 520338,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "input-preview.gif",
+      "frames": 159,
+      "duration_seconds": 15.9,
+      "bytes": 247963,
+      "width": 960,
+      "height": 737
     }
   ]
 }

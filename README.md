@@ -248,6 +248,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <a href="docs/sampled-input.md">入力表の編集方法</a>
 </p>
 
+<p align="center">
+  <a href="docs/media/input-preview.gif"><img src="docs/media/input-preview.gif" width="960" alt="適用前のSampled Inputを保持波形でプレビューし、繰り返しと最終行保持、成分と取得値カーソル、結果JSONを確認"></a><br>
+  <b>適用前に、入力の波形を確かめる。</b><br>
+  最大3周期の保持波形、成分表示、取得値カーソル、実行時の条件と全点の保存。<br>
+  <a href="docs/sampled-input.md">入力プレビューの使い方</a>
+</p>
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。
