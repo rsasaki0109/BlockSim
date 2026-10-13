@@ -347,7 +347,7 @@ fn vector_mux_selector_and_nested_ids_extract_only_the_selected_ancestor_compone
     matches_bode(&parent, &q, &r);
 }
 #[test]
-fn eight_state_cap_component_schema_and_invalid_queries_fail_before_analysis() {
+fn sixteen_state_cap_component_schema_and_invalid_queries_fail_before_analysis() {
     let mut m = feedback();
     m.blocks[3].params = BlockKind::TransferFunction {
         numerator: vec![1.0],
@@ -357,16 +357,30 @@ fn eight_state_cap_component_schema_and_invalid_queries_fail_before_analysis() {
     assert_eq!(validate_state_space(&m, &query()).unwrap().states, 8);
     let mut b = m.blocks[0].clone();
     b.id = "extra".into();
-    b.params = BlockKind::Integrator { initial: vec![0.0] };
+    b.params = BlockKind::TransferFunction {
+        numerator: vec![1.0],
+        denominator: vec![1.0; 9],
+        initial: vec![0.0; 8],
+    };
     m.blocks.push(b);
     m.edges[3].to = "extra".into();
     let mut e = m.edges[3].clone();
     e.from = "extra".into();
     e.to = "plant".into();
     m.edges.push(e);
+    assert_eq!(validate_state_space(&m, &query()).unwrap().states, 16);
+    let mut extra = m.blocks[0].clone();
+    extra.id = "over".into();
+    extra.params = BlockKind::Integrator { initial: vec![0.] };
+    m.blocks.push(extra);
+    m.edges[3].to = "over".into();
+    let mut edge = m.edges[3].clone();
+    edge.from = "over".into();
+    edge.to = "extra".into();
+    m.edges.push(edge);
     assert!(validate_state_space(&m, &query())
         .unwrap_err()
-        .contains("8 related"));
+        .contains("16 related"));
     let mut q = query();
     q.source = "plant".into();
     assert!(validate_state_space(&feedback(), &q).is_err());

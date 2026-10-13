@@ -3,7 +3,9 @@ import {type PolynomialRoots,type Stability} from './pole-zero';
 export type StateSpaceDomain='continuous'|'discrete';
 export interface StateSpaceRequest {source:string;source_component:number;scope:string;scope_component:number}
 export interface StateInfo {block:string;label:string;component:number;state:number;description:string}
-export interface StateSpaceResult {request:StateSpaceRequest;check:{source_label:string;scope_label:string;variables:number;states:number;source_related:boolean};states:StateInfo[];a:number[][];b:number[];c:number[];d:number;characteristic:number[]|null;pole_scale:number;characteristic_residual:number|null;poles:PolynomialRoots;matrix_residuals:number[];stability:Stability & {outside_unit_circle_poles?:number|null};sample_time?:number;method:string}
+export interface NumericalRank {status:string;numerical_rank:number|null;dimension:number;tolerance:number;pivot_norms:number[];notes:string[]}
+export interface StateSpaceStructure {controllability:NumericalRank;observability:NumericalRank;method:string;notes:string[]}
+export interface StateSpaceResult {structure?:StateSpaceStructure;request:StateSpaceRequest;check:{source_label:string;scope_label:string;variables:number;states:number;source_related:boolean};states:StateInfo[];a:number[][];b:number[];c:number[];d:number;characteristic:number[]|null;pole_scale:number;characteristic_residual:number|null;poles:PolynomialRoots;matrix_residuals:number[];stability:Stability & {outside_unit_circle_poles?:number|null};sample_time?:number;method:string}
 export interface StateSpacePlan {format:'blocksim.state-space';version:1;domain?:StateSpaceDomain;model:GraphModel;request:StateSpaceRequest}
 export type StateSpaceValidator=(model:string,request:string,domain?:StateSpaceDomain)=>string;
 function object(value:unknown,keys:string[]){if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).length!==keys.length||keys.some(k=>!Object.hasOwn(value,k)))throw new Error('状態空間の保存形式が不正です');return value as Record<string,unknown>;}
@@ -26,6 +28,7 @@ export function stateSpaceCsv(r:StateSpaceResult){
  if(!r.poles.roots.length)rows.push([...prefix,quote('eigenvalue_set'),'','','','','','',quote(r.poles.status+(r.check.states===0?' · no dynamic states':' · '+r.poles.warnings.join(' | '))),'']);
  rows.push([...prefix,quote('characteristic'),'','','','','',r.characteristic_residual??'',quote(`det(zI-A/scale), scale=${r.pole_scale}, coefficients=${JSON.stringify(r.characteristic)}`),'']);
  if(discrete)rows.push([...prefix,quote('sample_time'),'','',r.sample_time!,'','','',quote(r.states.some(s=>s.description==='discrete transfer companion state')?'seconds; states before sample update, output after PID update and before next Delay/discrete-transfer state commit':'seconds; states before sample update, output after PID update and before next Delay commit'),'']);
+ if(r.structure)for(const [name,check]of [['controllability',r.structure.controllability],['observability',r.structure.observability]] as const)rows.push([...prefix,quote(name+'_rank'),check.dimension,'',check.numerical_rank??'','','',check.tolerance,quote(`${check.status} | pivots=${JSON.stringify(check.pivot_norms)} | ${check.notes.join(' | ')} | ${r.structure.method}`),'']);
  const headers=['source','input_component','scope','output_component','stability','record','row_or_index','column','value',discrete?'real_dimensionless':'real_per_s',discrete?'imag_dimensionless':'imag_rad_s','relative_residual','note',discrete?'outside_unit_circle_poles':'right_half_plane_poles'];
  return '\uFEFF'+[headers.map(quote).join(','),...rows.map(x=>x.join(','))].join('\r\n');
 }

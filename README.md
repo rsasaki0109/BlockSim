@@ -169,7 +169,7 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
 - **グループ解除**：サブシステムの境界をつなぎ直して展開。設定・ベクトル幅・分岐・フィードバックを保持し、Undo／Redo に対応します。
 - **モデルを追加読み込み**：読み込み方法を「既存モデルに追加」にすると、元のモデルを残して取り込めます。ID の衝突を回避し、既存の時計・終了時刻を保持します。
 
-連続線形モデルでは、選択した Scope 成分に関係する接続から [状態空間行列と内部安定性](docs/state-space.md) を解析できます。最大8状態の A・B・C・D、固有値と残差を表示し、設定の保存／復元、行列・極の CSV／結果 JSON に対応します。同じ周期のDelay・離散PIDでは [離散状態空間と単位円](docs/discrete-state-space.md)、[離散BodeとNyquist上限](docs/discrete-frequency.md)、[離散開ループの余裕](docs/discrete-margins.md) を選択できます。Scope に関係しない枝を含むモデル全体の安定性判定は対象外です。
+連続線形モデルでは、選択した Scope 成分に関係する接続から [状態空間行列と内部安定性](docs/state-space.md) を解析できます。最大16状態の A・B・C・D、固有値と残差を表示し、設定の保存／復元、行列・極の CSV／結果 JSON に対応します。同じ周期のDelay・離散PIDでは [離散状態空間と単位円](docs/discrete-state-space.md)、[離散BodeとNyquist上限](docs/discrete-frequency.md)、[離散開ループの余裕](docs/discrete-margins.md) を選択できます。Scope に関係しない枝を含むモデル全体の安定性判定は対象外です。
 
 <p align="center">
   <strong>22 — Coefficients in. Samples out.</strong><br>
@@ -309,6 +309,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <b>目標値が変わっても、進み方を決められる。</b><br>
   上昇・下降速度を個別に設定。各周期の変化量を制限して保持。<br>
   <a href="docs/rate-limiter.md">Discrete Rate Limiterを使う</a>
+</p>
+
+<p align="center">
+  <a href="docs/media/large-state-space.gif"><img src="docs/media/large-state-space.gif" width="960" alt="16状態の行列と全固有値を解析し、可制御性・可観測性の数値ランク、閾値付近と未解決、離散領域と設定復元を実WASMで確認"></a><br>
+  <b>大きなモデルも、状態を残して確かめる。</b><br>
+  最大16状態の解析。数値ランクと、その判定の限界も表示。<br>
+  <a href="docs/structural-analysis.md">状態と数値ランクを確認する</a>
 </p>
 
 ## 開発環境

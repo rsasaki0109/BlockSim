@@ -65,3 +65,5 @@ summary { color: #9facc5; cursor: pointer; font-size: 12px; margin: 18px 0; } fo
 
 #graph-input-table tr.input-preview-selected{background:#63e3bc14}#graph-input-table th button{font-size:11px;padding:4px 7px;min-width:32px}#graph-input-table th button[aria-pressed="true"]{border-color:#63e3bc;color:#63e3bc}
 #graph-input-generator-plan-output{min-width:0}#graph-input-generator-plan-output p{font-size:12px;overflow-wrap:anywhere}#graph-input-generator-plan-output .table-wrap{overflow:auto;max-height:360px;max-width:100%;margin:8px 0}#graph-input-generator-plan-table th,#graph-input-generator-plan-table td{padding:6px}
+
+#graph-state-space-structure p{overflow-wrap:anywhere}#graph-state-space-structure .table-wrap{max-width:100%;overflow:auto}

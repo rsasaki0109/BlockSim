@@ -4,7 +4,9 @@ use super::*;
 use pole_zero::{PolynomialRoots, Stability};
 pub(super) mod discrete;
 mod spectrum;
+mod structure;
 pub use discrete::{analyze_discrete_state_space, validate_discrete_state_space};
+pub use structure::{NumericalRank, StateSpaceStructure};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -72,6 +74,8 @@ pub struct StateSpaceResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sample_time: Option<f64>,
     pub method: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub structure: Option<StateSpaceStructure>,
 }
 struct Prepared {
     graph: Compiled,
@@ -137,8 +141,8 @@ fn prepare_with_domain(
             _ => 0,
         };
         for state in 0..count {
-            if states.len() >= 8 {
-                return Err(format!("State-space analysis supports at most 8 related {} states; no states are silently removed", if discrete { "discrete" } else { "continuous" }));
+            if states.len() >= 16 {
+                return Err(format!("State-space analysis supports at most 16 related {} states; no states are silently removed", if discrete { "discrete" } else { "continuous" }));
             }
             let description = match b.params {
                 BlockKind::Pid { .. } if discrete => match state {
@@ -306,5 +310,6 @@ pub fn analyze_state_space(model: &GraphModel, q: &StateSpaceRequest) -> Result<
     if !p.check.source_related {
         stability.notes.push("Selected source component is outside the Scope ancestry: B and D are zero; ancestor internal modes are still retained".into());
     }
-    Ok(StateSpaceResult{request:q.clone(),check:p.check,states:p.states,a,b,c,d,characteristic,pole_scale,characteristic_residual,poles,matrix_residuals,stability:stability.into(),sample_time:None,method:"continuous LTI Scope ancestry / simulation-equation unit basis / xdot=Ax+Bu,y=Cx+Du / scaled characteristic polynomial and independent matrix determinant residuals / Routh / no state removal".into()})
+    let structure = Some(structure::analyze(&a, &b, &c));
+    Ok(StateSpaceResult{structure,request:q.clone(),check:p.check,states:p.states,a,b,c,d,characteristic,pole_scale,characteristic_residual,poles,matrix_residuals,stability:stability.into(),sample_time:None,method:"continuous LTI Scope ancestry / simulation-equation unit basis / xdot=Ax+Bu,y=Cx+Du / scaled characteristic polynomial and independent matrix determinant residuals / Routh / no state removal".into()})
 }

@@ -313,7 +313,7 @@ fn compact_second_order_transfer_matches_existing_delay_loop_bode_and_margins() 
     );
 }
 #[test]
-fn eighth_order_delay_keeps_all_origin_states_and_ninth_related_state_is_rejected() {
+fn eighth_order_delay_keeps_origin_states_and_seventeenth_related_state_is_rejected() {
     let mut m = model();
     set(
         &mut m,
@@ -342,13 +342,26 @@ fn eighth_order_delay_keeps_all_origin_states_and_ninth_related_state_is_rejecte
         sample_time: 0.1,
     };
     m.edges[1].from = "direct".into();
-    assert!(analyze_discrete_state_space(
-        &m,
-        &StateSpaceRequest {
-            scope: "delayed-output".into(),
-            ..sq()
-        }
-    )
-    .unwrap_err()
-    .contains("at most 8"));
+    let query = StateSpaceRequest {
+        scope: "delayed-output".into(),
+        ..sq()
+    };
+    assert_eq!(
+        analyze_discrete_state_space(&m, &query)
+            .unwrap()
+            .check
+            .states,
+        9
+    );
+    let mut extra = m.blocks[1].clone();
+    extra.id = "extra-transfer".into();
+    m.blocks.push(extra);
+    m.edges[1].from = "extra-transfer".into();
+    let mut edge = m.edges[1].clone();
+    edge.from = "direct".into();
+    edge.to = "extra-transfer".into();
+    m.edges.push(edge);
+    assert!(analyze_discrete_state_space(&m, &query)
+        .unwrap_err()
+        .contains("at most 16"));
 }

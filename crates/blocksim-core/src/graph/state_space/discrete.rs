@@ -164,7 +164,8 @@ pub fn analyze_discrete_state_space(
                 .into(),
         );
     }
-    Ok(StateSpaceResult { request: q.clone(), check, states, a, b, c, d,
+    let structure = Some(structure::analyze(&a, &b, &c));
+    Ok(StateSpaceResult { structure, request: q.clone(), check, states, a, b, c, d,
         characteristic, pole_scale, characteristic_residual, poles, matrix_residuals, stability,
         sample_time: Some(sample_time),
         method: format!("discrete LTI Scope ancestry / actual synchronous sample-instant {} unit basis / x[k+1]=Ax[k]+Bu[k],y[k]=Cx[k]+Du[k] / unit-circle bilinear polynomial and Routh / no state removal", if has_discrete_transfer { "PID, Delay and discrete transfer" } else { "PID and Delay" }) })

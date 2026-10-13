@@ -216,6 +216,47 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 #[cfg(test)]
 mod tests {
     #[test]
+    fn sixteen_state_boundary_exports_exact_ranks_and_all_modes_in_both_domains() {
+        for (name, discrete) in [("sixteen-integrators", false), ("sixteen-delays", true)] {
+            let text =
+                std::fs::read_to_string(format!("../../samples/state-space/{name}-plan.json"))
+                    .unwrap();
+            let p: serde_json::Value = serde_json::from_str(&text).unwrap();
+            let model = p["model"].to_string();
+            let request = p["request"].to_string();
+            let json = if discrete {
+                discrete_state_space_json(&model, &request)
+            } else {
+                state_space_json(&model, &request)
+            }
+            .unwrap();
+            let r: serde_json::Value = serde_json::from_str(&json).unwrap();
+            assert_eq!(r["check"]["states"], 16);
+            assert_eq!(r["poles"]["roots"].as_array().unwrap().len(), 16);
+            for name in ["controllability", "observability"] {
+                assert_eq!(r["structure"][name]["numerical_rank"], 16);
+                assert_eq!(r["structure"][name]["status"], "full_numerical_rank");
+            }
+            let mut legacy = r.clone();
+            legacy.as_object_mut().unwrap().remove("structure");
+            let restored: blocksim_core::graph::state_space::StateSpaceResult =
+                serde_json::from_value(legacy).unwrap();
+            assert!(restored.structure.is_none());
+            assert_eq!(restored.a.len(), 16);
+        }
+    }
+    #[test]
+    fn structure_diagnostics_preserve_hidden_pid_states_and_unobservable_modes() {
+        let model = include_str!("../../../samples/frequency/feedback.json");
+        let request =
+            r#"{"source":"reference","source_component":0,"scope":"output","scope_component":0}"#;
+        let r: serde_json::Value =
+            serde_json::from_str(&state_space_json(model, request).unwrap()).unwrap();
+        assert_eq!(r["structure"]["observability"]["numerical_rank"], 2);
+        assert_eq!(r["check"]["states"], 3);
+        assert_eq!(r["poles"]["roots"].as_array().unwrap().len(), 3);
+    }
+    #[test]
     fn rate_limiter_boundary_roundtrips_initial_rates_period_and_all_sampled_holds() {
         let text = include_str!("../../../samples/graphs/rate-limiter.json");
         let normalized = normalize_graph_json(text, true).unwrap();

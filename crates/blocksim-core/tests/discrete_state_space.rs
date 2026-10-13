@@ -318,11 +318,11 @@ fn selected_vector_and_mux_selector_paths_keep_only_related_channel_states() {
     assert_eq!(r.b, vec![1.0, 0.0]);
 }
 #[test]
-fn eight_synchronous_delay_states_keep_known_zero_poles_and_nine_are_refused() {
+fn sixteen_synchronous_delay_states_keep_known_zero_poles_and_seventeen_are_refused() {
     let mut m = scalar(0.0);
     m.edges.retain(|e| e.to != "sum" || e.to_port == 0);
     m.blocks[1].params = BlockKind::Gain { gain: 1.0 };
-    for count in 2..=9 {
+    for count in 2..=17 {
         let mut delay = m.blocks[2].clone();
         delay.id = format!("delay{count}");
         m.blocks.push(delay);
@@ -331,7 +331,7 @@ fn eight_synchronous_delay_states_keep_known_zero_poles_and_nine_are_refused() {
         edge.to = format!("delay{count}");
         m.edges.push(edge);
         m.edges.iter_mut().find(|e| e.to == "output").unwrap().from = format!("delay{count}");
-        if count <= 8 {
+        if count <= 16 {
             let r = analyze_discrete_state_space(&m, &query()).unwrap();
             assert_eq!(r.check.states, count);
             assert_eq!(r.poles.roots.len(), count);
@@ -340,7 +340,7 @@ fn eight_synchronous_delay_states_keep_known_zero_poles_and_nine_are_refused() {
         } else {
             assert!(validate_discrete_state_space(&m, &query())
                 .unwrap_err()
-                .contains("8 related discrete"));
+                .contains("16 related discrete"));
         }
     }
 }

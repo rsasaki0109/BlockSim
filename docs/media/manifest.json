@@ -329,6 +329,14 @@
       "bytes": 1043892,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "large-state-space.gif",
+      "frames": 205,
+      "duration_seconds": 20.5,
+      "bytes": 447921,
+      "width": 960,
+      "height": 737
     }
   ]
 }
