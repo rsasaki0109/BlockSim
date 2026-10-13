@@ -1,0 +1,13 @@
+{
+  "format": "blocksim.input-generator",
+  "version": 2,
+  "generation": {
+    "shape": "sine",
+    "width": 2,
+    "rows": 8,
+    "base": [0, 0],
+    "delta": [1, 1],
+    "cycles": 1,
+    "phase": [0, 1.5707963267948966]
+  }
+}

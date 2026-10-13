@@ -289,6 +289,14 @@
       "bytes": 359632,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "input-phase.gif",
+      "frames": 358,
+      "duration_seconds": 35.8,
+      "bytes": 526977,
+      "width": 960,
+      "height": 737
     }
   ]
 }
