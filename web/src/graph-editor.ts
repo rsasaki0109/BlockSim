@@ -3,6 +3,7 @@ import {mountConversionComparison} from './discretize-comparison-ui';
 import {tustinRequest,tustinModel,type TustinResult,type ZohResult} from './discretize';
 import { parseNumber } from './document';
 import {decodeSampleTableCsv,sampleTableCsv} from './sampled-input-csv';
+import {mountSampleTableEditor} from './sampled-input-table-ui';
 import { copySelection, pasteSelection, connectPorts, mergeGraph, ungroupBlock, inputWidth, nodeHeight, portY, wirePath } from './graph-edit';
 import {
   GraphHistory, graphContext, newBlock, groupBlocks, deleteBlocks, inputCount, outputCount, outputWidth, setClock, setSolver,
@@ -150,6 +151,7 @@ export function mountEditor(host:HTMLElement) {
   function renderComparison(){
     const conversionBusy=modelBusy();
     if(conversionBusy!==sampledInputIoBusy){sampledInputIoBusy=conversionBusy;sampledInputIoEpoch++;}
+    const tableFields=host.querySelector<HTMLFieldSetElement>('#graph-input-table-fields');if(tableFields)tableFields.disabled=conversionBusy;
     for(const id of ['graph-input-csv-import','graph-input-csv-export']){const control=host.querySelector<HTMLInputElement|HTMLButtonElement>('#'+id);if(control)control.disabled=conversionBusy;}
     const conversionFields=host.querySelector<HTMLFieldSetElement>('#graph-discretize-fields');if(conversionFields)conversionFields.disabled=conversionBusy;
     sweep?.sync();frequency?.sync();poleZero?.sync();stateSpace?.sync();conversionComparison?.sync();
@@ -276,6 +278,8 @@ export function mountEditor(host:HTMLElement) {
     }
     if(b.params.kind==='sampled_input')field('p.repeat','入力系列を繰り返す',b.params.repeat??false);
     if(b.params.kind==='sampled_input'){
+      const tableHost=document.createElement('section');form.append(tableHost);
+      const tableEditor=mountSampleTableEditor(tableHost,{values:controls.get('p.values') as HTMLTextAreaElement,width:controls.get('width') as HTMLInputElement,period:controls.get('p.sample_time') as HTMLInputElement,busy:modelBusy});
       const section=document.createElement('section');section.id='graph-input-csv';
       section.innerHTML=`<h3>入力表CSV</h3><div class="buttons"><label class="file-button">入力表CSVを読み込む<input id="graph-input-csv-import" type="file" accept=".csv,text/csv"></label><button id="graph-input-csv-export" type="button">入力表CSVを保存</button></div><p class="hint">1行=サンプル、1列=成分。列数は上の信号幅と一致させます（1〜64列、1〜2001行、1 MBまで）。見出しなし、または1列はinput、複数列はinput_0,input_1,…。時刻・周期・繰り返し設定はCSVに含みません。読み込み後に「ブロック設定を適用」で反映します。保存は現在の設定欄の入力表です。</p><p id="graph-input-csv-state" role="status" aria-live="polite"></p>`;
       form.append(section);
@@ -295,7 +299,7 @@ export function mountEditor(host:HTMLElement) {
           const expectedWidth=parseNumber(width.value,'信号幅');message('入力表CSVを読み込み中…');
           const text=await file.text();if(!active())return;
           if(version!==revision||epoch!==sampledInputIoEpoch||modelBusy()){message('設定変更・実行のためCSV読み込みを破棄しました');return;}
-          const rows=decodeSampleTableCsv(text,expectedWidth);values.value=JSON.stringify(rows);revision++;
+          const rows=decodeSampleTableCsv(text,expectedWidth);values.value=JSON.stringify(rows);revision++;tableEditor.refresh();
           message(`入力表CSVを読み込みました · ${rows.length}行 × ${expectedWidth}列。ブロック設定を適用してください。`);
         }catch(error){if(active()&&version===revision&&epoch===sampledInputIoEpoch)message(String(error),true);}
         finally{if(id===readRequest)input.value='';}

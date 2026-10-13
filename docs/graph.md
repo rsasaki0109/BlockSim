@@ -203,3 +203,5 @@ Sampled Inputの`repeat: true`は入力表を周期再生します。GUIで切�
 [Sampled Input](sampled-input.md) は1〜2001行・幅1〜64の表を周期ごとに保持し、既定で最終行を継続します。`repeat: true`で最初の行へ戻ります。整数時計で読み取り、RK45の棄却中は進みません。離散化比較では2〜2001点の任意スカラー系列をJSON／1列CSVから読み込み、実入力・サンプル番号付きCSVと設定／結果JSONを保存できます。
 
 Sampled Inputの設定欄では[ベクトル入力表CSV](sampled-input.md#ブロックへ入力表csvを読み込む)を読み込み／書き出しできます。適用前の入力表を編集し、通常の適用・Undo・モデル保存を使います。
+
+Sampled Inputの[表編集](sampled-input.md#セルと行の編集)ではセル入力・行の追加／複製／削除と20行ごとのページ移動が使えます。JSON／CSVと同期し、通常のブロック設定適用で反映します。
