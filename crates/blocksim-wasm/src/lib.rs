@@ -216,6 +216,67 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 #[cfg(test)]
 mod tests {
     #[test]
+    fn dead_zone_boundary_roundtrips_thresholds_and_actual_vector_rows() {
+        let text = include_str!("../../../samples/graphs/dead-zone.json");
+        let normalized = normalize_graph_json(text, true).unwrap();
+        let m: serde_json::Value = serde_json::from_str(&normalized).unwrap();
+        assert_eq!(
+            m["blocks"][1]["params"],
+            serde_json::json!({"kind":"dead_zone","lower":-0.2,"upper":0.3})
+        );
+        assert_eq!(
+            normalize_graph_json(&normalized, false).unwrap(),
+            normalized
+        );
+        let r: serde_json::Value = serde_json::from_str(&graph_json(&normalized).unwrap()).unwrap();
+        assert_eq!(r["times"].as_array().unwrap().len(), 161);
+        let expected = [
+            [-0.6, 0.5],
+            [-0.05, 0.],
+            [0., 0.],
+            [0., 0.],
+            [0., 0.],
+            [0., 0.],
+            [0., 0.],
+            [0.35, -0.45],
+        ];
+        for (k, row) in r["traces"][0]["values"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .enumerate()
+        {
+            for (j, value) in expected[(k / 10) % 8].iter().enumerate() {
+                assert!((row[j].as_f64().unwrap() - value).abs() < 1e-14);
+            }
+        }
+    }
+    #[test]
+    fn dead_zone_boundary_rejects_bad_thresholds_fields_and_computed_overflow() {
+        let original: serde_json::Value =
+            serde_json::from_str(include_str!("../../../samples/graphs/dead-zone.json")).unwrap();
+        for params in [
+            serde_json::json!({"kind":"dead_zone","lower":1,"upper":0}),
+            serde_json::json!({"kind":"dead_zone","lower":null,"upper":1}),
+            serde_json::json!({"kind":"dead_zone","lower":0}),
+            serde_json::json!({"kind":"dead_zone","lower":0,"upper":1,"limits":{}}),
+            serde_json::json!({"kind":"dead_zone","lower":[0,0],"upper":1}),
+        ] {
+            let mut m = original.clone();
+            m["blocks"][1]["params"] = params;
+            assert!(normalize_graph_json(&m.to_string(), false).is_err());
+            assert!(graph_json(&m.to_string()).is_err());
+        }
+        let mut m = original;
+        m["blocks"][0]["params"] = serde_json::json!({"kind":"constant","value":[1e308,1e308]});
+        m["blocks"][1]["params"] =
+            serde_json::json!({"kind":"dead_zone","lower":-1e308,"upper":-1e308});
+        normalize_graph_json(&m.to_string(), true).unwrap();
+        assert!(graph_json(&m.to_string())
+            .unwrap_err()
+            .contains("zone at t=0"));
+    }
+    #[test]
     fn sampled_input_boundary_preserves_table_and_rejects_bad_rows_and_unknown_fields() {
         let text = include_str!("../../../samples/discrete/sequence.json");
         let normalized = normalize_graph_json(text, false).unwrap();

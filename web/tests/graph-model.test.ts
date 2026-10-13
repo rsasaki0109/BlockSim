@@ -8,6 +8,12 @@ import vector from '../../samples/graphs/vector.json';
 const normalize=(json:string)=>json;
 const fresh=()=>structuredClone(sample) as GraphModel;
 describe('graph editing transactions',()=>{
+  it('dead zone defaults have one vector input/output and retain thresholds through files and history',()=>{
+    const g=fresh(),b=newBlock('dead_zone',g);expect(b.params).toEqual({kind:'dead_zone',lower:-.1,upper:.1});
+    expect(inputCount(b)).toBe(1);expect(outputCount(b)).toBe(1);g.blocks.push(b);
+    const h=new GraphHistory(g,normalize);h.apply(m=>{m.blocks.at(-1)!.params={kind:'dead_zone',lower:-.2,upper:.3};});
+    expect(decodeGraphDocument(encodeGraphDocument(h.graph),normalize)).toEqual(h.graph);h.undo();expect(h.graph).toEqual(g);h.redo();expect(h.graph.blocks.at(-1)!.params.upper).toBe(.3);
+  });
   it('discrete transfer defaults preserve coefficient order, companion state and recording clock through model files',()=>{
     const g=fresh(),b=newBlock('discrete_transfer_function',g);expect(b.params).toEqual({kind:'discrete_transfer_function',numerator:[.2,0],denominator:[1,-.8],initial:[0],sample_time:g.dt});g.blocks.push(b);expect(decodeGraphDocument(encodeGraphDocument(g),normalize)).toEqual(g);expect(inputCount(b)).toBe(1);expect(outputCount(b)).toBe(1);
   });

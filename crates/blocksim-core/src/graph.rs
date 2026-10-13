@@ -112,6 +112,10 @@ pub enum BlockKind {
     Saturation {
         limits: OutputLimits,
     },
+    DeadZone {
+        lower: f64,
+        upper: f64,
+    },
     Integrator {
         initial: Vec<f64>,
     },
@@ -307,6 +311,13 @@ fn validate_block(b: &Block, dt: f64, adaptive: bool) -> Result<()> {
         }
         BlockKind::Product { inputs } | BlockKind::Mux { inputs } => count("Inputs", *inputs)?,
         BlockKind::Saturation { limits } => limits.validate()?,
+        BlockKind::DeadZone { lower, upper } => {
+            finite("DeadZone lower", *lower)?;
+            finite("DeadZone upper", *upper)?;
+            if lower > upper {
+                return Err("DeadZone lower must be <= upper".into());
+            }
+        }
         BlockKind::Integrator { initial } => vector("Initial state", initial, b.width)?,
         BlockKind::FirstOrder { gain, tau, initial } => {
             finite("Plant gain", *gain)?;
@@ -967,6 +978,18 @@ fn evaluate(
                 .map(|j| inputs.iter().map(|s| values[*s][j]).product())
                 .collect(),
             BlockKind::Saturation { limits } => first().iter().map(|v| limits.clamp(*v)).collect(),
+            BlockKind::DeadZone { lower, upper } => first()
+                .iter()
+                .map(|v| {
+                    if v < lower {
+                        v - lower
+                    } else if v > upper {
+                        v - upper
+                    } else {
+                        0.0
+                    }
+                })
+                .collect(),
             BlockKind::Integrator { .. } | BlockKind::FirstOrder { .. } => rt.state[i].clone(),
             BlockKind::TransferFunction { .. } => {
                 let coefficients = rt.transfer[i].as_ref().unwrap();

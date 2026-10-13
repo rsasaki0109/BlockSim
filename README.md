@@ -1,6 +1,6 @@
 # BlockSim
 
-Rust + WebAssembly によるブロック図モデリング・PID 制御実験環境です。連続／離散 PID の出力制限、条件付き積分による anti-windup、ベクトル対応 Saturation ブロックを実装しています。ブラウザ GUI でモデルを設定し、目標値を下げた後の復帰を有効／無効で比較できます。
+Rust + WebAssembly によるブロック図モデリング・PID 制御実験環境です。連続／離散 PID の出力制限、条件付き積分による anti-windup、ベクトル対応 Saturation・Dead Zone ブロックを実装しています。ブラウザ GUI でモデルを設定し、目標値を下げた後の復帰を有効／無効で比較できます。
 
 <p align="center">
   <strong>MODEL · SIMULATE · UNDERSTAND</strong><br>
@@ -295,6 +295,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <b>生成する前に、条件の違いを確かめる。</b><br>
   保持時間・予定範囲・実効デューティ比を確認。前の結果を保持して入力を調整。<br>
   <a href="docs/sampled-input.md">生成予定を確認する</a>
+</p>
+
+<p align="center">
+  <a href="docs/media/dead-zone.gif"><img src="docs/media/dead-zone.gif" width="960" alt="2成分の入力をDead Zoneで処理し、範囲内の0出力、範囲外の超過分、設定変更とUndo／Redoを実WASMで確認"></a><br>
+  <b>小さな変動は0に。超えた分だけ、先へ。</b><br>
+  成分ごとの入力と出力を比較。非対称の不感帯を設定して保存。<br>
+  <a href="docs/dead-zone.md">Dead Zoneを使う</a>
 </p>
 
 ## 開発環境

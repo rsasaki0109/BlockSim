@@ -313,6 +313,14 @@
       "bytes": 512052,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "dead-zone.gif",
+      "frames": 376,
+      "duration_seconds": 37.6,
+      "bytes": 966004,
+      "width": 960,
+      "height": 737
     }
   ]
 }

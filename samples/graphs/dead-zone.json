@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "dt": 0.01,
+  "duration": 1.6,
+  "blocks": [
+    {
+      "id": "source",
+      "label": "Vector input",
+      "width": 2,
+      "position": [
+        30,
+        100
+      ],
+      "params": {
+        "kind": "sampled_input",
+        "values": [
+          [
+            -0.8,
+            0.8
+          ],
+          [
+            -0.25,
+            0.25
+          ],
+          [
+            -0.2,
+            0.3
+          ],
+          [
+            -0.05,
+            0.05
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0.15,
+            -0.15
+          ],
+          [
+            0.3,
+            -0.2
+          ],
+          [
+            0.65,
+            -0.65
+          ]
+        ],
+        "sample_time": 0.1,
+        "repeat": true
+      }
+    },
+    {
+      "id": "zone",
+      "label": "Dead Zone",
+      "width": 2,
+      "position": [
+        290,
+        100
+      ],
+      "params": {
+        "kind": "dead_zone",
+        "lower": -0.2,
+        "upper": 0.3
+      }
+    },
+    {
+      "id": "output",
+      "label": "After dead zone",
+      "width": 2,
+      "position": [
+        550,
+        100
+      ],
+      "params": {
+        "kind": "scope"
+      }
+    },
+    {
+      "id": "raw",
+      "label": "Before dead zone",
+      "width": 2,
+      "position": [
+        290,
+        300
+      ],
+      "params": {
+        "kind": "scope"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_port": 0,
+      "to_port": 0,
+      "from": "source",
+      "to": "zone"
+    },
+    {
+      "from_port": 0,
+      "to_port": 0,
+      "from": "zone",
+      "to": "output"
+    },
+    {
+      "from_port": 0,
+      "to_port": 0,
+      "from": "source",
+      "to": "raw"
+    }
+  ]
+}
