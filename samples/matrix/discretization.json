@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "dt": 0.01,
+  "duration": 2,
+  "blocks": [
+    {
+      "id": "source",
+      "label": "2成分入力",
+      "width": 2,
+      "position": [
+        30,
+        140
+      ],
+      "params": {
+        "kind": "step",
+        "before": [
+          1,
+          2
+        ],
+        "after": [
+          0.25,
+          -1
+        ],
+        "step_time": 1.2
+      }
+    },
+    {
+      "id": "matrix",
+      "label": "StateSpace",
+      "width": 2,
+      "position": [
+        330,
+        140
+      ],
+      "params": {
+        "kind": "state_space",
+        "a": [
+          [
+            -1,
+            0
+          ],
+          [
+            1,
+            -2
+          ]
+        ],
+        "b": [
+          [
+            1,
+            1
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "c": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        "d": [
+          [
+            0.25,
+            0
+          ],
+          [
+            0,
+            0.5
+          ]
+        ],
+        "initial": [
+          0,
+          0
+        ],
+        "mode": "continuous",
+        "sample_time": 0.1
+      }
+    },
+    {
+      "id": "output",
+      "label": "2成分出力",
+      "width": 2,
+      "position": [
+        630,
+        140
+      ],
+      "params": {
+        "kind": "scope"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "source",
+      "from_port": 0,
+      "to": "matrix",
+      "to_port": 0
+    },
+    {
+      "from": "matrix",
+      "from_port": 0,
+      "to": "output",
+      "to_port": 0
+    }
+  ]
+}

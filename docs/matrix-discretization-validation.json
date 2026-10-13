@@ -1,0 +1,65 @@
+{
+  "max_zoh_error": 2.220446049250313e-15,
+  "zoh_points": 201,
+  "zoh_residual": 5.2723969358692325e-17,
+  "zoh_a": [
+    [
+      0.9048374180359596,
+      0
+    ],
+    [
+      0.08610666495797772,
+      0.8187307530779818
+    ]
+  ],
+  "zoh_b": [
+    [
+      0.09516258196404043,
+      0.09516258196404043
+    ],
+    [
+      0.004527958503031357,
+      0.1857972054250495
+    ]
+  ],
+  "tustin": [
+    {
+      "prewarp": null,
+      "mapping_scale": 20,
+      "maximum_complex_error": 9.226380847435024e-16,
+      "paths": 4,
+      "points": 101,
+      "residual": 1.3877787807814457e-17
+    },
+    {
+      "prewarp": 3,
+      "mapping_scale": 19.849774516769845,
+      "maximum_complex_error": 2.295673038527314e-15,
+      "paths": 4,
+      "points": 101,
+      "residual": 6.938893903907228e-18
+    }
+  ],
+  "baselines": [
+    {
+      "name": "continuous-pid",
+      "points": 4001,
+      "all_fields_equal": true
+    },
+    {
+      "name": "mixed-pid",
+      "points": 4001,
+      "all_fields_equal": true
+    },
+    {
+      "name": "vector",
+      "points": 101,
+      "all_fields_equal": true
+    },
+    {
+      "name": "subsystem",
+      "points": 201,
+      "all_fields_equal": true
+    }
+  ]
+}

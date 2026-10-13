@@ -1,6 +1,8 @@
 //! Continuous-to-discrete coefficients, without initial-state mapping or cancellation.
 use super::*;
+mod matrix;
 mod zoh;
+pub use matrix::{discretize_matrix, MatrixMethod, MatrixRequest, MatrixResult};
 pub use zoh::{discretize_zoh, ZohRequest, ZohResult};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]

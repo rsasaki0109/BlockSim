@@ -332,6 +332,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <a href="docs/matrix-block.md">StateSpaceブロックを使う</a>
 </p>
 
+<p align="center">
+  <a href="docs/media/matrix-discretization.gif"><img src="docs/media/matrix-discretization.gif" width="960" alt="StateSpace行列をZOHとプリワープ付きTustinで離散化し、係数確認・適用・Undo・全取得点の独立式照合と保存復元を実WASMで確認"></a><br>
+  <b>連続の行列を、確かめて離散モデルへ。</b><br>
+  ZOHとTustinを選択。変換行列を確認し、時計と接続を保持して適用。<br>
+  <a href="docs/matrix-discretization.md">行列を離散化する</a>
+</p>
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。

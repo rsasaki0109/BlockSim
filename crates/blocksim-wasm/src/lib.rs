@@ -55,6 +55,14 @@ pub fn graph_json(json: &str) -> Result<String, String> {
     let graph: blocksim_core::graph::GraphModel = decode(json)?;
     encode(&blocksim_core::graph::simulate_graph(&graph)?)
 }
+pub fn matrix_discretize_json(request: &str) -> Result<String, String> {
+    let q = decode(request)?;
+    encode(&blocksim_core::graph::discretize::discretize_matrix(&q)?)
+}
+#[wasm_bindgen]
+pub fn discretize_matrix(request: &str) -> Result<String, JsValue> {
+    matrix_discretize_json(request).map_err(|e| JsValue::from_str(&e))
+}
 pub fn tustin_json(request: &str) -> Result<String, String> {
     let q = decode(request)?;
     encode(&blocksim_core::graph::discretize::discretize_tustin(&q)?)
@@ -237,6 +245,54 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn matrix_conversion_json_preserves_nonzero_zoh_initial_and_checks_tustin() {
+        let source: serde_json::Value =
+            serde_json::from_str(include_str!("../../../samples/matrix/discretization.json"))
+                .unwrap();
+        let mut q = source["blocks"][1]["params"].clone();
+        let object = q.as_object_mut().unwrap();
+        object.remove("kind");
+        object.remove("mode");
+        object.insert("method".into(), "zoh".into());
+        object.insert("initial".into(), serde_json::json!([0.5, -0.25]));
+        let text = super::matrix_discretize_json(&q.to_string()).unwrap();
+        let r: blocksim_core::graph::discretize::MatrixResult =
+            serde_json::from_str(&text).unwrap();
+        assert_eq!(r.initial, vec![0.5, -0.25]);
+        assert_eq!(r.a.len(), 2);
+        assert!(r.residual < 1e-12);
+        q["method"] = "tustin".into();
+        assert!(super::matrix_discretize_json(&q.to_string())
+            .unwrap_err()
+            .contains("zero initial"));
+        q["initial"] = serde_json::json!([0, 0]);
+        let r: blocksim_core::graph::discretize::MatrixResult =
+            serde_json::from_str(&super::matrix_discretize_json(&q.to_string()).unwrap()).unwrap();
+        assert_eq!(r.mapping_scale, Some(20.));
+    }
+    #[test]
+    fn matrix_conversion_boundary_rejects_unknown_missing_null_oversized_and_invalid_values() {
+        for text in ["{}", "null", "{\"method\":\"other\"}", "{\"a\":null}"] {
+            assert!(super::matrix_discretize_json(text).is_err());
+        }
+        assert!(super::matrix_discretize_json(&" ".repeat(1_000_001))
+            .unwrap_err()
+            .contains("1 MB"));
+        let source: serde_json::Value =
+            serde_json::from_str(include_str!("../../../samples/matrix/discretization.json"))
+                .unwrap();
+        let mut q = source["blocks"][1]["params"].clone();
+        let object = q.as_object_mut().unwrap();
+        object.remove("kind");
+        object.remove("mode");
+        object.insert("method".into(), "zoh".into());
+        object.insert("unexpected".into(), true.into());
+        assert!(super::matrix_discretize_json(&q.to_string()).is_err());
+        q.as_object_mut().unwrap().remove("unexpected");
+        q["a"][0][0] = serde_json::Value::Null;
+        assert!(super::matrix_discretize_json(&q.to_string()).is_err());
+    }
     #[test]
     fn matrix_block_boundary_roundtrips_original_matrices_and_executes_both_domains() {
         for text in [

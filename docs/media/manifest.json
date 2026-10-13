@@ -353,6 +353,14 @@
       "bytes": 573108,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "matrix-discretization.gif",
+      "frames": 204,
+      "duration_seconds": 20.4,
+      "bytes": 468423,
+      "width": 960,
+      "height": 737
     }
   ]
 }

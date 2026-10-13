@@ -24,14 +24,14 @@ pub struct ZohResult {
     pub reconstruction_residual: f64,
     pub method: String,
 }
-fn identity(n: usize) -> Matrix {
+pub(super) fn identity(n: usize) -> Matrix {
     let mut m = vec![vec![0.0; n]; n];
     for (i, r) in m.iter_mut().enumerate() {
         r[i] = 1.0;
     }
     m
 }
-fn norm(m: &Matrix) -> f64 {
+pub(super) fn norm(m: &Matrix) -> f64 {
     m.iter()
         .map(|r| r.iter().map(|v| v.abs()).sum::<f64>())
         .fold(0.0, f64::max)
@@ -54,7 +54,7 @@ fn mul(a: &Matrix, b: &Matrix) -> Result<Matrix> {
     }
     Ok(c)
 }
-fn exponential(m: &Matrix) -> Result<(Matrix, usize, usize)> {
+pub(super) fn exponential(m: &Matrix) -> Result<(Matrix, usize, usize)> {
     let bound = norm(m);
     finite("ZOH matrix norm", bound)?;
     let squares = if bound > 0.5 {
