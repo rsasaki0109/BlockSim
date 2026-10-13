@@ -304,6 +304,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <a href="docs/dead-zone.md">Dead Zoneを使う</a>
 </p>
 
+<p align="center">
+  <a href="docs/media/rate-limiter.gif"><img src="docs/media/rate-limiter.gif" width="960" alt="2成分の目標値を離散Rate Limiterで処理し、上昇と下降の変化量・初期値・保持・Undo／Redoを実WASMで確認"></a><br>
+  <b>目標値が変わっても、進み方を決められる。</b><br>
+  上昇・下降速度を個別に設定。各周期の変化量を制限して保持。<br>
+  <a href="docs/rate-limiter.md">Discrete Rate Limiterを使う</a>
+</p>
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。

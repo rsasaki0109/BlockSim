@@ -8,6 +8,9 @@ import vector from '../../samples/graphs/vector.json';
 const normalize=(json:string)=>json;
 const fresh=()=>structuredClone(sample) as GraphModel;
 describe('graph editing transactions',()=>{
+  it('discrete rate limiter defaults use recording period and preserve rates and vector initial output through history and files',()=>{
+    const g=fresh(),b=newBlock('discrete_rate_limiter',g);expect(b.params).toEqual({kind:'discrete_rate_limiter',rising_rate:1,falling_rate:1,initial:[0],sample_time:g.dt});expect(inputCount(b)).toBe(1);expect(outputCount(b)).toBe(1);g.blocks.push(b);const h=new GraphHistory(g,normalize);h.apply(m=>{const b=m.blocks.at(-1)!;b.width=2;b.params={kind:'discrete_rate_limiter',rising_rate:2,falling_rate:1,initial:[.5,-.5],sample_time:.1};});const edited=structuredClone(h.graph);expect(decodeGraphDocument(encodeGraphDocument(edited),normalize)).toEqual(edited);h.undo();expect(h.graph).toEqual(g);h.redo();expect(h.graph).toEqual(edited);
+  });
   it('dead zone defaults have one vector input/output and retain thresholds through files and history',()=>{
     const g=fresh(),b=newBlock('dead_zone',g);expect(b.params).toEqual({kind:'dead_zone',lower:-.1,upper:.1});
     expect(inputCount(b)).toBe(1);expect(outputCount(b)).toBe(1);g.blocks.push(b);

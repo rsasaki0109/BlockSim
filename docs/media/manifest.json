@@ -321,6 +321,14 @@
       "bytes": 966004,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "rate-limiter.gif",
+      "frames": 405,
+      "duration_seconds": 40.5,
+      "bytes": 1043892,
+      "width": 960,
+      "height": 737
     }
   ]
 }

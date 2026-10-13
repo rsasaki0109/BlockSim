@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "dt": 0.025,
+  "duration": 3.75,
+  "blocks": [
+    {
+      "id": "source",
+      "label": "Reference input",
+      "width": 2,
+      "position": [
+        30,
+        100
+      ],
+      "params": {
+        "kind": "step",
+        "before": [
+          1,
+          -1
+        ],
+        "after": [
+          -1,
+          1
+        ],
+        "step_time": 1.5
+      }
+    },
+    {
+      "id": "limiter",
+      "label": "Discrete Rate Limiter",
+      "width": 2,
+      "position": [
+        290,
+        100
+      ],
+      "params": {
+        "kind": "discrete_rate_limiter",
+        "rising_rate": 2,
+        "falling_rate": 1,
+        "initial": [
+          0,
+          0
+        ],
+        "sample_time": 0.125
+      }
+    },
+    {
+      "id": "output",
+      "label": "Limited reference",
+      "width": 2,
+      "position": [
+        550,
+        100
+      ],
+      "params": {
+        "kind": "scope"
+      }
+    },
+    {
+      "id": "raw",
+      "label": "Original reference",
+      "width": 2,
+      "position": [
+        290,
+        300
+      ],
+      "params": {
+        "kind": "scope"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_port": 0,
+      "to_port": 0,
+      "from": "source",
+      "to": "limiter"
+    },
+    {
+      "from_port": 0,
+      "to_port": 0,
+      "from": "limiter",
+      "to": "output"
+    },
+    {
+      "from_port": 0,
+      "to_port": 0,
+      "from": "source",
+      "to": "raw"
+    }
+  ]
+}

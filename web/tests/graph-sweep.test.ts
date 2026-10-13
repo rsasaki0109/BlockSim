@@ -3,7 +3,12 @@ import {sweepParameters,sweepModel,validateSweepPlan,sweepMetrics,sweepRow,sweep
 import {type GraphModel,type GraphResult} from '../src/graph-model';
 import subsystem from '../../samples/graphs/subsystem.json';
 import pid from '../../samples/graphs/continuous-pid.json';
+import rateLimiter from '../../samples/graphs/rate-limiter.json';
 const normalize=(j:string)=>j;
+it('discovers limiter rates, period and individual initial components and changes only the chosen field in an independent plan',()=>{
+ const model=structuredClone(rateLimiter) as GraphModel,keys=sweepParameters(model).map(p=>p.key);expect(keys).toEqual(expect.arrayContaining(['limiter:rising_rate','limiter:falling_rate','limiter:sample_time','limiter:initial.0','limiter:initial.1']));
+ const p:SweepPlan={format:'blocksim.sweep',version:1,model,parameter:'limiter:rising_rate',values:[0,1,2],metric:{scope:'output',component:0,reference:0,start:0,end:3.75}},before=structuredClone(p);const changed=sweepModel(validateSweepPlan(p,normalize),1,normalize);expect(changed.blocks[1].params).toEqual({...model.blocks[1].params,rising_rate:1});expect(changed.blocks[0]).toEqual(model.blocks[0]);expect(p).toEqual(before);expect(decodeSweepPlan(encodeSweepPlan(p),normalize)).toEqual(p);
+});
 const plan=():SweepPlan=>({format:'blocksim.sweep',version:1,model:structuredClone(subsystem) as GraphModel,parameter:'amplifier/gain:gain',values:[1,3,5],metric:{scope:'wave-output',component:0,reference:3,start:0,end:2}});
 it('changes only the exact nested parameter in independent clones, including duplicate local IDs',()=>{const p=plan(),copy=structuredClone(p.model.blocks[1]);copy.id='other';p.model.blocks.push(copy);const before=structuredClone(p);const a=sweepModel(p,7,normalize),b=sweepModel(p,9,normalize);expect((a.blocks[1].params.model as GraphModel).blocks[1].params.gain).toBe(7);expect((a.blocks[3].params.model as GraphModel).blocks[1].params.gain).toBe(3);expect((b.blocks[1].params.model as GraphModel).blocks[1].params.gain).toBe(9);expect(p).toEqual(before);});
 it('discovers vector components and AW booleans without exposing topology or arbitrary paths',()=>{const parameters=sweepParameters(pid as GraphModel);expect(parameters.find(p=>p.key==='controller:config.anti_windup')?.kind).toBe('boolean');expect(parameters.some(p=>p.key==='reference:before.0')).toBe(true);expect(parameters.some(p=>/kind|mode|inputs|model|port/.test(p.path.join('.')))).toBe(false);const p=plan();p.parameter='__proto__:gain';expect(()=>validateSweepPlan(p,normalize)).toThrow('パラメータ');});

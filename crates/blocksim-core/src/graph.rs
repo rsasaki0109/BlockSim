@@ -139,6 +139,12 @@ pub enum BlockKind {
         initial: Vec<f64>,
         sample_time: f64,
     },
+    DiscreteRateLimiter {
+        rising_rate: f64,
+        falling_rate: f64,
+        initial: Vec<f64>,
+        sample_time: f64,
+    },
     Pid {
         config: PidConfig,
         mode: PidMode,
@@ -345,6 +351,27 @@ fn validate_block(b: &Block, dt: f64, adaptive: bool) -> Result<()> {
         } => {
             vector("Initial delay", initial, b.width)?;
             period(*sample_time, dt)?;
+        }
+        BlockKind::DiscreteRateLimiter {
+            rising_rate,
+            falling_rate,
+            initial,
+            sample_time,
+        } => {
+            vector("Rate limiter initial output", initial, b.width)?;
+            period(*sample_time, dt)?;
+            for (name, rate) in [("Rising rate", rising_rate), ("Falling rate", falling_rate)] {
+                finite(name, *rate)?;
+                if *rate < 0.0 {
+                    return Err(format!("{name} must be nonnegative"));
+                }
+                let increment = rate * sample_time;
+                if !increment.is_finite() || (*rate > 0.0 && increment == 0.0) {
+                    return Err(format!(
+                        "{name} times sample time must be a representable finite increment"
+                    ));
+                }
+            }
         }
         BlockKind::DiscreteTransferFunction {
             numerator,
@@ -882,12 +909,15 @@ fn runtime(graph: &Compiled) -> Result<Runtime> {
                 None
             },
         );
-        rt.held
-            .push(if let BlockKind::Delay { initial, .. } = &b.params {
+        rt.held.push(
+            if let BlockKind::Delay { initial, .. }
+            | BlockKind::DiscreteRateLimiter { initial, .. } = &b.params
+            {
                 initial.clone()
             } else {
                 vec![0.0; b.width]
-            });
+            },
+        );
         rt.pending.push(None);
         rt.discrete.push(
             if let BlockKind::Pid {
@@ -1008,6 +1038,47 @@ fn evaluate(
                     .collect()
             }
             BlockKind::Delay { .. } => rt.held[i].clone(),
+            BlockKind::DiscreteRateLimiter {
+                rising_rate,
+                falling_rate,
+                sample_time,
+                ..
+            } => {
+                if tick.is_some_and(|t| {
+                    t > 0
+                        && t.is_multiple_of(
+                            period(*sample_time, dt).expect("validated sample time"),
+                        )
+                }) {
+                    let rise = rising_rate * sample_time;
+                    let fall = falling_rate * sample_time;
+                    rt.held[i] = first()
+                        .iter()
+                        .zip(&rt.held[i])
+                        .map(|(input, previous)| {
+                            // Compare distance before adding a limit. An overflowing
+                            // distance across opposite signs still takes a finite step.
+                            if input > previous {
+                                if input - previous <= rise {
+                                    *input
+                                } else {
+                                    previous + rise
+                                }
+                            } else if input < previous {
+                                if previous - input <= fall {
+                                    *input
+                                } else {
+                                    previous - fall
+                                }
+                            } else {
+                                *previous
+                            }
+                        })
+                        .collect();
+                }
+                rt.held[i].clone()
+            }
+
             BlockKind::DiscreteTransferFunction { sample_time, .. } => {
                 if tick.is_some_and(|t| t % period(*sample_time, dt).unwrap() == 0) {
                     let coefficients = rt.transfer[i].as_ref().unwrap();

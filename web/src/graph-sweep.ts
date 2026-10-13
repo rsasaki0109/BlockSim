@@ -5,7 +5,7 @@ export interface SweepMetric { scope:string;component:number;reference:number;st
 export interface SweepPlan { format:'blocksim.sweep';version:1;model:GraphModel;parameter:string;values:number[];metric:SweepMetric }
 export interface SweepMetrics { min:number;max:number;final:number;iae:number;ise:number }
 export interface SweepRow { value:number;status:'pending'|'ok'|'error'|'cancelled';model?:GraphModel;result?:GraphResult;statistics?:SolverStatistics;metrics?:SweepMetrics;error?:string;stage?:'validation'|'execution'|'metrics' }
-const KEYS=new Set(['numerator','denominator','value','before','after','step_time','amplitude','frequency','phase','offset','gain','tau','initial','signs','sample_time','kp','ki','kd','derivative_tau','anti_windup','lower','upper']);
+const KEYS=new Set(['numerator','denominator','value','before','after','step_time','amplitude','frequency','phase','offset','gain','tau','initial','signs','sample_time','kp','ki','kd','derivative_tau','rising_rate','falling_rate','anti_windup','lower','upper']);
 export function sweepParameters(model:GraphModel,prefix:string[]=[]):SweepParameter[]{
  return model.blocks.flatMap(block=>{
   const address=[...prefix,block.id].join('/');if(block.params.kind==='subsystem')return sweepParameters(block.params.model as GraphModel,[...prefix,block.id]);

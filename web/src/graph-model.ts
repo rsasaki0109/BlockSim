@@ -1,5 +1,5 @@
 import type { PidConfig } from './types';
-export type Kind = 'constant'|'sampled_input'|'step'|'sine'|'gain'|'sum'|'product'|'saturation'|'dead_zone'|'integrator'|'first_order'|'transfer_function'|'discrete_transfer_function'|'delay'|'pid'|'mux'|'selector'|'scope'|'input'|'output'|'subsystem';
+export type Kind = 'constant'|'sampled_input'|'step'|'sine'|'gain'|'sum'|'product'|'saturation'|'dead_zone'|'integrator'|'first_order'|'transfer_function'|'discrete_transfer_function'|'delay'|'discrete_rate_limiter'|'pid'|'mux'|'selector'|'scope'|'input'|'output'|'subsystem';
 export interface Params { kind: Kind; [key: string]: unknown }
 export interface GraphBlock { id: string; label: string; width: number; position: [number,number]; params: Params }
 export interface Edge { from: string; from_port: number; to: string; to_port: number }
@@ -12,7 +12,7 @@ export interface GraphResult { times: number[]; traces: GraphTrace[]; solver: st
 export const GRAPH_STORAGE_KEY = 'blocksim.graph.v2';
 export const KIND_NAMES: Record<Kind,string> = {
   constant:'Constant', sampled_input:'Sampled Input', step:'Step', sine:'Sine', gain:'Gain', sum:'Sum', product:'Product', saturation:'Saturation', dead_zone:'Dead Zone',
-  integrator:'Integrator', first_order:'FirstOrder', delay:'Unit Delay', pid:'PID', mux:'Mux', selector:'Selector',
+  integrator:'Integrator', first_order:'FirstOrder', delay:'Unit Delay', discrete_rate_limiter:'Discrete Rate Limiter', pid:'PID', mux:'Mux', selector:'Selector',
   transfer_function:'TransferFunction', discrete_transfer_function:'Discrete TransferFunction', scope:'Scope', input:'Input', output:'Output', subsystem:'Subsystem',
 };
 export function graphContext(root: GraphModel, path: string[]): GraphModel {
@@ -50,7 +50,7 @@ export function newBlock(kind: Kind, graph: GraphModel): GraphBlock {
     product:{kind,inputs:2}, saturation:{kind,limits:{lower:0,upper:1}}, dead_zone:{kind,lower:-.1,upper:.1}, integrator:{kind,initial:[0]},
     transfer_function:{kind,numerator:[1],denominator:[1,1],initial:[0]},
     discrete_transfer_function:{kind,numerator:[0.2,0],denominator:[1,-0.8],initial:[0],sample_time:graph.dt},
-    first_order:{kind,gain:1,tau:1,initial:[0]}, delay:{kind,initial:[0],sample_time:graph.dt},
+    first_order:{kind,gain:1,tau:1,initial:[0]}, delay:{kind,initial:[0],sample_time:graph.dt}, discrete_rate_limiter:{kind,rising_rate:1,falling_rate:1,initial:[0],sample_time:graph.dt},
     pid:{kind,config:pid,mode:'continuous',sample_time:graph.dt}, mux:{kind,inputs:2}, selector:{kind,indices:[0]},
     scope:{kind}, input:{kind,port:graph.blocks.filter(b=>b.params.kind==='input').length},
     output:{kind,port:graph.blocks.filter(b=>b.params.kind==='output').length}, subsystem:{kind},

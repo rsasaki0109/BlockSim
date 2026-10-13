@@ -161,6 +161,7 @@ pub(super) fn dependencies(graph: &Compiled, node: Node) -> Result<Vec<Node>> {
         | BlockKind::Scope {}
         | BlockKind::Input { .. }
         | BlockKind::Output { .. } => one(),
+        BlockKind::DiscreteRateLimiter { .. } => return Err(format!("{}: DiscreteRateLimiter is nonlinear; linear frequency/state-space analysis is unsupported", b.id)),
         BlockKind::DeadZone { .. } => {
             return Err(format!(
                 "{}: DeadZone is nonlinear; linear frequency/state-space analysis is unsupported",

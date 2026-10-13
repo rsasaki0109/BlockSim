@@ -216,6 +216,67 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 #[cfg(test)]
 mod tests {
     #[test]
+    fn rate_limiter_boundary_roundtrips_initial_rates_period_and_all_sampled_holds() {
+        let text = include_str!("../../../samples/graphs/rate-limiter.json");
+        let normalized = normalize_graph_json(text, true).unwrap();
+        let model: serde_json::Value = serde_json::from_str(&normalized).unwrap();
+        assert_eq!(
+            model["blocks"][1]["params"],
+            serde_json::json!({"kind":"discrete_rate_limiter","rising_rate":2.0,"falling_rate":1.0,"initial":[0.0,0.0],"sample_time":0.125})
+        );
+        assert_eq!(
+            normalize_graph_json(&normalized, false).unwrap(),
+            normalized
+        );
+        let r: serde_json::Value = serde_json::from_str(&graph_json(&normalized).unwrap()).unwrap();
+        assert_eq!(r["times"].as_array().unwrap().len(), 151);
+        for (k, row) in r["traces"][0]["values"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .enumerate()
+        {
+            let n = k / 5;
+            let expected = if n < 12 {
+                [0.25 * n as f64, -0.125 * n as f64].map(|v| v.clamp(-1., 1.))
+            } else {
+                [
+                    (1. - 0.125 * (n - 11) as f64).max(-1.),
+                    (-1. + 0.25 * (n - 11) as f64).min(1.),
+                ]
+            };
+            assert_eq!(row, &serde_json::json!(expected));
+        }
+    }
+    #[test]
+    fn rate_limiter_boundary_rejects_missing_unknown_negative_rates_bad_initial_and_period() {
+        let original: serde_json::Value =
+            serde_json::from_str(include_str!("../../../samples/graphs/rate-limiter.json"))
+                .unwrap();
+        for (key, value) in [
+            ("rising_rate", serde_json::json!(-1)),
+            ("falling_rate", serde_json::json!(-1)),
+            ("rising_rate", serde_json::json!(null)),
+            ("falling_rate", serde_json::json!([1, 1])),
+            ("initial", serde_json::json!([0])),
+            ("sample_time", serde_json::json!(0.13)),
+            ("extra", serde_json::json!(0)),
+        ] {
+            let mut m = original.clone();
+            m["blocks"][1]["params"][key] = value;
+            assert!(normalize_graph_json(&m.to_string(), false).is_err());
+            assert!(graph_json(&m.to_string()).is_err());
+        }
+        for key in ["rising_rate", "falling_rate", "initial", "sample_time"] {
+            let mut m = original.clone();
+            m["blocks"][1]["params"]
+                .as_object_mut()
+                .unwrap()
+                .remove(key);
+            assert!(graph_json(&m.to_string()).is_err());
+        }
+    }
+    #[test]
     fn dead_zone_boundary_roundtrips_thresholds_and_actual_vector_rows() {
         let text = include_str!("../../../samples/graphs/dead-zone.json");
         let normalized = normalize_graph_json(text, true).unwrap();
