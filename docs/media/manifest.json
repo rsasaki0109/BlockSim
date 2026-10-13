@@ -217,6 +217,14 @@
       "bytes": 257799,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "sine-comparison.gif",
+      "frames": 178,
+      "duration_seconds": 17.8,
+      "bytes": 313843,
+      "width": 960,
+      "height": 737
     }
   ]
 }

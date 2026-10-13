@@ -1,0 +1,509 @@
+{
+  "cases": [
+    {
+      "continuous_equation_max_error": 1.0970391262077328e-12,
+      "discrete_equation_max_error": 1.4432899320127035e-15,
+      "held_between_samples": true,
+      "input": {
+        "amplitude": 1.0,
+        "frequency_hz": 0.5,
+        "offset": 0.25,
+        "phase_rad": 0.4
+      },
+      "input_equation_max_error": 0.0,
+      "inputs_identical": true,
+      "max_abs_delta": 1.0973444375395047e-12,
+      "method": "zoh",
+      "name": "lowpass",
+      "points": [
+        {
+          "continuous": 0.0,
+          "discrete": 0.0,
+          "input": 0.6394183423086506,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": 0.011204589192743981,
+          "discrete": 0.011204589192367052,
+          "input": 1.1064321255857608,
+          "sample": 1,
+          "time": 0.2
+        },
+        {
+          "continuous": 0.04754096409680813,
+          "discrete": 0.047540964096128235,
+          "input": 1.2463179459464289,
+          "sample": 2,
+          "time": 0.4
+        },
+        {
+          "continuous": 0.17535212967838915,
+          "discrete": 0.17535212967894548,
+          "input": 0.6394183423086506,
+          "sample": 10,
+          "time": 2.0
+        },
+        {
+          "continuous": 0.19154997662414439,
+          "discrete": 0.1915499766247439,
+          "input": 0.6394183423086481,
+          "sample": 50,
+          "time": 10.0
+        },
+        {
+          "continuous": 0.191542349741885,
+          "discrete": 0.19154234974247983,
+          "input": 0.6394183423086469,
+          "sample": 100,
+          "time": 20.0
+        }
+      ],
+      "rms_delta": 5.849863843056972e-13,
+      "sample_time": 0.2,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 1.0970391262077328e-12,
+      "discrete_equation_max_error": 1.304512053934559e-15,
+      "held_between_samples": true,
+      "input": {
+        "amplitude": 1.0,
+        "frequency_hz": 0.5,
+        "offset": 0.25,
+        "phase_rad": 0.4
+      },
+      "input_equation_max_error": 0.0,
+      "inputs_identical": true,
+      "max_abs_delta": 0.03550696275794016,
+      "method": "tustin",
+      "name": "lowpass",
+      "points": [
+        {
+          "continuous": 0.0,
+          "discrete": 0.005284449109988849,
+          "input": 0.6394183423086506,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": 0.011204589192743981,
+          "discrete": 0.028360245735378965,
+          "input": 1.1064321255857608,
+          "sample": 1,
+          "time": 0.2
+        },
+        {
+          "continuous": 0.04754096409680813,
+          "discrete": 0.07674288278613671,
+          "input": 1.2463179459464289,
+          "sample": 2,
+          "time": 0.4
+        },
+        {
+          "continuous": 0.17535212967838915,
+          "discrete": 0.16326309534130065,
+          "input": 0.6394183423086506,
+          "sample": 10,
+          "time": 2.0
+        },
+        {
+          "continuous": 0.19154997662414439,
+          "discrete": 0.17733266901465522,
+          "input": 0.6394183423086481,
+          "sample": 50,
+          "time": 10.0
+        },
+        {
+          "continuous": 0.191542349741885,
+          "discrete": 0.1773254202793871,
+          "input": 0.6394183423086469,
+          "sample": 100,
+          "time": 20.0
+        }
+      ],
+      "rms_delta": 0.018966451464837705,
+      "sample_time": 0.2,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 2.917110997202599e-13,
+      "discrete_equation_max_error": 9.992007221626409e-16,
+      "held_between_samples": true,
+      "input": {
+        "amplitude": -0.5,
+        "frequency_hz": 2.5,
+        "offset": 0.25,
+        "phase_rad": 1.5707963267948966
+      },
+      "input_equation_max_error": 0.0,
+      "inputs_identical": true,
+      "max_abs_delta": 2.9243274468626623e-13,
+      "method": "zoh",
+      "name": "nyquist",
+      "points": [
+        {
+          "continuous": 0.0,
+          "discrete": 0.0,
+          "input": -0.25,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": -0.004380774076787453,
+          "discrete": -0.004380774076605445,
+          "input": 0.75,
+          "sample": 1,
+          "time": 0.2
+        },
+        {
+          "continuous": 0.0021351124190958997,
+          "discrete": 0.002135112418895527,
+          "input": -0.25,
+          "sample": 2,
+          "time": 0.4
+        },
+        {
+          "continuous": 0.1352958710143098,
+          "discrete": 0.13529587101409926,
+          "input": -0.25,
+          "sample": 10,
+          "time": 2.0
+        },
+        {
+          "continuous": 0.25018319335064343,
+          "discrete": 0.2501831933505078,
+          "input": -0.25,
+          "sample": 50,
+          "time": 10.0
+        },
+        {
+          "continuous": 0.250330669894193,
+          "discrete": 0.25033066989405844,
+          "input": -0.25,
+          "sample": 100,
+          "time": 20.0
+        }
+      ],
+      "rms_delta": 2.0832170897819071e-13,
+      "sample_time": 0.2,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 2.917110997202599e-13,
+      "discrete_equation_max_error": 6.661338147750939e-16,
+      "held_between_samples": true,
+      "input": {
+        "amplitude": -0.5,
+        "frequency_hz": 2.5,
+        "offset": 0.25,
+        "phase_rad": 1.5707963267948966
+      },
+      "input_equation_max_error": 0.0,
+      "inputs_identical": true,
+      "max_abs_delta": 0.009300550563513851,
+      "method": "tustin",
+      "name": "nyquist",
+      "points": [
+        {
+          "continuous": 0.0,
+          "discrete": -0.0020661157024793393,
+          "input": -0.25,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": -0.004380774076787453,
+          "discrete": -0.0013148009015777617,
+          "input": 0.75,
+          "sample": 1,
+          "time": 0.2
+        },
+        {
+          "continuous": 0.0021351124190958997,
+          "discrete": 0.007496072672631655,
+          "input": -0.25,
+          "sample": 2,
+          "time": 0.4
+        },
+        {
+          "continuous": 0.1352958710143098,
+          "discrete": 0.14204812824676474,
+          "input": -0.25,
+          "sample": 10,
+          "time": 2.0
+        },
+        {
+          "continuous": 0.25018319335064343,
+          "discrete": 0.2498679895446586,
+          "input": -0.25,
+          "sample": 50,
+          "time": 10.0
+        },
+        {
+          "continuous": 0.250330669894193,
+          "discrete": 0.24999998889461372,
+          "input": -0.25,
+          "sample": 100,
+          "time": 20.0
+        }
+      ],
+      "rms_delta": 0.0028026578138027067,
+      "sample_time": 0.2,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 2.0722312754628547e-13,
+      "discrete_equation_max_error": 4.440892098500626e-16,
+      "held_between_samples": true,
+      "input": {
+        "amplitude": 1.0,
+        "frequency_hz": 1.3,
+        "offset": -0.25,
+        "phase_rad": 0.4
+      },
+      "input_equation_max_error": 0.0,
+      "inputs_identical": true,
+      "max_abs_delta": 2.0689006063889792e-13,
+      "method": "zoh",
+      "name": "direct_rounded",
+      "points": [
+        {
+          "continuous": 0.13941834230865052,
+          "discrete": 0.13941834230865052,
+          "input": 0.13941834230865052,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": 0.7012671772198465,
+          "discrete": 0.7012671772198559,
+          "input": 0.6879997677926183,
+          "sample": 1,
+          "time": 0.1
+        },
+        {
+          "continuous": 0.722268393283696,
+          "discrete": 0.7222683932837605,
+          "input": 0.6447917104997871,
+          "sample": 2,
+          "time": 0.2
+        },
+        {
+          "continuous": 0.4443583760419274,
+          "discrete": 0.4443583760418946,
+          "input": 0.5056441745570416,
+          "sample": 10,
+          "time": 1.0
+        },
+        {
+          "continuous": -0.7626421813119874,
+          "discrete": -0.7626421813118955,
+          "input": -0.639418342308651,
+          "sample": 50,
+          "time": 5.0
+        },
+        {
+          "continuous": -0.23481912088467843,
+          "discrete": -0.2348191208847792,
+          "input": 0.13941834230865935,
+          "sample": 100,
+          "time": 10.0
+        }
+      ],
+      "rms_delta": 8.633047050255164e-14,
+      "sample_time": 0.1,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 2.0722312754628547e-13,
+      "discrete_equation_max_error": 4.440892098500626e-16,
+      "held_between_samples": true,
+      "input": {
+        "amplitude": 1.0,
+        "frequency_hz": 1.3,
+        "offset": -0.25,
+        "phase_rad": 0.4
+      },
+      "input_equation_max_error": 0.0,
+      "inputs_identical": true,
+      "max_abs_delta": 0.06015155516725601,
+      "method": "tustin",
+      "name": "direct_rounded",
+      "points": [
+        {
+          "continuous": 0.13941834230865052,
+          "discrete": 0.14605731099001484,
+          "input": 0.13941834230865052,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": 0.7012671772198465,
+          "discrete": 0.7334073161281988,
+          "input": 0.6879997677926183,
+          "sample": 1,
+          "time": 0.1
+        },
+        {
+          "continuous": 0.722268393283696,
+          "discrete": 0.7493409912935222,
+          "input": 0.6447917104997871,
+          "sample": 2,
+          "time": 0.2
+        },
+        {
+          "continuous": 0.4443583760419274,
+          "discrete": 0.4713312584535825,
+          "input": 0.5056441745570416,
+          "sample": 10,
+          "time": 1.0
+        },
+        {
+          "continuous": -0.7626421813119874,
+          "discrete": -0.787136131028452,
+          "input": -0.639418342308651,
+          "sample": 50,
+          "time": 5.0
+        },
+        {
+          "continuous": -0.23481912088467843,
+          "discrete": -0.21045554783209788,
+          "input": 0.13941834230865935,
+          "sample": 100,
+          "time": 10.0
+        }
+      ],
+      "rms_delta": 0.034932634739660115,
+      "sample_time": 0.1,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 2.1249668691325496e-13,
+      "discrete_equation_max_error": 4.440892098500626e-16,
+      "held_between_samples": true,
+      "input": {
+        "amplitude": 1.0,
+        "frequency_hz": 0.0,
+        "offset": 0.25,
+        "phase_rad": 0.4
+      },
+      "input_equation_max_error": 0.0,
+      "inputs_identical": true,
+      "max_abs_delta": 2.1249668691325496e-13,
+      "method": "zoh",
+      "name": "zero_frequency",
+      "points": [
+        {
+          "continuous": 0.6394183423086506,
+          "discrete": 0.6394183423086506,
+          "input": 0.6394183423086506,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": 0.7553252236869685,
+          "discrete": 0.7553252236870649,
+          "input": 0.6394183423086506,
+          "sample": 1,
+          "time": 0.2
+        },
+        {
+          "continuous": 0.8502217519647841,
+          "discrete": 0.8502217519649344,
+          "input": 0.6394183423086506,
+          "sample": 2,
+          "time": 0.4
+        },
+        {
+          "continuous": 1.192300822154117,
+          "discrete": 1.1923008221542746,
+          "input": 0.6394183423086506,
+          "sample": 10,
+          "time": 2.0
+        },
+        {
+          "continuous": 1.2788076550694716,
+          "discrete": 1.2788076550694716,
+          "input": 0.6394183423086506,
+          "sample": 50,
+          "time": 10.0
+        },
+        {
+          "continuous": 1.278836683299362,
+          "discrete": 1.2788366832993616,
+          "input": 0.6394183423086506,
+          "sample": 100,
+          "time": 20.0
+        }
+      ],
+      "rms_delta": 6.436108397397526e-14,
+      "sample_time": 0.2,
+      "samples": 101
+    },
+    {
+      "continuous_equation_max_error": 2.1249668691325496e-13,
+      "discrete_equation_max_error": 6.661338147750939e-16,
+      "held_between_samples": true,
+      "input": {
+        "amplitude": 1.0,
+        "frequency_hz": 0.0,
+        "offset": 0.25,
+        "phase_rad": 0.4
+      },
+      "input_equation_max_error": 0.0,
+      "inputs_identical": true,
+      "max_abs_delta": 0.058128940209877245,
+      "method": "tustin",
+      "name": "zero_frequency",
+      "points": [
+        {
+          "continuous": 0.6394183423086506,
+          "discrete": 0.6975472825185278,
+          "input": 0.6394183423086506,
+          "sample": 0,
+          "time": 0.0
+        },
+        {
+          "continuous": 0.7553252236869685,
+          "discrete": 0.8032362647183047,
+          "input": 0.6394183423086506,
+          "sample": 1,
+          "time": 0.2
+        },
+        {
+          "continuous": 0.8502217519647841,
+          "discrete": 0.889709068336304,
+          "input": 0.6394183423086506,
+          "sample": 2,
+          "time": 0.4
+        },
+        {
+          "continuous": 1.192300822154117,
+          "discrete": 1.2006935824826934,
+          "input": 0.6394183423086506,
+          "sample": 10,
+          "time": 2.0
+        },
+        {
+          "continuous": 1.2788076550694716,
+          "discrete": 1.2788111644440048,
+          "input": 0.6394183423086506,
+          "sample": 50,
+          "time": 10.0
+        },
+        {
+          "continuous": 1.278836683299362,
+          "discrete": 1.278836683496896,
+          "input": 0.6394183423086506,
+          "sample": 100,
+          "time": 20.0
+        }
+      ],
+      "rms_delta": 0.010212127080253488,
+      "sample_time": 0.2,
+      "samples": 101
+    }
+  ],
+  "scope": "isolated scalar zero-state sampled and held sine, sample instants only"
+}

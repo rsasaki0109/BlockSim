@@ -211,6 +211,14 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
 
 [保持入力の比較](docs/conversion-comparison.md) では、入力の変更前・変更後・切り替えサンプルを設定できます。
 
+<p align="center">
+  <strong>27 — Sample the sine. Hold the input.</strong><br>
+  <a href="docs/media/sine-comparison.gif"><img src="docs/media/sine-comparison.gif" width="960" alt="正弦波をサンプルして保持した入力で連続と離散を比較し、ZOHの一致とTustinの差を数値確認、周波数・位相・実際の入力系列付きCSVと設定を保存・復元"></a><br>
+  <sub>正弦波をサンプルして保持。同じ入力で比較し、実行条件と入力系列を保存。</sub>
+</p>
+
+[保持正弦波の比較](docs/sine-comparison.md) で、周波数・振幅・位相・オフセットを設定できます。
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。

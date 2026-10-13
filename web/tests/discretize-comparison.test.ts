@@ -1,10 +1,25 @@
 import {describe,it,expect} from 'vitest';
-import {decodeConversionPlan,conversionReport,conversionModels,conversionCsv,type ConversionPlan} from '../src/discretize-comparison';
+import {decodeConversionPlan,conversionReport,conversionModels,conversionCsv,conversionInputLabel,type ConversionPlan} from '../src/discretize-comparison';
 import type {GraphResult} from '../src/graph-model';
 const plan:ConversionPlan={format:'blocksim.conversion-comparison',version:1,method:'zoh',request:{numerator:[1],denominator:[1,1],sample_time:.2},samples:3};
 const converted={request:plan.request,numerator:[0,1-Math.exp(-.2)],denominator:[1,-Math.exp(-.2)],method:'zoh'};
 const result=(value:(t:number)=>number):GraphResult=>({times:Array.from({length:21},(_,i)=>i*.02),traces:[{id:'output',label:'output',values:Array.from({length:21},(_,i)=>[value(i*.02)])}],solver:'rk45'});
 describe('conversion comparison',()=>{
+ it('bounds sampled-sine fields, Nyquist and ambiguous input formats',()=>{
+  const input={kind:'sampled_sine',frequency_hz:2.5,amplitude:-1,phase_rad:.4,offset:.25};
+  expect(decodeConversionPlan(JSON.stringify({...plan,input})).input).toEqual(input);
+  for(const patch of [{frequency_hz:2.500001},{frequency_hz:-1},{amplitude:null},{phase_rad:'0'},{offset:null},{extra:true},{change_sample:1}])expect(()=>decodeConversionPlan(JSON.stringify({...plan,input:{...input,...patch}}))).toThrow();
+ });
+ it('uses actual sample/hold and records the supplied input on both sides',()=>{
+  const p:ConversionPlan={...plan,input:{kind:'sampled_sine',frequency_hz:.5,amplitude:1,phase_rad:.4,offset:.25}},[a,b]=conversionModels(p,converted);
+  expect(a.blocks.find(v=>v.id==='hold')!.params).toEqual({kind:'discrete_transfer_function',numerator:[1],denominator:[1],initial:[],sample_time:.2});expect(b.blocks.find(v=>v.id==='hold')).toEqual(a.blocks.find(v=>v.id==='hold'));expect(a.edges.filter(e=>e.from==='hold').map(e=>e.to)).toEqual(['plant','input_record']);
+ });
+ it('refuses different, unheld or nonfinite actual input and exports its executed conditions',()=>{
+  const p:ConversionPlan={...plan,input:{kind:'sampled_sine',frequency_hz:.5,amplitude:1,phase_rad:.4,offset:.25}};
+  const a=result(()=>0);a.traces.push({id:'input_record',label:'Actual input',values:a.times.map((_,i)=>[Math.floor(i/10)])});const b=structuredClone(a);
+  const r=conversionReport(p,converted,a,b);expect(r.input).toEqual([0,1,2]);expect(r.post_change_metrics).toBeUndefined();expect(conversionInputLabel(r)).toContain('Nyquist=2.5Hz');expect(conversionCsv(r).split('\r\n')[0]).toContain('input,frequency_hz,amplitude,phase_rad,offset');
+  for(const edit of [(r:GraphResult)=>{r.traces.pop();},(r:GraphResult)=>{r.traces[1].values[10]=[3];},(r:GraphResult)=>{r.traces[1].values[1]=[.5];},(r:GraphResult)=>{r.traces[1].values[10]=[NaN];}]){const bad=structuredClone(b);edit(bad);expect(()=>conversionReport(p,converted,a,bad)).toThrow();}
+ });
  it('rejects invalid held input and off-clock or out-of-range change conditions',()=>{
   const input={kind:'held_step',before:1,after:0,change_sample:1};
   expect(decodeConversionPlan(JSON.stringify({...plan,input})).input).toEqual(input);
@@ -20,7 +35,7 @@ describe('conversion comparison',()=>{
   const p={...plan,input:{kind:'held_step' as const,before:2,after:-.5,change_sample:1}};
   const r=conversionReport(p,converted,result(()=>0),result(t=>t<.2?100:1));
   expect(r.metrics.maxAbs).toBe(100);expect(r.post_change_metrics).toEqual({maxAbs:1,rms:1,final:1,area:.2});expect(r.input).toEqual([2,-.5,-.5]);
-  const rows=conversionCsv(r).split('\r\n');expect(rows[0]).toContain('input,change_sample,before,after');expect(rows[2].split(',').slice(6)).toEqual(['-0.5','1','2','-0.5']);p.input.after=99;expect(r.plan.input?.after).toBe(-.5);
+  const rows=conversionCsv(r).split('\r\n');expect(rows[0]).toContain('input,change_sample,before,after');expect(rows[2].split(',').slice(6)).toEqual(['-0.5','1','2','-0.5']);p.input.after=99;expect((r.plan.input?.kind==='held_step'?r.plan.input.after:undefined)).toBe(-.5);
  });
  it('rejects unbounded, ambiguous and invalid plans',()=>{
   expect(decodeConversionPlan(JSON.stringify(plan))).toEqual(plan);
