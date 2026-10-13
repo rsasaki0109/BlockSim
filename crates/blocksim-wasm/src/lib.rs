@@ -238,6 +238,64 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 #[cfg(test)]
 mod tests {
     #[test]
+    fn matrix_block_boundary_roundtrips_original_matrices_and_executes_both_domains() {
+        for text in [
+            include_str!("../../../samples/matrix/continuous-plan.json"),
+            include_str!("../../../samples/matrix/discrete-plan.json"),
+        ] {
+            let p: serde_json::Value = serde_json::from_str(text).unwrap();
+            let model = p["model"].to_string();
+            let normalized = normalize_graph_json(&model, true).unwrap();
+            let saved: serde_json::Value = serde_json::from_str(&normalized).unwrap();
+            let original: blocksim_core::graph::GraphModel =
+                serde_json::from_value(p["model"].clone()).unwrap();
+            let restored: blocksim_core::graph::GraphModel = serde_json::from_value(saved).unwrap();
+            assert_eq!(restored, original);
+            let result: serde_json::Value =
+                serde_json::from_str(&graph_json(&normalized).unwrap()).unwrap();
+            assert_eq!(
+                result["traces"][0]["values"][0],
+                serde_json::json!([0.75, 0.75])
+            );
+            assert_eq!(result["times"].as_array().unwrap().len(), 201);
+            let analysis: serde_json::Value =
+                serde_json::from_str(&mimo_json(&normalized, &p["request"].to_string()).unwrap())
+                    .unwrap();
+            assert_eq!(analysis["check"]["states"], 2);
+            assert_eq!(analysis["responses"].as_array().unwrap().len(), 4);
+            assert_eq!(
+                analysis["structure"]["controllability"]["numerical_rank"],
+                2
+            );
+            assert!(!normalized.contains("state-0"));
+        }
+    }
+    #[test]
+    fn matrix_block_boundary_rejects_unknown_missing_null_and_invalid_shapes() {
+        let p: serde_json::Value =
+            serde_json::from_str(include_str!("../../../samples/matrix/continuous-plan.json"))
+                .unwrap();
+        for field in ["a", "b", "c", "d", "initial", "mode", "sample_time"] {
+            let mut m = p["model"].clone();
+            m["blocks"][1]["params"]
+                .as_object_mut()
+                .unwrap()
+                .remove(field);
+            assert!(normalize_graph_json(&m.to_string(), false).is_err());
+            m = p["model"].clone();
+            m["blocks"][1]["params"][field] = serde_json::Value::Null;
+            assert!(normalize_graph_json(&m.to_string(), false).is_err());
+        }
+        let mut m = p["model"].clone();
+        m["blocks"][1]["params"]["unknown"] = serde_json::json!(true);
+        assert!(normalize_graph_json(&m.to_string(), false).is_err());
+        m = p["model"].clone();
+        m["blocks"][1]["params"]["b"] = serde_json::json!([[1], [2]]);
+        assert!(normalize_graph_json(&m.to_string(), false)
+            .unwrap_err()
+            .contains("StateSpace"));
+    }
+    #[test]
     fn mimo_boundary_preserves_full_matrices_paths_and_strict_limits() {
         for text in [
             include_str!("../../../samples/mimo/continuous-plan.json"),

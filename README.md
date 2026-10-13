@@ -325,6 +325,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <a href="docs/mimo.md">複数入出力を解析する</a>
 </p>
 
+<p align="center">
+  <a href="docs/media/matrix-block.gif"><img src="docs/media/matrix-block.gif" width="960" alt="StateSpaceブロックの行列と初期状態を設定し、結合した2成分の時間応答・離散の出力保持・MIMO解析と設定復元を実WASMで確認"></a><br>
+  <b>行列からモデルを作り、そのまま動かす。</b><br>
+  A・B・C・Dと初期状態を編集。連続・離散の時間応答から全経路の解析へ。<br>
+  <a href="docs/matrix-block.md">StateSpaceブロックを使う</a>
+</p>
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。

@@ -345,6 +345,14 @@
       "bytes": 272746,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "matrix-block.gif",
+      "frames": 227,
+      "duration_seconds": 22.7,
+      "bytes": 573108,
+      "width": 960,
+      "height": 737
     }
   ]
 }

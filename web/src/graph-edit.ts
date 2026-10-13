@@ -1,6 +1,7 @@
 import { inputCount, outputCount, outputWidth, interfaceBlocks, setClock, solverKey, type GraphBlock, type GraphModel, type Edge } from './graph-model';
 
 export function inputWidth(block: GraphBlock, port: number): number {
+  if(block.params.kind==='state_space')return (block.params.d as number[][])[0]?.length??0;
   return block.params.kind === 'subsystem' ? interfaceBlocks(block, 'input')[port].width : block.width;
 }
 /** One occupied input is never replaced implicitly. Editing remains transactional. */

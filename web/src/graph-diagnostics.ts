@@ -25,11 +25,14 @@ export interface GraphDiagnostic {
 export interface GraphValidation { runnable: boolean; diagnostics: GraphDiagnostic[] }
 export function diagnosticTarget(root: GraphModel, address: string|null): GraphSearchHit|null {
   if (!address) return null;
-  const parts = address.split('/'), id = parts.pop()!;
-  try {
-    const block = graphContext(root, parts).blocks.find(b => b.id === id);
-    return block ? { path: parts, id, label: block.label, kind: block.params.kind, address } : null;
-  } catch { return null; }
+  const parts=address.split('/');let model=root;
+  for(let i=0;i<parts.length;i++){
+    const block=model.blocks.find(b=>b.id===parts[i]);if(!block)return null;
+    if(block.params.kind==='state_space'&&i<parts.length-1&&(parts.length!==i+2||!/^(input|output|vector|(?:input|state|rate|output|held)-\d+)$/.test(parts[i+1])))return null;
+    if(i===parts.length-1||block.params.kind==='state_space')return {path:parts.slice(0,i),id:block.id,label:block.label,kind:block.params.kind,address:parts.slice(0,i+1).join('/')};
+    if(block.params.kind!=='subsystem')return null;model=block.params.model as GraphModel;
+  }
+  return null;
 }
 export function diagnosticLinks(root: GraphModel, issue: GraphDiagnostic) {
   const target = diagnosticTarget(root, issue.block_id), source = diagnosticTarget(root, issue.source_id);
@@ -39,5 +42,6 @@ export function diagnosticLinks(root: GraphModel, issue: GraphDiagnostic) {
     const block = graphContext(root, target.path).blocks.find(b => b.id === target.id)!;
     if (parent) parentInput = { target: parent, port: Number(block.params.port) };
   }
+  if(['unconnected_input','signal_width','duplicate_input'].includes(issue.code)&&target?.kind==='state_space')parentInput={target,port:0};
   return { target, source, parentInput };
 }

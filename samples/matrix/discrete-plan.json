@@ -1,0 +1,142 @@
+{
+  "format": "blocksim.mimo",
+  "version": 1,
+  "model": {
+    "version": 1,
+    "dt": 0.01,
+    "duration": 2,
+    "blocks": [
+      {
+        "id": "source",
+        "label": "2\u6210\u5206\u5165\u529b",
+        "width": 2,
+        "position": [
+          30,
+          140
+        ],
+        "params": {
+          "kind": "step",
+          "before": [
+            1,
+            2
+          ],
+          "after": [
+            0.25,
+            -1
+          ],
+          "step_time": 0.15
+        }
+      },
+      {
+        "id": "matrix",
+        "label": "StateSpace",
+        "width": 2,
+        "position": [
+          330,
+          140
+        ],
+        "params": {
+          "kind": "state_space",
+          "a": [
+            [
+              0.8,
+              0
+            ],
+            [
+              0.1,
+              0.7
+            ]
+          ],
+          "b": [
+            [
+              0.2,
+              0.1
+            ],
+            [
+              0,
+              0.3
+            ]
+          ],
+          "c": [
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "d": [
+            [
+              0.25,
+              0
+            ],
+            [
+              0,
+              0.5
+            ]
+          ],
+          "initial": [
+            0.5,
+            -0.25
+          ],
+          "mode": "discrete",
+          "sample_time": 0.1
+        }
+      },
+      {
+        "id": "output",
+        "label": "2\u6210\u5206\u51fa\u529b",
+        "width": 2,
+        "position": [
+          630,
+          140
+        ],
+        "params": {
+          "kind": "scope"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "source",
+        "from_port": 0,
+        "to": "matrix",
+        "to_port": 0
+      },
+      {
+        "from": "matrix",
+        "from_port": 0,
+        "to": "output",
+        "to_port": 0
+      }
+    ]
+  },
+  "request": {
+    "inputs": [
+      {
+        "block": "source",
+        "component": 0
+      },
+      {
+        "block": "source",
+        "component": 1
+      }
+    ],
+    "outputs": [
+      {
+        "block": "output",
+        "component": 0
+      },
+      {
+        "block": "output",
+        "component": 1
+      }
+    ],
+    "discrete": true,
+    "min_omega": 0.1,
+    "max_omega": 10,
+    "points": 101
+  }
+}

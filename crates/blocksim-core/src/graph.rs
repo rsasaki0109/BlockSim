@@ -7,6 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 mod adaptive;
 pub mod discretize;
 pub mod frequency;
+mod matrix_block;
 pub mod pole_zero;
 mod sampled;
 pub mod state_space;
@@ -133,6 +134,15 @@ pub enum BlockKind {
         numerator: Vec<f64>,
         denominator: Vec<f64>,
         initial: Vec<f64>,
+        sample_time: f64,
+    },
+    StateSpace {
+        a: Vec<Vec<f64>>,
+        b: Vec<Vec<f64>>,
+        c: Vec<Vec<f64>>,
+        d: Vec<Vec<f64>>,
+        initial: Vec<f64>,
+        mode: PidMode,
         sample_time: f64,
     },
     Delay {
@@ -406,6 +416,7 @@ fn validate_block(b: &Block, dt: f64, adaptive: bool) -> Result<()> {
                 return Err("Selector indices must match output width".into());
             }
         }
+        BlockKind::StateSpace { .. } => matrix_block::validate(b, dt)?,
         BlockKind::Scope {} | BlockKind::Input { .. } | BlockKind::Output { .. } => (),
         BlockKind::Subsystem { .. } => unreachable!("expanded before parameter validation"),
     }
@@ -468,6 +479,11 @@ fn expand(
                 return Err(format!("{id}: subsystem needs an Output"));
             }
             boundary
+        } else if matches!(b.params, BlockKind::StateSpace { .. }) {
+            validate_block(b, dt, matches!(solver, SolverConfig::Rk45 { .. }))
+                .map_err(|e| format!("{id}: {e}"))?;
+            let inner = matrix_block::lower(b, model.dt, model.duration)?;
+            expand(&inner, &format!("{id}/"), depth.max(1), flat, dt, solver)?
         } else {
             validate_block(b, dt, matches!(solver, SolverConfig::Rk45 { .. }))
                 .map_err(|e| format!("{id}: {e}"))?;
@@ -1136,7 +1152,7 @@ fn evaluate(
                 indices.iter().map(|j| values[inputs[0]][*j]).collect()
             }
             BlockKind::Scope {} | BlockKind::Input { .. } | BlockKind::Output { .. } => first(),
-            BlockKind::Subsystem { .. } => unreachable!(),
+            BlockKind::Subsystem { .. } | BlockKind::StateSpace { .. } => unreachable!(),
         };
         for v in &value {
             finite(&format!("{} at t={time}", b.id), *v)?;
