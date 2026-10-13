@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "dt": 0.01,
+  "duration": 1,
+  "blocks": [
+    {
+      "id": "source",
+      "label": "Vector CSV input",
+      "width": 2,
+      "position": [
+        30,
+        100
+      ],
+      "params": {
+        "kind": "sampled_input",
+        "values": [
+          [
+            0,
+            0
+          ]
+        ],
+        "sample_time": 0.1,
+        "repeat": true
+      }
+    },
+    {
+      "id": "output",
+      "label": "CSV Scope",
+      "width": 2,
+      "position": [
+        290,
+        100
+      ],
+      "params": {
+        "kind": "scope"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "source",
+      "from_port": 0,
+      "to": "output",
+      "to_port": 0
+    }
+  ]
+}

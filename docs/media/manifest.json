@@ -241,6 +241,14 @@
       "bytes": 255088,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "vector-input-csv.gif",
+      "frames": 163,
+      "duration_seconds": 16.3,
+      "bytes": 371542,
+      "width": 960,
+      "height": 737
     }
   ]
 }

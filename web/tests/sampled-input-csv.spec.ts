@@ -1,0 +1,38 @@
+import {test,expect,type Page} from '@playwright/test';
+import {readFile} from 'node:fs/promises';
+import {sampleTableCsv} from '../src/sampled-input-csv';
+import type {GraphModel} from '../src/graph-model';
+const edge=(from:string,to:string)=>({from,from_port:0,to,to_port:0});
+function model(width=2):GraphModel{return {version:1,dt:.01,duration:1,blocks:[{id:'source',label:'CSV input',width,position:[30,100],params:{kind:'sampled_input',values:[Array(width).fill(0)],sample_time:.1,repeat:true}},{id:'output',label:'out',width,position:[260,100],params:{kind:'scope'}}],edges:[edge('source','output')]};}
+async function open(page:Page,m=model()) {page.on('dialog',d=>d.accept());await page.goto('/');await expect(page.locator('#status')).toContainText('完了');await page.getByRole('tab',{name:'ブロック図エディタ'}).click();await expect(page.locator('#graph-status')).toContainText('完了');await page.locator('#graph-import').setInputFiles({name:'model.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(m))});await run(page);await inspect(page,m.blocks[0].id);}
+async function inspect(page:Page,id='source'){await page.locator(`[data-block="${id}"]`).focus();await page.keyboard.press('Enter');}
+async function run(page:Page){await page.locator('#graph-run').click();await expect(page.locator('#graph-status')).toContainText('完了');}
+async function download(page:Page,id:string){const pending=page.waitForEvent('download');await page.locator('#'+id).click();return readFile((await(await pending).path())!,'utf8');}
+async function archive(page:Page){await page.locator('#graph-run-files').evaluate((el:HTMLDetailsElement)=>el.open=true);return download(page,'graph-run-export');}
+async function readCsv(page:Page,text:string,name='table.csv'){await page.locator('#graph-input-csv-import').setInputFiles({name,mimeType:'text/csv',buffer:Buffer.from(text)});}
+async function apply(page:Page){await page.getByRole('button',{name:'ブロック設定を適用',exact:true}).click();}
+test('scalar CSV stages without changing the model/result, applies once with Undo/Redo and exports current draft',async({page})=>{
+ await open(page,model(1));const before=await archive(page);await readCsv(page,'input\r\n1\r\n-.5');await expect(page.locator('#graph-input-csv-state')).toContainText('2行 × 1列');await expect(page.locator('[name="p.values"]')).toHaveValue('[[1],[-0.5]]');expect(await archive(page)).toEqual(before);expect(await download(page,'graph-input-csv-export')).toBe('input\r\n1\r\n-0.5');
+ await apply(page);await expect(page.locator('#graph-run-export')).toBeDisabled();await run(page);const a=JSON.parse(await archive(page));expect(a.model.blocks[0].params).toEqual({kind:'sampled_input',values:[[1],[-.5]],sample_time:.1,repeat:true});for(let i=0;i<101;i++)expect(a.result.traces[0].values[i]).toEqual([Math.floor(i/10)%2?-.5:1]);
+ await page.locator('#graph-undo').click();await run(page);expect(await archive(page)).toEqual(before);await page.locator('#graph-redo').click();await run(page);expect(JSON.parse(await archive(page))).toEqual(a);
+ await inspect(page);await page.locator('[name="p.values"]').fill('[[0.75]]');await expect(page.locator('#graph-input-csv-state')).toContainText('変更');expect(await download(page,'graph-input-csv-export')).toBe('input\r\n0.75');expect(JSON.parse(await archive(page))).toEqual(a);
+});
+test('vector headers and precision roundtrip through CSV, real WASM, model save and reload',async({page})=>{
+ await open(page);const rows=[[1.2345678901234567,-1],[.5,2],[0,-.5]],csv=sampleTableCsv(rows,2);await readCsv(page,csv);await expect(page.locator('#graph-input-csv-state')).toContainText('3行 × 2列');expect(await download(page,'graph-input-csv-export')).toEqual(csv);await apply(page);await run(page);const a=JSON.parse(await archive(page));for(let i=0;i<101;i++)expect(a.result.traces[0].values[i]).toEqual(rows[Math.floor(i/10)%3]);await page.locator('#graph-save').click();await page.reload();await expect(page.locator('#status')).toContainText('完了');await page.getByRole('tab',{name:'ブロック図エディタ'}).click();await expect(page.locator('#graph-status')).toContainText('完了');expect(JSON.parse(await archive(page))).toEqual(a);await inspect(page);expect(await download(page,'graph-input-csv-export')).toEqual(csv);await readCsv(page,await download(page,'graph-input-csv-export'));await expect(page.locator('#graph-input-csv-state')).toContainText('3行 × 2列');
+});
+test('invalid columns, bounds and export data preserve draft and prior executed results',async({page})=>{
+ await open(page);const before=await archive(page),value=await page.locator('[name="p.values"]').inputValue();
+ for(const text of ['input\n1\n2','time,input\n0,1','1,2\n3','1,2\n\n3,4','NaN,1','"1",2',' '.repeat(1_000_001)]){await readCsv(page,text);await expect(page.locator('#graph-input-csv-state')).toHaveClass(/error/);await expect(page.locator('[name="p.values"]')).toHaveValue(value);expect(await archive(page)).toEqual(before);}
+ await page.locator('[name="p.values"]').fill('[[1,null]]');await page.locator('#graph-input-csv-export').click();await expect(page.locator('#graph-input-csv-state')).toHaveClass(/error/);expect(await archive(page)).toEqual(before);
+});
+test('late CSV reads cannot overwrite edits, another selection, a newer read or a run/cancel',async({page})=>{
+ await open(page);await page.evaluate(()=>{const read=File.prototype.text;File.prototype.text=function(){return new Promise<string>(resolve=>setTimeout(()=>read.call(this).then(resolve),this.name==='fast.csv'?20:400));};});
+ await readCsv(page,'1,2','slow.csv');await page.locator('[name="p.values"]').fill('[[9,8]]');await expect(page.locator('#graph-input-csv-state')).toContainText('破棄');await expect(page.locator('[name="p.values"]')).toHaveValue('[[9,8]]');
+ await readCsv(page,'1,2','slow.csv');await inspect(page,'output');await page.waitForTimeout(500);await inspect(page);await expect(page.locator('[name="p.values"]')).toHaveValue('[[0,0]]');
+ await readCsv(page,'1,2','slow.csv');await readCsv(page,'3,4','fast.csv');await expect(page.locator('#graph-input-csv-state')).toContainText('読み込みました');await page.waitForTimeout(500);await expect(page.locator('[name="p.values"]')).toHaveValue('[[3,4]]');
+ await readCsv(page,'5,6','slow.csv');await page.evaluate(()=>{document.getElementById('graph-run')!.click();document.getElementById('graph-cancel')!.click();});await expect(page.locator('#graph-input-csv-state')).toContainText('破棄');await expect(page.locator('[name="p.values"]')).toHaveValue('[[3,4]]');
+});
+test('nested input accepts 64 columns and 2001 rows while CSV controls fit 320px',async({page})=>{
+ await page.setViewportSize({width:320,height:844});const inner=model(64);inner.blocks[1].params={kind:'output',port:0};const m:GraphModel={version:1,dt:.01,duration:1,blocks:[{id:'nested',label:'Nested',width:64,position:[30,100],params:{kind:'subsystem',model:inner}},{...model(64).blocks[1]}],edges:[edge('nested','output')]};
+ await open(page,m);await page.locator('[data-block="nested"]').dblclick();await inspect(page);const rows=Array.from({length:2001},(_,k)=>Array.from({length:64},(_,j)=>(k%3-1)*(j+1)/64));const csv=sampleTableCsv(rows,64);await readCsv(page,csv);await expect(page.locator('#graph-input-csv-state')).toContainText('2001行 × 64列');expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);await apply(page);await run(page);const a=JSON.parse(await archive(page));for(let i=0;i<101;i++)expect(a.result.traces[0].values[i]).toEqual(rows[Math.floor(i/10)]);await inspect(page);expect(await download(page,'graph-input-csv-export')).toEqual(csv);
+});

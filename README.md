@@ -234,6 +234,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <a href="docs/sampled-input.md">使い方と数値検証</a>
 </p>
 
+<p align="center">
+  <a href="docs/media/vector-input-csv.gif"><img src="docs/media/vector-input-csv.gif" width="960" alt="2列のCSVをSampled Inputの設定欄に読み込み、適用してベクトルを周期再生し、最終行保持とUndo、入力表の保存を確認"></a><br>
+  <b>データを読み込む。すべての成分を動かす。</b><br>
+  複数列の入力CSV、設定欄での確認、適用とUndo、周期再生と最後の行の保持。<br>
+  <a href="docs/sampled-input.md">入力表CSVの使い方</a>
+</p>
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。
