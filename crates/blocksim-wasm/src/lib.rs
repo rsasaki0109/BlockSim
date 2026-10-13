@@ -215,6 +215,41 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn sampled_input_boundary_preserves_table_and_rejects_bad_rows_and_unknown_fields() {
+        let text = include_str!("../../../samples/discrete/sequence.json");
+        let normalized = normalize_graph_json(text, false).unwrap();
+        let original: serde_json::Value = serde_json::from_str(text).unwrap();
+        let source_model: blocksim_core::graph::GraphModel = serde_json::from_str(text).unwrap();
+        let stored_model: blocksim_core::graph::GraphModel =
+            serde_json::from_str(&normalized).unwrap();
+        assert_eq!(stored_model.blocks[0].params, source_model.blocks[0].params);
+        let run: serde_json::Value = serde_json::from_str(&graph_json(text).unwrap()).unwrap();
+        let input = run["traces"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|t| t["id"] == "input_record")
+            .unwrap();
+        for k in 0..101 {
+            assert_eq!(
+                input["values"][k * 10][0].as_f64(),
+                original["blocks"][0]["params"]["values"][k][0].as_f64()
+            );
+        }
+        let mut bad = original.clone();
+        bad["blocks"][0]["params"]["values"] = serde_json::json!([[1, 2]]);
+        assert!(graph_json(&bad.to_string()).is_err());
+        bad = original.clone();
+        bad["blocks"][0]["params"]["interpolate"] = serde_json::json!(true);
+        assert!(normalize_graph_json(&bad.to_string(), true).is_err());
+        bad["blocks"][0]["params"]
+            .as_object_mut()
+            .unwrap()
+            .remove("interpolate");
+        bad["blocks"][0]["params"]["values"] = serde_json::json!(vec![vec![0.0]; 2002]);
+        assert!(graph_json(&bad.to_string()).is_err());
+    }
     use super::*;
     #[test]
     fn zoh_boundary_serializes_realization_and_refuses_prewarp_or_bad_request() {

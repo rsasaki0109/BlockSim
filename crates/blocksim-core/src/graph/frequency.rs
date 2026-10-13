@@ -126,7 +126,10 @@ pub(super) fn dependencies(graph: &Compiled, node: Node) -> Result<Vec<Node>> {
         format!("{}: frequency analysis requires continuous linear blocks; bounded PID/Saturation, Product and sampled blocks are unsupported",b.id)
     };
     Ok(match &b.params {
-        BlockKind::Constant { .. } | BlockKind::Step { .. } | BlockKind::Sine { .. } => vec![],
+        BlockKind::Constant { .. }
+        | BlockKind::SampledInput { .. }
+        | BlockKind::Step { .. }
+        | BlockKind::Sine { .. } => vec![],
         BlockKind::Sum { .. } => incoming.iter().map(|i| (*i, c)).collect(),
         BlockKind::Mux { .. } => {
             let mut component = c;
@@ -204,7 +207,10 @@ pub(super) fn network_with_dependencies(
     let source_block = &graph.flat.blocks[source];
     if !matches!(
         source_block.params,
-        BlockKind::Constant { .. } | BlockKind::Step { .. } | BlockKind::Sine { .. }
+        BlockKind::Constant { .. }
+            | BlockKind::SampledInput { .. }
+            | BlockKind::Step { .. }
+            | BlockKind::Sine { .. }
     ) || request.source_component >= source_block.width
         || request.scope_component >= graph.flat.blocks[scope].width
     {
@@ -266,7 +272,10 @@ fn polynomial(coefficients: &[f64], s: C, scale: f64) -> Result<C> {
 }
 fn weights(kind: &BlockKind, s: C) -> Result<Vec<C>> {
     Ok(match kind {
-        BlockKind::Constant { .. } | BlockKind::Step { .. } | BlockKind::Sine { .. } => vec![],
+        BlockKind::Constant { .. }
+        | BlockKind::SampledInput { .. }
+        | BlockKind::Step { .. }
+        | BlockKind::Sine { .. } => vec![],
         BlockKind::Sum { signs } => signs.iter().map(|v| C::real(*v)).collect(),
         BlockKind::Gain { gain } => vec![C::real(*gain)],
         BlockKind::FirstOrder { gain, tau, .. } => {

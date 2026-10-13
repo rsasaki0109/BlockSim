@@ -1,10 +1,22 @@
 import {describe,it,expect} from 'vitest';
-import {decodeConversionPlan,conversionReport,conversionModels,conversionCsv,conversionInputLabel,type ConversionPlan} from '../src/discretize-comparison';
+import {decodeConversionPlan,conversionReport,conversionModels,conversionCsv,conversionInputLabel,decodeInputCsv,type ConversionPlan} from '../src/discretize-comparison';
 import type {GraphResult} from '../src/graph-model';
 const plan:ConversionPlan={format:'blocksim.conversion-comparison',version:1,method:'zoh',request:{numerator:[1],denominator:[1,1],sample_time:.2},samples:3};
 const converted={request:plan.request,numerator:[0,1-Math.exp(-.2)],denominator:[1,-Math.exp(-.2)],method:'zoh'};
 const result=(value:(t:number)=>number):GraphResult=>({times:Array.from({length:21},(_,i)=>i*.02),traces:[{id:'output',label:'output',values:Array.from({length:21},(_,i)=>[value(i*.02)])}],solver:'rk45'});
 describe('conversion comparison',()=>{
+ it('accepts strict scalar CSV with optional input header and rejects ambiguous or excessive files',()=>{
+  expect(decodeInputCsv('\uFEFFinput\r\n0\r\n+1.25\r\n-2e-3\r\n')).toEqual([0,1.25,-.002]);expect(decodeInputCsv('.5\n1.')).toEqual([.5,1]);
+  for(const s of ['1','time,input\n0,1\n1,2','0\n\n1','0\nNaN','0\nInfinity','0\n0x10','0\n"1"','0\n1e999','input\n'+Array(2002).fill('0').join('\n'),' '.repeat(100001)])expect(()=>decodeInputCsv(s)).toThrow();
+ });
+ it('requires exact series length and builds bounded actual SampledInput graphs',()=>{
+  const p:ConversionPlan={...plan,input:{kind:'sample_sequence',values:[1,-.5,0]}};expect(decodeConversionPlan(JSON.stringify(p))).toEqual(p);const [a,b]=conversionModels(p,converted);expect(a.blocks[0].params).toEqual({kind:'sampled_input',values:[[1],[-.5],[0]],sample_time:.2});expect(b.blocks).toHaveLength(4);
+  for(const values of [[1],[1,2,3,4],[1,null,0],[1,'2',0],[[1],[2],[3]]])expect(()=>decodeConversionPlan(JSON.stringify({...p,input:{kind:'sample_sequence',values}}))).toThrow();
+ });
+ it('checks actual series equality and exports each sample index without changing old CSV',()=>{
+  const p:ConversionPlan={...plan,input:{kind:'sample_sequence',values:[0,1,2]}},a=result(()=>0);a.traces.push({id:'input_record',label:'actual',values:a.times.map((_,i)=>[Math.floor(i/10)])});const b=structuredClone(a),r=conversionReport(p,converted,a,b);expect(r.input).toEqual([0,1,2]);expect(conversionCsv(r).split('\r\n')[2].split(',').slice(6)).toEqual(['1','1']);expect(conversionInputLabel(r)).toContain('3サンプル');
+  expect(()=>conversionReport({...p,input:{kind:'sample_sequence',values:[0,9,2]}},converted,a,b)).toThrow(/指定した系列/);
+ });
  it('bounds sampled-sine fields, Nyquist and ambiguous input formats',()=>{
   const input={kind:'sampled_sine',frequency_hz:2.5,amplitude:-1,phase_rad:.4,offset:.25};
   expect(decodeConversionPlan(JSON.stringify({...plan,input})).input).toEqual(input);

@@ -225,6 +225,14 @@
       "bytes": 313843,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "sequence-comparison.gif",
+      "frames": 178,
+      "duration_seconds": 17.8,
+      "bytes": 269136,
+      "width": 960,
+      "height": 737
     }
   ]
 }

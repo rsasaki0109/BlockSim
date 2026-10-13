@@ -1,5 +1,5 @@
 import type { PidConfig } from './types';
-export type Kind = 'constant'|'step'|'sine'|'gain'|'sum'|'product'|'saturation'|'integrator'|'first_order'|'transfer_function'|'discrete_transfer_function'|'delay'|'pid'|'mux'|'selector'|'scope'|'input'|'output'|'subsystem';
+export type Kind = 'constant'|'sampled_input'|'step'|'sine'|'gain'|'sum'|'product'|'saturation'|'integrator'|'first_order'|'transfer_function'|'discrete_transfer_function'|'delay'|'pid'|'mux'|'selector'|'scope'|'input'|'output'|'subsystem';
 export interface Params { kind: Kind; [key: string]: unknown }
 export interface GraphBlock { id: string; label: string; width: number; position: [number,number]; params: Params }
 export interface Edge { from: string; from_port: number; to: string; to_port: number }
@@ -11,7 +11,7 @@ export interface GraphTrace { id: string; label: string; values: number[][] }
 export interface GraphResult { times: number[]; traces: GraphTrace[]; solver: string; statistics?:SolverStatistics }
 export const GRAPH_STORAGE_KEY = 'blocksim.graph.v2';
 export const KIND_NAMES: Record<Kind,string> = {
-  constant:'Constant', step:'Step', sine:'Sine', gain:'Gain', sum:'Sum', product:'Product', saturation:'Saturation',
+  constant:'Constant', sampled_input:'Sampled Input', step:'Step', sine:'Sine', gain:'Gain', sum:'Sum', product:'Product', saturation:'Saturation',
   integrator:'Integrator', first_order:'FirstOrder', delay:'Unit Delay', pid:'PID', mux:'Mux', selector:'Selector',
   transfer_function:'TransferFunction', discrete_transfer_function:'Discrete TransferFunction', scope:'Scope', input:'Input', output:'Output', subsystem:'Subsystem',
 };
@@ -30,7 +30,7 @@ export function interfaceBlocks(block: GraphBlock, kind: 'input'|'output'): Grap
 }
 export function inputCount(block: GraphBlock): number {
   switch(block.params.kind) {
-    case 'constant': case 'step': case 'sine': return 0;
+    case 'constant': case 'sampled_input': case 'step': case 'sine': return 0;
     case 'sum': return (block.params.signs as number[]).length;
     case 'mux': case 'product': return block.params.inputs as number;
     case 'subsystem': return interfaceBlocks(block,'input').length;
@@ -45,7 +45,7 @@ export function newBlock(kind: Kind, graph: GraphModel): GraphBlock {
   let n=1; while(graph.blocks.some(b=>b.id===`${kind}-${n}`)) n++;
   const pid: PidConfig = { kp:2, ki:1, kd:0, derivative_tau:0.05, limits:{ lower:null, upper:null }, anti_windup:false };
   const params: Record<Kind,Params> = {
-    constant:{kind,value:[1]}, step:{kind,before:[0],after:[1],step_time:1},
+    constant:{kind,value:[1]}, sampled_input:{kind,values:[[0],[1],[0]],sample_time:graph.dt}, step:{kind,before:[0],after:[1],step_time:1},
     sine:{kind,amplitude:1,frequency:1,phase:0,offset:0}, gain:{kind,gain:1}, sum:{kind,signs:[1,-1]},
     product:{kind,inputs:2}, saturation:{kind,limits:{lower:0,upper:1}}, integrator:{kind,initial:[0]},
     transfer_function:{kind,numerator:[1],denominator:[1,1],initial:[0]},

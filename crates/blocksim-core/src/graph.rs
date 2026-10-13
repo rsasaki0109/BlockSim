@@ -83,6 +83,10 @@ pub enum BlockKind {
     Constant {
         value: Vec<f64>,
     },
+    SampledInput {
+        values: Vec<Vec<f64>>,
+        sample_time: f64,
+    },
     Step {
         before: Vec<f64>,
         after: Vec<f64>,
@@ -193,7 +197,10 @@ struct Compiled {
 impl BlockKind {
     fn inputs(&self) -> usize {
         match self {
-            Self::Constant { .. } | Self::Step { .. } | Self::Sine { .. } => 0,
+            Self::Constant { .. }
+            | Self::SampledInput { .. }
+            | Self::Step { .. }
+            | Self::Sine { .. } => 0,
             Self::Sum { signs } => signs.len(),
             Self::Product { inputs } | Self::Mux { inputs } => *inputs,
             _ => 1,
@@ -251,6 +258,18 @@ fn validate_block(b: &Block, dt: f64, adaptive: bool) -> Result<()> {
     }
     match &b.params {
         BlockKind::Constant { value } => vector("Constant", value, b.width)?,
+        BlockKind::SampledInput {
+            values,
+            sample_time,
+        } => {
+            if !(1..=2001).contains(&values.len()) {
+                return Err("SampledInput values must contain 1..2001 rows".into());
+            }
+            for row in values {
+                vector("SampledInput row", row, b.width)?;
+            }
+            period(*sample_time, dt)?;
+        }
         BlockKind::Step {
             before,
             after,
@@ -438,6 +457,17 @@ fn expand(
         mappings.insert(b.id.clone(), boundary);
         if flat.blocks.len() > 256 {
             return Err("Expanded graph exceeds 256 blocks".into());
+        }
+        let input_cells: usize = flat
+            .blocks
+            .iter()
+            .map(|b| match &b.params {
+                BlockKind::SampledInput { values, .. } => values.len() * b.width,
+                _ => 0,
+            })
+            .sum();
+        if input_cells > 2_000_000 {
+            return Err("SampledInput tables exceed 2000000 cells".into());
         }
     }
     let mut occupied = BTreeSet::new();
@@ -882,6 +912,18 @@ fn evaluate(
         let first = || values[inputs[0]].clone();
         let value = match &b.params {
             BlockKind::Constant { value } => value.clone(),
+            BlockKind::SampledInput {
+                values,
+                sample_time,
+            } => {
+                if let Some(t) = tick {
+                    let p = period(*sample_time, dt)?;
+                    if t.is_multiple_of(p) {
+                        rt.held[i] = values[(t / p).min(values.len() - 1)].clone();
+                    }
+                }
+                rt.held[i].clone()
+            }
             BlockKind::Step {
                 before,
                 after,

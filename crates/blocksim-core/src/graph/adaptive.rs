@@ -212,6 +212,7 @@ pub(super) fn simulate(
                 events.push(*step_time)
             }
             BlockKind::Delay { sample_time, .. }
+            | BlockKind::SampledInput { sample_time, .. }
             | BlockKind::DiscreteTransferFunction { sample_time, .. }
             | BlockKind::Pid {
                 mode: PidMode::Discrete,

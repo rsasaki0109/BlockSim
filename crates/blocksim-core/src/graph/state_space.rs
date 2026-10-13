@@ -169,9 +169,10 @@ fn prepare_with_domain(
             offsets.push((i, state));
         }
         b.params = match b.params {
-            BlockKind::Constant { .. } | BlockKind::Step { .. } | BlockKind::Sine { .. } => {
-                BlockKind::Constant { value: vec![0.0] }
-            }
+            BlockKind::Constant { .. }
+            | BlockKind::SampledInput { .. }
+            | BlockKind::Step { .. }
+            | BlockKind::Sine { .. } => BlockKind::Constant { value: vec![0.0] },
             BlockKind::Integrator { .. } => BlockKind::Integrator { initial: vec![0.0] },
             BlockKind::FirstOrder { gain, tau, .. } => BlockKind::FirstOrder {
                 gain,

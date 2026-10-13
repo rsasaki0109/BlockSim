@@ -219,6 +219,14 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
 
 [保持正弦波の比較](docs/sine-comparison.md) で、周波数・振幅・位相・オフセットを設定できます。
 
+<p align="center">
+  <strong>28 — Data in. Held inputs out.</strong><br>
+  <a href="docs/media/sequence-comparison.gif"><img src="docs/media/sequence-comparison.gif" width="960" alt="任意の101点入力系列をCSVから読み込み、Sampled Inputで保持してZOHとTustinを比較し、実入力・全応答・設定を保存と復元"></a><br>
+  <sub>入力CSVを読み込む。値を順番に保持して、応答と差を確かめる。</sub>
+</p>
+
+[Sampled Inputと系列比較](docs/sampled-input.md) はベクトルの保持と、任意のサンプル入力による離散化比較に対応します。
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。
