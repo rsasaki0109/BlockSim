@@ -361,6 +361,14 @@
       "bytes": 468423,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "matrix-comparison.gif",
+      "frames": 142,
+      "duration_seconds": 14.2,
+      "bytes": 339915,
+      "width": 960,
+      "height": 737
     }
   ]
 }

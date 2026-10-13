@@ -339,6 +339,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <a href="docs/matrix-discretization.md">行列を離散化する</a>
 </p>
 
+<p align="center">
+  <a href="docs/media/matrix-comparison.gif"><img src="docs/media/matrix-comparison.gif" width="960" alt="行列の連続応答とZOH・Tustinの離散応答を同じベクトル入力で比較し、全成分の最大差・RMS・入力変更後の差分と条件復元を実WASMで確認"></a><br>
+  <b>変換前と変換後、同じ入力で確かめる。</b><br>
+  出力を切り替えて波形と差分を比較。実行条件と全取得値を保存。<br>
+  <a href="docs/matrix-comparison.md">行列の応答を比較する</a>
+</p>
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。

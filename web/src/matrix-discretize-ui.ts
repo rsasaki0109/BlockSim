@@ -1,7 +1,8 @@
 import {discretize_matrix,normalize_graph,diagnose_graph} from './wasm/blocksim';
 import {graphContext,type GraphModel,type Params} from './graph-model';
+import {mountMatrixComparison} from './matrix-comparison-ui';
 import {matrixRequest,matrixModel,type MatrixRequest,type MatrixResult} from './matrix-discretize';
-export function mountMatrixDiscretize(host:HTMLElement,options:{model:()=>GraphModel;address:string;busy:()=>boolean;apply:(params:Params,message:string)=>void}) {
+export function mountMatrixDiscretize(host:HTMLElement,options:{model:()=>GraphModel;address:string;busy:()=>boolean;apply:(params:Params,message:string)=>void;onBusy:()=>void;download:(s:string,name:string,type:string)=>void}) {
  const section=document.createElement('section');section.id='graph-matrix-discretize';
  section.innerHTML=`<h3>行列の連続 → 離散</h3><p class="hint">適用済みの行列を変換します。上の編集は先に適用してください。ZOHは元の状態座標と初期値を引き継ぎ、保持入力のサンプル時刻の応答を合わせます。Tustinは初期状態0のみで、状態座標と直接項が変わります。接続・記録時計・解析領域は保持します。</p><form id="graph-matrix-discretize-form"><fieldset id="graph-matrix-discretize-fields"><label>離散化方式<select id="graph-matrix-discretize-method"><option value="zoh">ゼロ次ホールド（ZOH）</option><option value="tustin">Tustin法</option></select></label><label>変換サンプル周期 (s)<input id="graph-matrix-discretize-period" type="number" step="any" required></label><label>プリワープ角周波数 (rad/s)<input id="graph-matrix-discretize-prewarp" type="number" step="any" placeholder="なし" disabled></label><button id="graph-matrix-discretize-preview" type="submit">変換行列を確認</button><button id="graph-matrix-discretize-apply" type="button" disabled>離散行列へ変換</button></fieldset></form><pre id="graph-matrix-discretize-coefficients" class="hint" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre><p id="graph-matrix-discretize-state" role="status"></p>`;host.append(section);
  const get=<T extends HTMLElement>(id:string)=>section.querySelector<T>('#graph-matrix-discretize-'+id)!;
@@ -25,4 +26,8 @@ export function mountMatrixDiscretize(host:HTMLElement,options:{model:()=>GraphM
   options.apply(graphContext(next,path).blocks.find(b=>b.id===id)!.params,`${method.value==='zoh'?'ZOH':'Tustin法'}で離散行列へ変換しました`);
  }catch(e){fail(e);}});
  get<HTMLFieldSetElement>('fields').disabled=options.busy();
+ const comparisonHost=document.createElement('section');section.append(comparisonHost);
+ return mountMatrixComparison(comparisonHost,{request:()=>matrixRequest(source(),Number(period.value),method.value as MatrixRequest['method'],method.value==='tustin'&&prewarp.value.trim()?Number(prewarp.value):undefined),restore:p=>{
+  const q=matrixRequest(source(),p.request.sample_time,p.request.method,p.request.prewarp_omega);if(JSON.stringify(q)!==JSON.stringify(p.request))throw new Error('選択した行列または初期状態と比較設定が違います');discretize_matrix(JSON.stringify(q));method.value=q.method;period.value=String(q.sample_time);prewarp.value=q.prewarp_omega===undefined?'':String(q.prewarp_omega);prewarp.disabled=q.method==='zoh';clear();
+ },busy:options.busy,context:()=>JSON.stringify([options.model(),conditions()]),onBusy:options.onBusy,download:options.download});
 }

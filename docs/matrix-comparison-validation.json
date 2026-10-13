@@ -1,0 +1,236 @@
+{
+  "source": "Actual Chromium/WASM comparison Worker; independent piecewise exponential and bilinear matrix recurrence",
+  "zoh": {
+    "request": {
+      "a": [
+        [
+          -1,
+          0
+        ],
+        [
+          1,
+          -2
+        ]
+      ],
+      "b": [
+        [
+          1,
+          1
+        ],
+        [
+          0,
+          2
+        ]
+      ],
+      "c": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "d": [
+        [
+          0.25,
+          0
+        ],
+        [
+          0,
+          0.5
+        ]
+      ],
+      "initial": [
+        0.5,
+        -0.25
+      ],
+      "sample_time": 0.1,
+      "method": "zoh"
+    },
+    "samples": 21,
+    "change_time": 1.2,
+    "continuous_max_independent_error": 4.445332990599127e-13,
+    "discrete_max_independent_error": 1.9984014443252818e-15,
+    "metrics": [
+      {
+        "maxAbs": 2.842170943040401e-14,
+        "rms": 1.8875750534051025e-14,
+        "final": -1.7208456881689926e-14,
+        "area": 3.39117622871754e-14
+      },
+      {
+        "maxAbs": 4.445332990599127e-13,
+        "rms": 3.092247081938838e-13,
+        "final": -2.6872948311051914e-13,
+        "area": 5.813433068269092e-13
+      }
+    ],
+    "post_change_metrics": [
+      {
+        "maxAbs": 2.842170943040401e-14,
+        "rms": 1.4824653394387796e-14,
+        "final": -1.7208456881689926e-14,
+        "area": 9.09827768680316e-15
+      },
+      {
+        "maxAbs": 2.7583491046812014e-13,
+        "rms": 2.2570996555047098e-13,
+        "final": -2.6872948311051914e-13,
+        "area": 1.623673417938676e-13
+      }
+    ],
+    "independent_metrics": [
+      {
+        "maxAbs": 0,
+        "rms": 0
+      },
+      {
+        "maxAbs": 0,
+        "rms": 0
+      }
+    ],
+    "input_all_points_verified": true,
+    "independent_post_change_metrics": [
+      {
+        "maxAbs": 0,
+        "rms": 0
+      },
+      {
+        "maxAbs": 0,
+        "rms": 0
+      }
+    ],
+    "tested_input": {
+      "before": [
+        1,
+        2
+      ],
+      "after": [
+        0.25,
+        -1
+      ],
+      "change_sample": 12
+    },
+    "max_independent_metric_error": 4.445332990599127e-13
+  },
+  "tustin": {
+    "request": {
+      "a": [
+        [
+          -1,
+          0
+        ],
+        [
+          1,
+          -2
+        ]
+      ],
+      "b": [
+        [
+          1,
+          1
+        ],
+        [
+          0,
+          2
+        ]
+      ],
+      "c": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "d": [
+        [
+          0.25,
+          0
+        ],
+        [
+          0,
+          0.5
+        ]
+      ],
+      "initial": [
+        0,
+        0
+      ],
+      "sample_time": 0.1,
+      "method": "tustin",
+      "prewarp_omega": 3
+    },
+    "samples": 21,
+    "change_time": 1.2,
+    "continuous_max_independent_error": 3.3861802251067274e-13,
+    "discrete_max_independent_error": 1.3322676295501878e-15,
+    "metrics": [
+      {
+        "maxAbs": 0.143886448152571,
+        "rms": 0.09731988978315087,
+        "final": -0.06565810960204344,
+        "area": 0.1873203484976721
+      },
+      {
+        "maxAbs": 0.22562078304733335,
+        "rms": 0.13608991710534826,
+        "final": -0.08885167200752381,
+        "area": 0.2561995870750581
+      }
+    ],
+    "post_change_metrics": [
+      {
+        "maxAbs": 0.12787028689771684,
+        "rms": 0.09601239299188437,
+        "final": -0.06565810960204344,
+        "area": 0.07482433514937381
+      },
+      {
+        "maxAbs": 0.22562078304733335,
+        "rms": 0.15336859329062139,
+        "final": -0.08885167200752381,
+        "area": 0.11649404751052013
+      }
+    ],
+    "independent_metrics": [
+      {
+        "maxAbs": 0.14388644815257096,
+        "rms": 0.09731988978314225
+      },
+      {
+        "maxAbs": 0.22562078304746458,
+        "rms": 0.13608991710519727
+      }
+    ],
+    "input_all_points_verified": true,
+    "independent_post_change_metrics": [
+      {
+        "maxAbs": 0.1278702868977475,
+        "rms": 0.09601239299189027
+      },
+      {
+        "maxAbs": 0.22562078304746325,
+        "rms": 0.15336859329044647
+      }
+    ],
+    "tested_input": {
+      "before": [
+        1,
+        2
+      ],
+      "after": [
+        0.25,
+        -1
+      ],
+      "change_sample": 12
+    },
+    "max_independent_metric_error": 1.7491563752969341e-13
+  },
+  "source_models_and_results_retained": true,
+  "restored_report_exact": true
+}

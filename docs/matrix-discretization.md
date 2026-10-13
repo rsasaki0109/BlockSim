@@ -44,3 +44,6 @@ GUIサンプル「行列のZOH／Tustin離散化」は[モデルJSON](../samples
 Rust: `graph::discretize::{MatrixRequest,MatrixResult,MatrixMethod,discretize_matrix}`。WASM: `discretize_matrix(request_json)`、1 MBの厳密JSON境界。行列／initial／sample_time／methodは必須、未知項目・不足・不正寸法を拒否します。previewのrequestには実行した元行列と条件を含め、GUI適用時にも対象の一致を再確認します。
 
 数値・実行したテスト・途中の不具合は[検証記録](validation.md)、実行と保持の規則は[StateSpaceブロック](matrix-block.md)を参照してください。
+
+
+GUIで[行列の保持入力応答比較](matrix-comparison.md)を使うと、選択した行列を単独で実行し、同じベクトル入力の連続／離散の全出力差分、条件保存／復元を確認できます。元モデルへの変換適用とは別操作です。

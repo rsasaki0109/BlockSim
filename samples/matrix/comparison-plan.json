@@ -1,0 +1,64 @@
+{
+  "format": "blocksim.matrix-comparison",
+  "version": 1,
+  "request": {
+    "a": [
+      [
+        -1,
+        0
+      ],
+      [
+        1,
+        -2
+      ]
+    ],
+    "b": [
+      [
+        1,
+        1
+      ],
+      [
+        0,
+        2
+      ]
+    ],
+    "c": [
+      [
+        1,
+        0
+      ],
+      [
+        0,
+        1
+      ]
+    ],
+    "d": [
+      [
+        0.25,
+        0
+      ],
+      [
+        0,
+        0.5
+      ]
+    ],
+    "initial": [
+      0.5,
+      -0.25
+    ],
+    "sample_time": 0.1,
+    "method": "zoh"
+  },
+  "samples": 21,
+  "input": {
+    "before": [
+      1,
+      2
+    ],
+    "after": [
+      0.25,
+      -1
+    ],
+    "change_sample": 12
+  }
+}
