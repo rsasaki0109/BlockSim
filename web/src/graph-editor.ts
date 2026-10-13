@@ -1,4 +1,4 @@
-import { normalize_graph, diagnose_graph, validate_graph, validate_frequency, validate_discrete_frequency, validate_pole_zero, validate_state_space, validate_discrete_state_space, discretize_tustin, discretize_zoh } from './wasm/blocksim';
+import { normalize_graph, validate_mimo, diagnose_graph, validate_graph, validate_frequency, validate_discrete_frequency, validate_pole_zero, validate_state_space, validate_discrete_state_space, discretize_tustin, discretize_zoh } from './wasm/blocksim';
 import {mountConversionComparison} from './discretize-comparison-ui';
 import {tustinRequest,tustinModel,type TustinResult,type ZohResult} from './discretize';
 import { parseNumber } from './document';
@@ -23,6 +23,7 @@ import { mountSweep } from './graph-sweep-ui';
 import { mountFrequency } from './frequency-ui';
 import { mountPoleZero } from './pole-zero-ui';
 import { mountStateSpace } from './state-space-ui';
+import { mountMimo } from './mimo-ui';
 import inputSequence from '../../samples/discrete/sequence.json';
 import repeatInput from '../../samples/discrete/repeat.json';
 import vectorInput from '../../samples/discrete/vector-input.json';
@@ -90,7 +91,7 @@ export function mountEditor(host:HTMLElement) {
           <div class="comparison-pages"><button id="graph-comparison-prev">前の系列</button><span id="graph-comparison-page"></span><button id="graph-comparison-next">次の系列</button><button id="graph-difference-csv" disabled>差分 CSV</button></div>
         </details>
       </section>
-      <div id="graph-sweep-host"></div><div id="graph-frequency-host"></div><div id="graph-pole-zero-host"></div><div id="graph-state-space-host"></div>
+      <div id="graph-sweep-host"></div><div id="graph-frequency-host"></div><div id="graph-pole-zero-host"></div><div id="graph-state-space-host"></div><div id="graph-mimo-host"></div>
     </section><aside>
       <section class="panel"><h2>ブロック設定</h2><div id="graph-inspector"><p class="hint">ブロックを選択してください</p></div></section>
       <section class="panel"><h2>接続</h2><form id="graph-connect"><label>接続元<select id="edge-from"></select></label><label>出力ポート<select id="edge-from-port"></select></label><label>接続先<select id="edge-to"></select></label><label>入力ポート<select id="edge-to-port"></select></label><button>接続する</button></form><div id="graph-edges"></div></section>
@@ -114,10 +115,11 @@ export function mountEditor(host:HTMLElement) {
   let frequency:ReturnType<typeof mountFrequency>|undefined;
   let poleZero:ReturnType<typeof mountPoleZero>|undefined;
   let stateSpace:ReturnType<typeof mountStateSpace>|undefined;
+  let mimo:ReturnType<typeof mountMimo>|undefined;
   let conversionComparison:ReturnType<typeof mountConversionComparison>|undefined;
   let inputPreview:ReturnType<typeof mountInputPreview>|undefined;
   let sampledInputIoEpoch=0,sampledInputIoBusy=false;
-  const modelBusy=()=>!!worker||archiveBusy||!!sweep?.running()||!!frequency?.running()||!!poleZero?.running()||!!stateSpace?.running()||!!(conversionComparison?.running()||inputPreview?.running());
+  const modelBusy=()=>!!worker||archiveBusy||!!sweep?.running()||!!frequency?.running()||!!poleZero?.running()||!!(stateSpace?.running()||mimo?.running())||!!(conversionComparison?.running()||inputPreview?.running());
   let diagnosticSnapshot:string|null=null,diagnosticPage=0,runtimeError:string|null=null;
   let validation:GraphValidation={runnable:false,diagnostics:[]};
   const problemBlocks=new Map<string,number>(),problemPorts=new Set<string>();
@@ -163,14 +165,14 @@ export function mountEditor(host:HTMLElement) {
     const generatorFields=host.querySelector<HTMLFieldSetElement>('#graph-input-generator-fields');if(generatorFields)generatorFields.disabled=conversionBusy;
     for(const id of ['graph-input-csv-import','graph-input-csv-export']){const control=host.querySelector<HTMLInputElement|HTMLButtonElement>('#'+id);if(control)control.disabled=conversionBusy;}
     const conversionFields=host.querySelector<HTMLFieldSetElement>('#graph-discretize-fields');if(conversionFields)conversionFields.disabled=conversionBusy;
-    inputPreview?.sync();sweep?.sync();frequency?.sync();poleZero?.sync();stateSpace?.sync();conversionComparison?.sync();
-    get<HTMLButtonElement>('graph-run').disabled=!!worker||archiveBusy||(!!sweep?.running()||(!!frequency?.running()||(!!poleZero?.running()||(!!stateSpace?.running()||!!(conversionComparison?.running()||inputPreview?.running())))));
-    get<HTMLButtonElement>('graph-reference-set').disabled=!result||!resultModel||!!worker||archiveBusy||(!!sweep?.running()||(!!frequency?.running()||(!!poleZero?.running()||(!!stateSpace?.running()||!!(conversionComparison?.running()||inputPreview?.running())))));
+    inputPreview?.sync();sweep?.sync();frequency?.sync();poleZero?.sync();stateSpace?.sync();mimo?.sync();conversionComparison?.sync();
+    get<HTMLButtonElement>('graph-run').disabled=!!worker||archiveBusy||(!!sweep?.running()||(!!frequency?.running()||(!!poleZero?.running()||(!!(stateSpace?.running()||mimo?.running())||!!(conversionComparison?.running()||inputPreview?.running())))));
+    get<HTMLButtonElement>('graph-reference-set').disabled=!result||!resultModel||!!worker||archiveBusy||(!!sweep?.running()||(!!frequency?.running()||(!!poleZero?.running()||(!!(stateSpace?.running()||mimo?.running())||!!(conversionComparison?.running()||inputPreview?.running())))));
     get('graph-reference-set').textContent=referenceRun?'基準を置き換える':'基準として保持';
     get<HTMLButtonElement>('graph-reference-clear').disabled=!referenceRun||archiveBusy;get<HTMLButtonElement>('graph-reference-export').disabled=!referenceRun;
-    get<HTMLButtonElement>('graph-run-export').disabled=!result||!resultModel||!!worker||archiveBusy||(!!sweep?.running()||(!!frequency?.running()||(!!poleZero?.running()||(!!stateSpace?.running()||!!(conversionComparison?.running()||inputPreview?.running())))));
-    get<HTMLButtonElement>('graph-reference-save').disabled=!referenceRun||!!worker||archiveBusy||(!!sweep?.running()||(!!frequency?.running()||(!!poleZero?.running()||(!!stateSpace?.running()||!!(conversionComparison?.running()||inputPreview?.running())))));
-    get<HTMLInputElement>('graph-reference-import').disabled=!!worker||archiveBusy||(!!sweep?.running()||(!!frequency?.running()||(!!poleZero?.running()||(!!stateSpace?.running()||!!(conversionComparison?.running()||inputPreview?.running())))));
+    get<HTMLButtonElement>('graph-run-export').disabled=!result||!resultModel||!!worker||archiveBusy||(!!sweep?.running()||(!!frequency?.running()||(!!poleZero?.running()||(!!(stateSpace?.running()||mimo?.running())||!!(conversionComparison?.running()||inputPreview?.running())))));
+    get<HTMLButtonElement>('graph-reference-save').disabled=!referenceRun||!!worker||archiveBusy||(!!sweep?.running()||(!!frequency?.running()||(!!poleZero?.running()||(!!(stateSpace?.running()||mimo?.running())||!!(conversionComparison?.running()||inputPreview?.running())))));
+    get<HTMLInputElement>('graph-reference-import').disabled=!!worker||archiveBusy||(!!sweep?.running()||(!!frequency?.running()||(!!poleZero?.running()||(!!(stateSpace?.running()||mimo?.running())||!!(conversionComparison?.running()||inputPreview?.running())))));
     get<HTMLButtonElement>('graph-reference-cancel').disabled=!archiveBusy;
     get<HTMLInputElement>('graph-reference-show').disabled=!referenceRun;
     get('graph-reference-state').textContent=referenceRun?`基準: dt=${referenceRun.model.dt}s · 終了=${referenceRun.model.duration}s · ${referenceRun.result.traces.length} Scope · ${referenceRun.result.times.length} 点。${result?'設定と結果を保持しています。':'再実行して比較してください。'} このタブ内のみ保持し、再読み込みで解除します。`:'実行結果を基準として保持すると、設定変更後の波形と差分を比較できます。';
@@ -219,7 +221,7 @@ export function mountEditor(host:HTMLElement) {
     viewport.scrollLeft=Math.max(0,(left+32)*zoom-25);viewport.scrollTop=Math.max(0,(top+32)*zoom-25);
   }
   const cancel=()=>{request++;worker?.terminate();worker=null;get<HTMLButtonElement>('graph-run').disabled=false;get<HTMLButtonElement>('graph-cancel').disabled=true;renderComparison();};
-  const invalidate=()=>{inputPreview?.invalidate();conversionComparison?.clear();frequency?.invalidate();poleZero?.invalidate();stateSpace?.invalidate();sweep?.cancel();cancel();pendingWire=null;previewPoint=null;selectedEdge=null;result=null;resultModel=null;comparison=null;get('graph-statistics').textContent='';get('graph-plot').replaceChildren();get('graph-series').replaceChildren();get('graph-values').textContent='モデル変更後は再実行してください';get('graph-reference-values').textContent='';get<HTMLInputElement>('graph-cursor').disabled=true;get<HTMLButtonElement>('graph-csv').disabled=true;renderComparison();};
+  const invalidate=()=>{inputPreview?.invalidate();conversionComparison?.clear();frequency?.invalidate();poleZero?.invalidate();stateSpace?.invalidate();mimo?.invalidate();sweep?.cancel();cancel();pendingWire=null;previewPoint=null;selectedEdge=null;result=null;resultModel=null;comparison=null;get('graph-statistics').textContent='';get('graph-plot').replaceChildren();get('graph-series').replaceChildren();get('graph-values').textContent='モデル変更後は再実行してください';get('graph-reference-values').textContent='';get<HTMLInputElement>('graph-cursor').disabled=true;get<HTMLButtonElement>('graph-csv').disabled=true;renderComparison();};
   const current=()=>graphContext(history.graph,path);
   // Transfer metadata uses the root solver while retaining the context arrays.
   const transfer=(graph:GraphModel)=>({...graph,solver:history.graph.solver});
@@ -353,7 +355,7 @@ export function mountEditor(host:HTMLElement) {
       const section=document.createElement('section');section.id='graph-discretize';section.innerHTML=`<h3>連続 → 離散</h3><p class="hint">適用済みの係数を変換します。上の変更は先に適用してください。初期状態0のみ。Tustinは周波数を写像し、プリワープで指定周波数を一致させます。ZOHは一定の保持入力に対するサンプル時刻の応答を合わせます。接続・記録時計・解析領域は保持します。</p><form id="graph-discretize-form"><fieldset id="graph-discretize-fields"><label>離散化方式<select id="graph-discretize-method"><option value="tustin">Tustin法</option><option value="zoh">ゼロ次ホールド（ZOH）</option></select></label><label>変換サンプル周期 (s)<input id="graph-discretize-period" type="number" step="any" value="${history.graph.dt}" required></label><label>プリワープ角周波数 (rad/s)<input id="graph-discretize-prewarp" type="number" step="any" placeholder="なし"></label><button id="graph-discretize-preview" type="submit">変換係数を確認</button><button id="graph-discretize-apply" type="button" disabled>離散ブロックへ変換</button></fieldset></form><pre id="graph-discretize-coefficients" class="hint"></pre><p id="graph-discretize-state" role="status"></p>`;area.append(section);
       let preview:{result:TustinResult|ZohResult;root:string;conditions:string}|null=null;
       const period=section.querySelector<HTMLInputElement>('#graph-discretize-period')!,prewarp=section.querySelector<HTMLInputElement>('#graph-discretize-prewarp')!,apply=section.querySelector<HTMLButtonElement>('#graph-discretize-apply')!,state=section.querySelector<HTMLElement>('#graph-discretize-state')!,output=section.querySelector<HTMLElement>('#graph-discretize-coefficients')!;
-      const busy=()=>!!worker||archiveBusy||!!sweep?.running()||!!frequency?.running()||!!poleZero?.running()||(!!stateSpace?.running()||!!(conversionComparison?.running()||inputPreview?.running()));
+      const busy=()=>!!worker||archiveBusy||!!sweep?.running()||!!frequency?.running()||!!poleZero?.running()||(!!(stateSpace?.running()||mimo?.running())||!!(conversionComparison?.running()||inputPreview?.running()));
       const mode=section.querySelector<HTMLSelectElement>('#graph-discretize-method')!;
       const conditions=()=>JSON.stringify([mode.value,period.value,prewarp.value]);
       const address=[...path,b.id].join('/');
@@ -371,7 +373,7 @@ export function mountEditor(host:HTMLElement) {
       conversionComparison=mountConversionComparison(comparisonHost,{
         plan:()=>({format:'blocksim.conversion-comparison',version:1,method:mode.value==='zoh'?'zoh':'tustin',samples:101,request:tustinRequest(b,parseNumber(period.value,'変換周期'),mode.value==='tustin'&&prewarp.value.trim()?parseNumber(prewarp.value,'プリワープ'):undefined)}),
         restore:p=>{const q=tustinRequest(b,p.request.sample_time,p.request.prewarp_omega);if(JSON.stringify([q.numerator,q.denominator])!==JSON.stringify([p.request.numerator,p.request.denominator]))throw new Error('選択した伝達関数と比較設定の係数が違います');(p.method==='zoh'?discretize_zoh:discretize_tustin)(JSON.stringify(q));mode.value=p.method;period.value=String(q.sample_time);prewarp.value=q.prewarp_omega===undefined?'':String(q.prewarp_omega);prewarp.disabled=p.method==='zoh';preview=null;apply.disabled=true;output.textContent='';state.textContent='比較設定を読み込みました。係数を再確認してください。';state.classList.remove('error');},
-        busy:()=>!!worker||archiveBusy||!!sweep?.running()||!!frequency?.running()||!!poleZero?.running()||!!stateSpace?.running(),onBusy:renderComparison,download,
+        busy:()=>!!worker||archiveBusy||!!sweep?.running()||!!frequency?.running()||!!poleZero?.running()||!!(stateSpace?.running()||mimo?.running()),onBusy:renderComparison,download,
       });
       section.querySelector<HTMLFieldSetElement>('#graph-discretize-fields')!.disabled=busy();
     }
@@ -458,7 +460,7 @@ export function mountEditor(host:HTMLElement) {
     const kinds=get<HTMLSelectElement>('block-kind');const previous=kinds.value;kinds.replaceChildren();
     for(const kind of Object.keys(KIND_NAMES) as Kind[])if(path.length||!['input','output'].includes(kind))kinds.add(new Option(KIND_NAMES[kind],kind));if([...kinds.options].some(o=>o.value===previous))kinds.value=previous;
     for(const id of ['edge-from','edge-to']){const select=get<HTMLSelectElement>(id),previous=select.value;select.replaceChildren();for(const b of current().blocks)select.add(new Option(`${b.label} (${b.id})`,b.id));if(current().blocks.some(b=>b.id===previous))select.value=previous;}
-    refreshDiagnostics();renderPorts();renderNodes();renderInspector();syncCopy();syncDirty();renderSearch();renderDiagnostics();renderComparison();sweep?.refresh();frequency?.refresh();poleZero?.refresh();stateSpace?.refresh();
+    refreshDiagnostics();renderPorts();renderNodes();renderInspector();syncCopy();syncDirty();renderSearch();renderDiagnostics();renderComparison();sweep?.refresh();frequency?.refresh();poleZero?.refresh();stateSpace?.refresh();mimo?.refresh();
     const edges=get('graph-edges');edges.replaceChildren();current().edges.forEach((e,i)=>{
       const row=document.createElement('div');row.className='edge-row';const text=document.createElement('span');text.textContent=`${e.from}:${e.from_port} → ${e.to}:${e.to_port}`;
       const remove=button('×',()=>edit(g=>{g.edges.splice(i,1);},'接続を削除しました'));remove.setAttribute('aria-label',`接続を削除 ${e.from} ${e.to} ${e.to_port}`);row.append(text,remove);edges.append(row);
@@ -484,7 +486,7 @@ export function mountEditor(host:HTMLElement) {
     renderComparison();plotResult();cursor();say(`完了 · ${data.times.length} 点 · ${data.traces.length} Scope · Rust / WASM`);
   }
   function run(){guard(()=>{
-    if(archiveBusy||(sweep?.running()||frequency?.running()||poleZero?.running()||stateSpace?.running()||(conversionComparison?.running()||inputPreview?.running())))throw new Error('実行結果ファイルの確認が終わるか、中止してから実行してください');
+    if(archiveBusy||(sweep?.running()||frequency?.running()||poleZero?.running()||(stateSpace?.running()||mimo?.running())||(conversionComparison?.running()||inputPreview?.running())))throw new Error('実行結果ファイルの確認が終わるか、中止してから実行してください');
     refreshDiagnostics(true);renderNodes();renderDiagnostics();
     if(!validation.runnable){get<HTMLDetailsElement>('graph-diagnostics').open=true;throw new Error(validation.diagnostics[0].message);}
     const json=JSON.stringify(history.graph);cancel();const id=++request;
@@ -554,7 +556,7 @@ if(event.key==='Escape'&&pendingWire){event.preventDefault();cancelWire();return
   get('graph-restore').addEventListener('click',()=>guard(()=>{const text=localStorage.getItem(GRAPH_STORAGE_KEY);if(text===null)throw new Error('保存済みモデルがありません');if(replace(decodeGraphDocument(text,normalize_graph))){baseline=JSON.stringify(history.graph);syncDirty();say('モデルを復元しました');}}));
   get('graph-export').addEventListener('click',()=>download(encodeGraphDocument(history.graph),'blocksim-graph.json','application/json'));
   get('graph-csv').addEventListener('click',()=>{if(result)download(resultCsv(result),'blocksim-signals.csv','text/csv');});
-  get('graph-reference-set').addEventListener('click',()=>guard(()=>{if(!result||!resultModel||worker||archiveBusy||(sweep?.running()||frequency?.running()||poleZero?.running()||stateSpace?.running()||(conversionComparison?.running()||inputPreview?.running())))throw new Error('実行・読み込みが完了してから基準を保持してください');referenceRun=snapshotRun(resultModel,result);comparison=compareResults(result,referenceRun.result);comparisonPage=0;get<HTMLDetailsElement>('graph-comparison').open=true;renderComparison();plotResult();cursor();}));
+  get('graph-reference-set').addEventListener('click',()=>guard(()=>{if(!result||!resultModel||worker||archiveBusy||(sweep?.running()||frequency?.running()||poleZero?.running()||(stateSpace?.running()||mimo?.running())||(conversionComparison?.running()||inputPreview?.running())))throw new Error('実行・読み込みが完了してから基準を保持してください');referenceRun=snapshotRun(resultModel,result);comparison=compareResults(result,referenceRun.result);comparisonPage=0;get<HTMLDetailsElement>('graph-comparison').open=true;renderComparison();plotResult();cursor();}));
   get('graph-reference-clear').addEventListener('click',()=>{if(archiveBusy)return;referenceRun=null;comparison=null;comparisonPage=0;renderComparison();plotResult();cursor();});
   get('graph-reference-export').addEventListener('click',()=>{if(referenceRun)download(encodeGraphDocument(referenceRun.model),'blocksim-reference-model.json','application/json');});
   get('graph-reference-show').addEventListener('change',plotResult);
@@ -567,7 +569,7 @@ if(event.key==='Escape'&&pendingWire){event.preventDefault();cancelWire();return
   get('graph-reference-cancel').addEventListener('click',()=>{finishArchive();archiveState('実行結果ファイルの読み込みを中止しました');});
   get<HTMLInputElement>('graph-reference-import').addEventListener('change',async event=>{
     const target=event.target as HTMLInputElement,file=target.files?.[0];if(!file)return;
-    if(worker||archiveBusy||(sweep?.running()||frequency?.running()||poleZero?.running()||stateSpace?.running()||(conversionComparison?.running()||inputPreview?.running()))){target.value='';return;}
+    if(worker||archiveBusy||(sweep?.running()||frequency?.running()||poleZero?.running()||(stateSpace?.running()||mimo?.running())||(conversionComparison?.running()||inputPreview?.running()))){target.value='';return;}
     const id=++archiveRequest;archiveBusy=true;get<HTMLDetailsElement>('graph-run-files').open=true;archiveState('実行結果ファイルを読み込み中…');renderComparison();
     try{
       checkArchiveSize(file.size);const text=await file.text();if(id!==archiveRequest)return;
@@ -598,9 +600,10 @@ if(event.key==='Escape'&&pendingWire){event.preventDefault();cancelWire();return
   host.addEventListener('graph-visible',renderNodes);
   let savedError:string|null=null;
   try{const text=localStorage.getItem(GRAPH_STORAGE_KEY);if(text!==null)history.replace(decodeGraphDocument(text,normalize_graph));}catch(error){savedError=String(error);}
-  sweep=mountSweep(get('graph-sweep-host'),{model:()=>history.graph,normalize:validate_graph,busy:()=>!!worker||archiveBusy||(!!frequency?.running()||(!!poleZero?.running()||(!!stateSpace?.running()||!!(conversionComparison?.running()||inputPreview?.running())))),onBusy:renderComparison,download,replace,apply:(model,data)=>{if(replace(model))showResult(data,structuredClone(history.graph));},reference:(model,data)=>{referenceRun=snapshotRun(model,data);comparison=result?compareResults(result,data):null;comparisonPage=0;get<HTMLDetailsElement>('graph-comparison').open=true;renderComparison();plotResult();cursor();say('掃引結果を基準として保持しました');}});
-  frequency=mountFrequency(get('graph-frequency-host'),{model:()=>history.graph,normalize:validate_graph,check:(model,request,domain)=>domain==='discrete'?validate_discrete_frequency(model,request):validate_frequency(model,request),busy:()=>!!worker||archiveBusy||!!sweep?.running()||(!!poleZero?.running()||(!!stateSpace?.running()||!!(conversionComparison?.running()||inputPreview?.running()))),onBusy:renderComparison,download,replace});
-  poleZero=mountPoleZero(get('graph-pole-zero-host'),{model:()=>history.graph,normalize:validate_graph,check:validate_pole_zero,busy:()=>!!worker||archiveBusy||!!sweep?.running()||!!frequency?.running()||(!!stateSpace?.running()||!!(conversionComparison?.running()||inputPreview?.running())),onBusy:renderComparison,download,replace});
-  stateSpace=mountStateSpace(get('graph-state-space-host'),{model:()=>history.graph,normalize:validate_graph,check:(model,request,domain)=>domain==='discrete'?validate_discrete_state_space(model,request):validate_state_space(model,request),busy:()=>!!worker||archiveBusy||!!sweep?.running()||!!frequency?.running()||!!poleZero?.running()||!!(conversionComparison?.running()||inputPreview?.running()),onBusy:renderComparison,download,replace});
+  sweep=mountSweep(get('graph-sweep-host'),{model:()=>history.graph,normalize:validate_graph,busy:()=>!!worker||archiveBusy||(!!frequency?.running()||(!!poleZero?.running()||(!!(stateSpace?.running()||mimo?.running())||!!(conversionComparison?.running()||inputPreview?.running())))),onBusy:renderComparison,download,replace,apply:(model,data)=>{if(replace(model))showResult(data,structuredClone(history.graph));},reference:(model,data)=>{referenceRun=snapshotRun(model,data);comparison=result?compareResults(result,data):null;comparisonPage=0;get<HTMLDetailsElement>('graph-comparison').open=true;renderComparison();plotResult();cursor();say('掃引結果を基準として保持しました');}});
+  frequency=mountFrequency(get('graph-frequency-host'),{model:()=>history.graph,normalize:validate_graph,check:(model,request,domain)=>domain==='discrete'?validate_discrete_frequency(model,request):validate_frequency(model,request),busy:()=>!!worker||archiveBusy||!!sweep?.running()||(!!poleZero?.running()||(!!(stateSpace?.running()||mimo?.running())||!!(conversionComparison?.running()||inputPreview?.running()))),onBusy:renderComparison,download,replace});
+  poleZero=mountPoleZero(get('graph-pole-zero-host'),{model:()=>history.graph,normalize:validate_graph,check:validate_pole_zero,busy:()=>!!worker||archiveBusy||!!sweep?.running()||!!frequency?.running()||(!!(stateSpace?.running()||mimo?.running())||!!(conversionComparison?.running()||inputPreview?.running())),onBusy:renderComparison,download,replace});
+  stateSpace=mountStateSpace(get('graph-state-space-host'),{model:()=>history.graph,normalize:validate_graph,check:(model,request,domain)=>domain==='discrete'?validate_discrete_state_space(model,request):validate_state_space(model,request),busy:()=>!!mimo?.running()||!!worker||archiveBusy||!!sweep?.running()||!!frequency?.running()||!!poleZero?.running()||!!(conversionComparison?.running()||inputPreview?.running()),onBusy:renderComparison,download,replace});
+  mimo=mountMimo(get('graph-mimo-host'),{model:()=>history.graph,normalize:validate_graph,check:validate_mimo,busy:()=>!!worker||archiveBusy||!!sweep?.running()||!!frequency?.running()||!!poleZero?.running()||!!stateSpace?.running()||!!conversionComparison?.running()||!!inputPreview?.running(),onBusy:renderComparison,download,replace});
   baseline=JSON.stringify(history.graph);render();if(savedError)say(`保存モデルの読み込みに失敗: ${savedError}`,true);else run();
 }

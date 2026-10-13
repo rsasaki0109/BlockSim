@@ -3,6 +3,7 @@
 use super::*;
 use pole_zero::{PolynomialRoots, Stability};
 pub(super) mod discrete;
+pub mod mimo;
 mod spectrum;
 mod structure;
 pub use discrete::{analyze_discrete_state_space, validate_discrete_state_space};
@@ -80,6 +81,8 @@ pub struct StateSpaceResult {
 struct Prepared {
     graph: Compiled,
     input: Option<usize>,
+    inputs: Vec<Option<usize>>,
+    outputs: Vec<usize>,
     offsets: Vec<(usize, usize)>,
     states: Vec<StateInfo>,
     check: StateSpaceCheck,
@@ -116,6 +119,26 @@ fn prepare_with_domain(
         e.replace("Frequency", "State-space")
             .replace("frequency analysis", "state-space analysis")
     })?;
+    let output = nodes[0];
+    scalarize(
+        original,
+        nodes,
+        &[(source, q.source_component)],
+        &[output],
+        check.source_label,
+        check.scope_label,
+        discrete,
+    )
+}
+fn scalarize(
+    original: Compiled,
+    nodes: Vec<(usize, usize)>,
+    sources: &[(usize, usize)],
+    outputs: &[(usize, usize)],
+    source_label: String,
+    scope_label: String,
+    discrete: bool,
+) -> Result<Prepared> {
     let indices: BTreeMap<_, _> = nodes.iter().enumerate().map(|(i, n)| (*n, i)).collect();
     let mut blocks = vec![];
     let mut incoming = vec![];
@@ -237,10 +260,15 @@ fn prepare_with_domain(
                 .filter_map(move |(i, n)| (n.0 == *b).then_some(i))
         })
         .collect();
-    let input = indices.get(&(source, q.source_component)).copied();
+    let inputs: Vec<_> = sources
+        .iter()
+        .map(|node| indices.get(node).copied())
+        .collect();
+    let input = inputs[0];
+    let outputs = outputs.iter().map(|node| indices[node]).collect();
     let check = StateSpaceCheck {
-        source_label: check.source_label,
-        scope_label: check.scope_label,
+        source_label,
+        scope_label,
         variables: nodes.len(),
         states: states.len(),
         source_related: input.is_some(),
@@ -256,6 +284,8 @@ fn prepare_with_domain(
             scopes: vec![0],
         },
         input,
+        inputs,
+        outputs,
         offsets,
         states,
         check,

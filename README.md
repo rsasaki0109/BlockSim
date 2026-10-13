@@ -318,6 +318,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <a href="docs/structural-analysis.md">状態と数値ランクを確認する</a>
 </p>
 
+<p align="center">
+  <a href="docs/media/mimo.gif"><img src="docs/media/mimo.gif" width="960" alt="2入力2出力の共有状態を解析し、全4経路の周波数応答・数値ランク・零応答・離散周期と設定復元を実WASMで確認"></a><br>
+  <b>複数の入力から、複数の出力を確かめる。</b><br>
+  共有状態を保持して解析。経路を切り替え、行列と全取得値を保存。<br>
+  <a href="docs/mimo.md">複数入出力を解析する</a>
+</p>
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。

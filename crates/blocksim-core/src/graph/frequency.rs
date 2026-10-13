@@ -54,24 +54,24 @@ pub struct FrequencyResult {
     pub margins: Option<MarginAnalysis>,
 }
 #[derive(Clone, Copy, Debug, Default)]
-struct C {
-    re: f64,
-    im: f64,
+pub(super) struct C {
+    pub(super) re: f64,
+    pub(super) im: f64,
 }
 impl C {
-    const ONE: Self = Self { re: 1.0, im: 0.0 };
-    fn real(re: f64) -> Self {
+    pub(super) const ONE: Self = Self { re: 1.0, im: 0.0 };
+    pub(super) fn real(re: f64) -> Self {
         Self { re, im: 0.0 }
     }
-    fn abs(self) -> f64 {
+    pub(super) fn abs(self) -> f64 {
         self.re.hypot(self.im)
     }
-    fn checked(self) -> Result<Self> {
+    pub(super) fn checked(self) -> Result<Self> {
         finite("Frequency real value", self.re)?;
         finite("Frequency imaginary value", self.im)?;
         Ok(self)
     }
-    fn div(self, b: Self) -> Result<Self> {
+    pub(super) fn div(self, b: Self) -> Result<Self> {
         let scale = b.re.abs().max(b.im.abs());
         if scale == 0.0 {
             return Err("Frequency equation has a zero denominator".into());
@@ -305,7 +305,7 @@ fn weights(kind: &BlockKind, s: C) -> Result<Vec<C>> {
         _ => vec![C::ONE],
     })
 }
-fn solve(mut matrix: Vec<Vec<C>>) -> Result<(Vec<C>, f64)> {
+pub(super) fn solve(mut matrix: Vec<Vec<C>>) -> Result<(Vec<C>, f64)> {
     let n = matrix.len();
     for row in &mut matrix {
         let scale = row[..n].iter().map(|v| v.abs()).fold(0.0, f64::max);

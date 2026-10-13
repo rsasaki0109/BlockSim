@@ -337,6 +337,14 @@
       "bytes": 447921,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "mimo.gif",
+      "frames": 134,
+      "duration_seconds": 13.4,
+      "bytes": 272746,
+      "width": 960,
+      "height": 737
     }
   ]
 }

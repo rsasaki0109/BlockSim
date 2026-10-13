@@ -13,7 +13,10 @@ fn unknown(reason: &str) -> StateSpaceStability {
 fn binomial(n: usize, k: usize) -> f64 {
     (0..k).fold(1.0, |v, i| v * (n - i) as f64 / (i + 1) as f64)
 }
-pub(super) fn classify(coefficients: Option<&[f64]>, scale: f64) -> StateSpaceStability {
+pub(in crate::graph::state_space) fn classify(
+    coefficients: Option<&[f64]>,
+    scale: f64,
+) -> StateSpaceStability {
     let Some(c) = coefficients else {
         return unknown(
             "Characteristic polynomial is unresolved; unit-circle stability is indeterminate",

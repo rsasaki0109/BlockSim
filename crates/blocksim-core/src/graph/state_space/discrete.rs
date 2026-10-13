@@ -1,6 +1,6 @@
 //! Single-clock sample-instant realization, sharing actual PID/Delay update semantics.
 use super::*;
-mod unit_circle;
+pub(super) mod unit_circle;
 
 pub(super) fn dependencies(graph: &Compiled, node: (usize, usize)) -> Result<Vec<(usize, usize)>> {
     let b = &graph.flat.blocks[node.0];
@@ -18,6 +18,10 @@ pub(super) fn dependencies(graph: &Compiled, node: (usize, usize)) -> Result<Vec
 }
 fn prepare_discrete(model: &GraphModel, q: &StateSpaceRequest) -> Result<(Prepared, f64)> {
     let p = prepare_with_domain(model, q, true)?;
+    let sample_time = common_clock(&p, model.dt)?;
+    Ok((p, sample_time))
+}
+pub(super) fn common_clock(p: &Prepared, dt: f64) -> Result<f64> {
     let mut clock = None;
     for b in &p.graph.flat.blocks {
         let t = match b.params {
@@ -27,14 +31,14 @@ fn prepare_discrete(model: &GraphModel, q: &StateSpaceRequest) -> Result<(Prepar
             _ => continue,
         };
         // Match the actual validated integer recording-clock period, not a fuzzy float comparison.
-        let ticks = period(t, model.dt)?;
+        let ticks = period(t, dt)?;
         if clock.is_some_and(|(previous, _)| previous != ticks) {
             return Err(format!("{}: discrete state-space requires one common sample period; mixed rates are unsupported", b.id));
         }
         clock = Some((ticks, t));
     }
     // Even approximately equal sample_time values change PID arithmetic; require the same value.
-    let sample_time = clock.map(|(_, t)| t).unwrap_or(model.dt);
+    let sample_time = clock.map(|(_, t)| t).unwrap_or(dt);
     for b in &p.graph.flat.blocks {
         if let BlockKind::Delay { sample_time: t, .. }
         | BlockKind::DiscreteTransferFunction { sample_time: t, .. }
@@ -47,7 +51,7 @@ fn prepare_discrete(model: &GraphModel, q: &StateSpaceRequest) -> Result<(Prepar
             }
         }
     }
-    Ok((p, sample_time))
+    Ok(sample_time)
 }
 pub fn validate_discrete_state_space(
     model: &GraphModel,

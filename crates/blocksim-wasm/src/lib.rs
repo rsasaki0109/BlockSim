@@ -116,6 +116,28 @@ pub fn pole_zero_json(model: &str, request: &str) -> Result<String, String> {
         &graph, &request,
     )?)
 }
+pub fn mimo_json(model: &str, request: &str) -> Result<String, String> {
+    let graph = decode(model)?;
+    let request = decode(request)?;
+    encode(&blocksim_core::graph::state_space::mimo::analyze_mimo(
+        &graph, &request,
+    )?)
+}
+pub fn mimo_check_json(model: &str, request: &str) -> Result<String, String> {
+    let graph = decode(model)?;
+    let request = decode(request)?;
+    encode(&blocksim_core::graph::state_space::mimo::validate_mimo(
+        &graph, &request,
+    )?)
+}
+#[wasm_bindgen]
+pub fn analyze_mimo(model: &str, request: &str) -> Result<String, JsValue> {
+    mimo_json(model, request).map_err(|e| JsValue::from_str(&e))
+}
+#[wasm_bindgen]
+pub fn validate_mimo(model: &str, request: &str) -> Result<String, JsValue> {
+    mimo_check_json(model, request).map_err(|e| JsValue::from_str(&e))
+}
 pub fn state_space_json(model: &str, request: &str) -> Result<String, String> {
     let graph = decode(model)?;
     let request = decode(request)?;
@@ -215,6 +237,54 @@ pub fn normalize_graph(json: &str) -> Result<String, JsValue> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn mimo_boundary_preserves_full_matrices_paths_and_strict_limits() {
+        for text in [
+            include_str!("../../../samples/mimo/continuous-plan.json"),
+            include_str!("../../../samples/mimo/discrete-plan.json"),
+        ] {
+            let p: serde_json::Value = serde_json::from_str(text).unwrap();
+            let m = p["model"].to_string();
+            let q = p["request"].to_string();
+            let r: serde_json::Value = serde_json::from_str(&mimo_json(&m, &q).unwrap()).unwrap();
+            assert_eq!(r["check"]["states"], 2);
+            assert_eq!(r["b"], serde_json::json!([[1.0, 1.0], [1.0, -1.0]]));
+            assert_eq!(r["responses"].as_array().unwrap().len(), 4);
+            assert_eq!(r["structure"]["controllability"]["numerical_rank"], 2);
+            let checked: serde_json::Value =
+                serde_json::from_str(&mimo_check_json(&m, &q).unwrap()).unwrap();
+            assert_eq!(checked, r["check"]);
+            let mut bad = p["request"].clone();
+            bad["inputs"][0]["unknown"] = serde_json::json!(true);
+            assert!(mimo_json(&m, &bad.to_string()).is_err());
+            assert!(mimo_json(&m, &" ".repeat(1_000_001)).is_err());
+            assert!(mimo_json("{}", &q).is_err());
+        }
+    }
+    #[test]
+    fn mimo_boundary_rejects_duplicate_null_and_invalid_period_without_mutating_input() {
+        let p: serde_json::Value =
+            serde_json::from_str(include_str!("../../../samples/mimo/discrete-plan.json")).unwrap();
+        let m = p["model"].to_string();
+        for value in [
+            serde_json::json!(null),
+            serde_json::json!([]),
+            serde_json::json!([
+                p["request"]["inputs"][0].clone(),
+                p["request"]["inputs"][0].clone()
+            ]),
+        ] {
+            let mut q = p["request"].clone();
+            q["inputs"] = value;
+            assert!(mimo_check_json(&m, &q.to_string()).is_err());
+        }
+        let mut q = p["request"].clone();
+        q["max_omega"] = serde_json::json!(32);
+        assert!(mimo_check_json(&m, &q.to_string())
+            .unwrap_err()
+            .contains("Nyquist"));
+        assert!(mimo_json(&m, &p["request"].to_string()).is_ok());
+    }
     #[test]
     fn sixteen_state_boundary_exports_exact_ranks_and_all_modes_in_both_domains() {
         for (name, discrete) in [("sixteen-integrators", false), ("sixteen-delays", true)] {

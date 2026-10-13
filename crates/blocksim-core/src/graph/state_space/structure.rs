@@ -1,4 +1,4 @@
-//! Scaled single-source/single-Scope Krylov diagnostics; never remove states.
+//! Scaled selected-input/output Krylov diagnostics; never remove states.
 use super::*;
 const TOLERANCE: f64 = 1e-10;
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -74,8 +74,7 @@ fn krylov(a: &[Vec<f64>], v: &[f64]) -> Result<Vec<Vec<f64>>> {
     }
     Ok(columns)
 }
-fn rank(columns: Vec<Vec<f64>>) -> NumericalRank {
-    let n = columns.len();
+fn rank(columns: Vec<Vec<f64>>, n: usize) -> NumericalRank {
     let mut remaining = columns;
     let mut basis: Vec<Vec<f64>> = vec![];
     let mut pivots = vec![];
@@ -118,12 +117,29 @@ fn rank(columns: Vec<Vec<f64>>) -> NumericalRank {
     NumericalRank {status:if n==0 {"no_states"}else if near {"near_threshold"}else if count==n {"full_numerical_rank"}else{"numerical_rank_deficient"}.into(),numerical_rank:Some(count),dimension:n,tolerance:TOLERANCE,pivot_norms:pivots,notes:vec!["Rank uses separately normalized Krylov columns; gain magnitude and energy are not assessed".into(),"This is a finite-precision diagnostic, not an exact controllability/observability or minimal-realization proof".into()]}
 }
 pub(super) fn analyze(a: &[Vec<f64>], b: &[f64], c: &[f64]) -> StateSpaceStructure {
+    analyze_multi(
+        a,
+        &b.iter().map(|v| vec![*v]).collect::<Vec<_>>(),
+        &[c.to_vec()],
+    )
+}
+pub(super) fn analyze_multi(a: &[Vec<f64>], b: &[Vec<f64>], c: &[Vec<f64>]) -> StateSpaceStructure {
     let n = a.len();
     let compute = || -> Result<(NumericalRank, NumericalRank)> {
-        if n > 16 || a.iter().any(|r| r.len() != n) || b.len() != n || c.len() != n {
+        if n > 16
+            || a.iter().any(|r| r.len() != n)
+            || b.len() != n
+            || b.iter().any(|r| r.len() != b.first().map_or(0, Vec::len))
+            || c.iter().any(|r| r.len() != n)
+        {
             return Err("Structural matrix dimensions are invalid".into());
         }
-        if a.iter().flatten().chain(b).chain(c).any(|v| !v.is_finite()) {
+        if a.iter()
+            .flatten()
+            .chain(b.iter().flatten())
+            .chain(c.iter().flatten())
+            .any(|v| !v.is_finite())
+        {
             return Err("Structural matrices must be finite".into());
         }
         let scale = a.iter().flatten().map(|v| v.abs()).fold(0., f64::max);
@@ -143,12 +159,21 @@ pub(super) fn analyze(a: &[Vec<f64>], b: &[f64], c: &[f64]) -> StateSpaceStructu
         let transpose: Vec<Vec<f64>> = (0..n)
             .map(|i| (0..n).map(|j| scaled[j][i]).collect())
             .collect();
-        let control = match krylov(&scaled, b) {
-            Ok(columns) => rank(columns),
+        let control = match (0..b.first().map_or(0, Vec::len)).try_fold(vec![], |mut columns, j| {
+            columns.extend(krylov(
+                &scaled,
+                &b.iter().map(|r| r[j]).collect::<Vec<_>>(),
+            )?);
+            Ok::<_, String>(columns)
+        }) {
+            Ok(columns) => rank(columns, n),
             Err(e) => unknown(n, e),
         };
-        let observation = match krylov(&transpose, c) {
-            Ok(columns) => rank(columns),
+        let observation = match c.iter().try_fold(vec![], |mut columns, row| {
+            columns.extend(krylov(&transpose, row)?);
+            Ok::<_, String>(columns)
+        }) {
+            Ok(columns) => rank(columns, n),
             Err(e) => unknown(n, e),
         };
         Ok((control, observation))
