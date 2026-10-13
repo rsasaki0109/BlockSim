@@ -281,6 +281,14 @@
       "bytes": 484221,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "input-generator-file.gif",
+      "frames": 249,
+      "duration_seconds": 24.9,
+      "bytes": 359632,
+      "width": 960,
+      "height": 737
     }
   ]
 }

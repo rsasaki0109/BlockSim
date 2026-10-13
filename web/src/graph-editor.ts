@@ -284,7 +284,7 @@ export function mountEditor(host:HTMLElement) {
     if(b.params.kind==='sampled_input')field('p.repeat','入力系列を繰り返す',b.params.repeat??false);
     if(b.params.kind==='sampled_input'){
       const generatorHost=document.createElement('section');form.append(generatorHost);
-      mountInputGenerator(generatorHost,{values:controls.get('p.values') as HTMLTextAreaElement,width:controls.get('width') as HTMLInputElement,busy:modelBusy});
+      mountInputGenerator(generatorHost,{values:controls.get('p.values') as HTMLTextAreaElement,width:controls.get('width') as HTMLInputElement,busy:modelBusy,ioEpoch:()=>sampledInputIoEpoch,download});
       const tableHost=document.createElement('section');form.append(tableHost);
       const tableEditor=mountSampleTableEditor(tableHost,{values:controls.get('p.values') as HTMLTextAreaElement,width:controls.get('width') as HTMLInputElement,period:controls.get('p.sample_time') as HTMLInputElement,busy:modelBusy,onSelect:row=>inputPreview?.seekRow(row)??false});
       const section=document.createElement('section');section.id='graph-input-csv';

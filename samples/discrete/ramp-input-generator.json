@@ -1,0 +1,11 @@
+{
+  "format": "blocksim.input-generator",
+  "version": 1,
+  "generation": {
+    "shape": "ramp",
+    "width": 2,
+    "rows": 5,
+    "base": [1, -1],
+    "delta": [2, -2]
+  }
+}
