@@ -305,6 +305,14 @@
       "bytes": 735044,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "input-generation-plan.gif",
+      "frames": 375,
+      "duration_seconds": 37.5,
+      "bytes": 512052,
+      "width": 960,
+      "height": 737
     }
   ]
 }
