@@ -1,0 +1,483 @@
+{
+  "source": "Actual Chromium/WASM Worker; independent piecewise matrix exponential and bilinear recurrence",
+  "last_row_hold": {
+    "plan": {
+      "format": "blocksim.matrix-comparison",
+      "version": 1,
+      "request": {
+        "a": [
+          [
+            -1,
+            0
+          ],
+          [
+            1,
+            -2
+          ]
+        ],
+        "b": [
+          [
+            1,
+            1
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "c": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        "d": [
+          [
+            0.25,
+            0
+          ],
+          [
+            0,
+            0.5
+          ]
+        ],
+        "initial": [
+          0.5,
+          -0.25
+        ],
+        "sample_time": 0.1,
+        "method": "zoh"
+      },
+      "samples": 13,
+      "input": {
+        "kind": "sample_sequence",
+        "values": [
+          [
+            1,
+            2
+          ],
+          [
+            0.25,
+            -1
+          ],
+          [
+            -2,
+            0.5
+          ],
+          [
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "input": [
+      [
+        1,
+        2
+      ],
+      [
+        0.25,
+        -1
+      ],
+      [
+        -2,
+        0.5
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "metrics": [
+      {
+        "maxAbs": 6.328271240363392e-15,
+        "rms": 4.7059160858421955e-15,
+        "final": -5.35682609381638e-15,
+        "area": 5.469236175059678e-15
+      },
+      {
+        "maxAbs": 3.814726312612038e-13,
+        "rms": 2.29068692727171e-13,
+        "final": 1.1754486273218845e-13,
+        "area": 2.6265795094460027e-13
+      }
+    ],
+    "independent_metrics": [
+      {
+        "maxAbs": 0,
+        "rms": 0
+      },
+      {
+        "maxAbs": 0,
+        "rms": 0
+      }
+    ],
+    "continuous_max_independent_error": 3.815003868368194e-13,
+    "discrete_max_independent_error": 3.3306690738754696e-16,
+    "all_input_samples_verified": true,
+    "states_continue_across_cycles": false
+  },
+  "repeated_zoh": {
+    "plan": {
+      "format": "blocksim.matrix-comparison",
+      "version": 1,
+      "request": {
+        "a": [
+          [
+            -1,
+            0
+          ],
+          [
+            1,
+            -2
+          ]
+        ],
+        "b": [
+          [
+            1,
+            1
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "c": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        "d": [
+          [
+            0.25,
+            0
+          ],
+          [
+            0,
+            0.5
+          ]
+        ],
+        "initial": [
+          0.5,
+          -0.25
+        ],
+        "sample_time": 0.1,
+        "method": "zoh"
+      },
+      "samples": 13,
+      "input": {
+        "kind": "sample_sequence",
+        "values": [
+          [
+            1,
+            2
+          ],
+          [
+            0.25,
+            -1
+          ],
+          [
+            -2,
+            0.5
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "repeat": true
+      }
+    },
+    "input": [
+      [
+        1,
+        2
+      ],
+      [
+        0.25,
+        -1
+      ],
+      [
+        -2,
+        0.5
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        0.25,
+        -1
+      ],
+      [
+        -2,
+        0.5
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        0.25,
+        -1
+      ],
+      [
+        -2,
+        0.5
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        2
+      ]
+    ],
+    "metrics": [
+      {
+        "maxAbs": 6.328271240363392e-15,
+        "rms": 4.21598809357985e-15,
+        "final": -6.217248937900877e-15,
+        "area": 4.404809850200308e-15
+      },
+      {
+        "maxAbs": 3.951283744640932e-13,
+        "rms": 2.818710952518548e-13,
+        "final": 2.0694557179012918e-13,
+        "area": 3.250677504951227e-13
+      }
+    ],
+    "independent_metrics": [
+      {
+        "maxAbs": 0,
+        "rms": 0
+      },
+      {
+        "maxAbs": 0,
+        "rms": 0
+      }
+    ],
+    "continuous_max_independent_error": 3.95294907917787e-13,
+    "discrete_max_independent_error": 6.661338147750939e-16,
+    "all_input_samples_verified": true,
+    "states_continue_across_cycles": true
+  },
+  "repeated_tustin": {
+    "plan": {
+      "format": "blocksim.matrix-comparison",
+      "version": 1,
+      "request": {
+        "a": [
+          [
+            -1,
+            0
+          ],
+          [
+            1,
+            -2
+          ]
+        ],
+        "b": [
+          [
+            1,
+            1
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "c": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        "d": [
+          [
+            0.25,
+            0
+          ],
+          [
+            0,
+            0.5
+          ]
+        ],
+        "initial": [
+          0,
+          0
+        ],
+        "sample_time": 0.1,
+        "method": "tustin",
+        "prewarp_omega": 3
+      },
+      "samples": 13,
+      "input": {
+        "kind": "sample_sequence",
+        "values": [
+          [
+            1,
+            2
+          ],
+          [
+            0.25,
+            -1
+          ],
+          [
+            -2,
+            0.5
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "repeat": true
+      }
+    },
+    "input": [
+      [
+        1,
+        2
+      ],
+      [
+        0.25,
+        -1
+      ],
+      [
+        -2,
+        0.5
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        0.25,
+        -1
+      ],
+      [
+        -2,
+        0.5
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        0.25,
+        -1
+      ],
+      [
+        -2,
+        0.5
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        2
+      ]
+    ],
+    "metrics": [
+      {
+        "maxAbs": 0.143886448152571,
+        "rms": 0.09099046377794039,
+        "final": 0.14105913169300444,
+        "area": 0.08212780821360949
+      },
+      {
+        "maxAbs": 0.1896535108393047,
+        "rms": 0.11474558271251069,
+        "final": 0.16342346588998602,
+        "area": 0.10484498511719137
+      }
+    ],
+    "independent_metrics": [
+      {
+        "maxAbs": 0.14388644815257096,
+        "rms": 0.09099046377794238
+      },
+      {
+        "maxAbs": 0.18965351083930448,
+        "rms": 0.1147455827125195
+      }
+    ],
+    "continuous_max_independent_error": 1.6514567491299204e-13,
+    "discrete_max_independent_error": 4.440892098500626e-16,
+    "all_input_samples_verified": true,
+    "states_continue_across_cycles": true
+  },
+  "source_models_and_results_retained": true,
+  "input_csv_rows_exact": true,
+  "restored_report_exact": true
+}

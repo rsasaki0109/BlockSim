@@ -346,6 +346,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <a href="docs/matrix-comparison.md">行列の応答を比較する</a>
 </p>
 
+<p align="center">
+  <a href="docs/media/matrix-sequence.gif"><img src="docs/media/matrix-sequence.gif" width="960" alt="任意のベクトル入力CSVを使ってZOHとTustinの行列応答を比較し、最終行保持・繰り返し・状態継続・全取得点と設定復元を実WASMで確認"></a><br>
+  <b>手元の入力系列で、変換後の動きを確かめる。</b><br>
+  CSVとJSONからベクトル入力。保持・繰り返しを選び、条件と全取得値を保存。<br>
+  <a href="docs/matrix-sequence.md">入力系列で行列を比較する</a>
+</p>
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。

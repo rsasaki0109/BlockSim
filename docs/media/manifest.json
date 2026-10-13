@@ -369,6 +369,14 @@
       "bytes": 339915,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "matrix-sequence.gif",
+      "frames": 181,
+      "duration_seconds": 18.1,
+      "bytes": 416302,
+      "width": 960,
+      "height": 737
     }
   ]
 }
