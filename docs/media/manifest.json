@@ -265,6 +265,14 @@
       "bytes": 247963,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "input-row-preview.gif",
+      "frames": 138,
+      "duration_seconds": 13.8,
+      "bytes": 301834,
+      "width": 960,
+      "height": 737
     }
   ]
 }

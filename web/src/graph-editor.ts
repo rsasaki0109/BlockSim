@@ -282,7 +282,7 @@ export function mountEditor(host:HTMLElement) {
     if(b.params.kind==='sampled_input')field('p.repeat','入力系列を繰り返す',b.params.repeat??false);
     if(b.params.kind==='sampled_input'){
       const tableHost=document.createElement('section');form.append(tableHost);
-      const tableEditor=mountSampleTableEditor(tableHost,{values:controls.get('p.values') as HTMLTextAreaElement,width:controls.get('width') as HTMLInputElement,period:controls.get('p.sample_time') as HTMLInputElement,busy:modelBusy});
+      const tableEditor=mountSampleTableEditor(tableHost,{values:controls.get('p.values') as HTMLTextAreaElement,width:controls.get('width') as HTMLInputElement,period:controls.get('p.sample_time') as HTMLInputElement,busy:modelBusy,onSelect:row=>inputPreview?.seekRow(row)??false});
       const section=document.createElement('section');section.id='graph-input-csv';
       section.innerHTML=`<h3>入力表CSV</h3><div class="buttons"><label class="file-button">入力表CSVを読み込む<input id="graph-input-csv-import" type="file" accept=".csv,text/csv"></label><button id="graph-input-csv-export" type="button">入力表CSVを保存</button></div><p class="hint">1行=サンプル、1列=成分。列数は上の信号幅と一致させます（1〜64列、1〜2001行、1 MBまで）。見出しなし、または1列はinput、複数列はinput_0,input_1,…。時刻・周期・繰り返し設定はCSVに含みません。読み込み後に「ブロック設定を適用」で反映します。保存は現在の設定欄の入力表です。</p><p id="graph-input-csv-state" role="status" aria-live="polite"></p>`;
       form.append(section);
@@ -312,8 +312,8 @@ export function mountEditor(host:HTMLElement) {
         download(sampleTableCsv(JSON.parse(values.value),parseNumber(width.value,'信号幅')),'blocksim-input-table.csv','text/csv');message('設定欄の入力表CSVを保存しました');
       }catch(error){message(String(error),true);}});
       const previewHost=document.createElement('section');form.append(previewHost);
-      inputPreview=mountInputPreview(previewHost,{read:()=>({values:JSON.parse(values.value),width:parseNumber(width.value,'信号幅'),sample_time:parseNumber(controls.get('p.sample_time')!.value,'サンプル周期'),repeat:(controls.get('p.repeat') as HTMLInputElement).checked,record_dt:history.graph.dt}),normalize:validate_graph,busy:modelBusy,onBusy:renderComparison,download});
-      const previewChanged=(event:Event)=>{if(event.target instanceof Node&&!previewHost.contains(event.target))inputPreview?.invalidate();};
+      inputPreview=mountInputPreview(previewHost,{read:()=>({values:JSON.parse(values.value),width:parseNumber(width.value,'信号幅'),sample_time:parseNumber(controls.get('p.sample_time')!.value,'サンプル周期'),repeat:(controls.get('p.repeat') as HTMLInputElement).checked,record_dt:history.graph.dt}),normalize:validate_graph,busy:modelBusy,onBusy:renderComparison,onCursor:row=>tableEditor.selectRow(row),download});
+      const previewChanged=(event:Event)=>{if(event.target instanceof Node&&!previewHost.contains(event.target)&&event.target!==tableHost.querySelector('#graph-input-table-page'))inputPreview?.invalidate();};
       form.addEventListener('input',previewChanged);form.addEventListener('change',previewChanged);
     }
     if(b.params.config){const cfg=b.params.config as Record<string,unknown>;for(const [key,value]of Object.entries(cfg))if(key!=='limits')field(`c.${key}`,key==='anti_windup'?'anti-windup':key,value);

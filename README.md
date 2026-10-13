@@ -255,6 +255,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <a href="docs/sampled-input.md">入力プレビューの使い方</a>
 </p>
 
+<p align="center">
+  <a href="docs/media/input-row-preview.gif"><img src="docs/media/input-row-preview.gif" width="960" alt="入力表の行とプレビューカーソルを連動し、周期と保持区間のマーカー、繰り返し終端と最終行保持を確認"></a><br>
+  <b>行を選ぶ。波形の同じ場所を確かめる。</b><br>
+  表とカーソルの双方向連動、ページ追従、保持区間と取得値のマーカー。<br>
+  <a href="docs/sampled-input.md">表と波形を対応させる</a>
+</p>
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。
