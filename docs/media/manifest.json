@@ -409,6 +409,14 @@
       "bytes": 221521,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "matrix-peak.gif",
+      "frames": 118,
+      "duration_seconds": 11.8,
+      "bytes": 266190,
+      "width": 960,
+      "height": 737
     }
   ]
 }

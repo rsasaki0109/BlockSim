@@ -381,6 +381,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <a href="docs/matrix-session.md">比較の作業状態を保存する</a>
 </p>
 
+<p align="center">
+  <a href="docs/media/matrix-peak.gif"><img src="docs/media/matrix-peak.gif" width="960" alt="行列比較の指定区間から全出力と出力ごとの最大絶対差を検索し、カーソル・時刻・実入力・符号付き差を確認し、同じ最大差の点へ保存復元する実画面GUI"></a><br>
+  <b>差が最大の点へ、すぐ移動。</b><br>
+  区間内の実取得値から検索。出力と時刻を確かめ、同じ点から再開。<br>
+  <a href="docs/matrix-peak.md">最大差の点を確認する</a>
+</p>
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。
