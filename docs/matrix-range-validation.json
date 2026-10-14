@@ -1,0 +1,527 @@
+{
+  "source": "Actual Chromium/WASM comparison; native range and cursor controls, raw files and independent bilinear recurrence and interval metrics",
+  "executed_plan": {
+    "format": "blocksim.matrix-comparison",
+    "version": 1,
+    "request": {
+      "a": [
+        [
+          -1,
+          0
+        ],
+        [
+          1,
+          -2
+        ]
+      ],
+      "b": [
+        [
+          1,
+          1
+        ],
+        [
+          0,
+          2
+        ]
+      ],
+      "c": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "d": [
+        [
+          0.25,
+          0
+        ],
+        [
+          0,
+          0.5
+        ]
+      ],
+      "initial": [
+        0,
+        0
+      ],
+      "sample_time": 0.1,
+      "method": "tustin",
+      "prewarp_omega": 3
+    },
+    "samples": 13,
+    "input": {
+      "kind": "sample_sequence",
+      "values": [
+        [
+          1,
+          2
+        ],
+        [
+          0.25,
+          -1
+        ],
+        [
+          -2,
+          0.5
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "repeat": true
+    }
+  },
+  "independent_discrete_max_error": 2.220446049250313e-16,
+  "intervals": [
+    {
+      "range": {
+        "start_sample": 0,
+        "end_sample": 12,
+        "start_time": 0,
+        "end_time": 1.2,
+        "samples": 13,
+        "metrics": [
+          {
+            "maxAbs": 0.143886448152571,
+            "rms": 0.09099046377794039,
+            "final": 0.14105913169300444,
+            "area": 0.08212780821360949
+          },
+          {
+            "maxAbs": 0.1896535108393047,
+            "rms": 0.11474558271251069,
+            "final": 0.16342346588998602,
+            "area": 0.10484498511719137
+          }
+        ]
+      },
+      "maximum_independent_metric_error": 2.7755575615628914e-17,
+      "csv_rows": 26,
+      "sample_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "input": [
+        [
+          1,
+          2
+        ],
+        [
+          0.25,
+          -1
+        ],
+        [
+          -2,
+          0.5
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0.25,
+          -1
+        ],
+        [
+          -2,
+          0.5
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0.25,
+          -1
+        ],
+        [
+          -2,
+          0.5
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "range": {
+        "start_sample": 4,
+        "end_sample": 7,
+        "start_time": 0.4,
+        "end_time": 0.7000000000000001,
+        "samples": 4,
+        "metrics": [
+          {
+            "maxAbs": 0.14260884881880392,
+            "rms": 0.08549103178532716,
+            "final": -0.0023796589833093365,
+            "area": 0.02019270663104893
+          },
+          {
+            "maxAbs": 0.1748614922207783,
+            "rms": 0.10904296546601089,
+            "final": -0.026437222928282433,
+            "area": 0.025256068353949442
+          }
+        ]
+      },
+      "maximum_independent_metric_error": 1.3877787807814457e-17,
+      "csv_rows": 8,
+      "sample_indices": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "input": [
+        [
+          1,
+          2
+        ],
+        [
+          0.25,
+          -1
+        ],
+        [
+          -2,
+          0.5
+        ],
+        [
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "range": {
+        "start_sample": 4,
+        "end_sample": 7,
+        "start_time": 0.4,
+        "end_time": 0.7000000000000001,
+        "samples": 4,
+        "metrics": [
+          {
+            "maxAbs": 0.14260884881880392,
+            "rms": 0.08549103178532716,
+            "final": -0.0023796589833093365,
+            "area": 0.02019270663104893
+          },
+          {
+            "maxAbs": 0.1748614922207783,
+            "rms": 0.10904296546601089,
+            "final": -0.026437222928282433,
+            "area": 0.025256068353949442
+          }
+        ]
+      },
+      "maximum_independent_metric_error": 1.3877787807814457e-17,
+      "csv_rows": 8,
+      "sample_indices": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "input": [
+        [
+          1,
+          2
+        ],
+        [
+          0.25,
+          -1
+        ],
+        [
+          -2,
+          0.5
+        ],
+        [
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "range": {
+        "start_sample": 8,
+        "end_sample": 11,
+        "start_time": 0.8,
+        "end_time": 1.1,
+        "samples": 4,
+        "metrics": [
+          {
+            "maxAbs": 0.14170144981903093,
+            "rms": 0.08542012050426151,
+            "final": -0.003080128784553257,
+            "area": 0.02034199021825438
+          },
+          {
+            "maxAbs": 0.16730777625104598,
+            "rms": 0.10794576314818183,
+            "final": -0.031019677790996236,
+            "area": 0.02520559989201508
+          }
+        ]
+      },
+      "maximum_independent_metric_error": 1.3877787807814457e-17,
+      "csv_rows": 8,
+      "sample_indices": [
+        8,
+        9,
+        10,
+        11
+      ],
+      "input": [
+        [
+          1,
+          2
+        ],
+        [
+          0.25,
+          -1
+        ],
+        [
+          -2,
+          0.5
+        ],
+        [
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "range": {
+        "start_sample": 12,
+        "end_sample": 12,
+        "start_time": 1.2,
+        "end_time": 1.2,
+        "samples": 1,
+        "metrics": [
+          {
+            "maxAbs": 0.14105913169300444,
+            "rms": 0.14105913169300444,
+            "final": 0.14105913169300444,
+            "area": 0
+          },
+          {
+            "maxAbs": 0.16342346588998602,
+            "rms": 0.16342346588998602,
+            "final": 0.16342346588998602,
+            "area": 0
+          }
+        ]
+      },
+      "maximum_independent_metric_error": 0,
+      "csv_rows": 2,
+      "sample_indices": [
+        12
+      ],
+      "input": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "range": {
+        "start_sample": 12,
+        "end_sample": 12,
+        "start_time": 1.2,
+        "end_time": 1.2,
+        "samples": 1,
+        "metrics": [
+          {
+            "maxAbs": 0.14105913169300444,
+            "rms": 0.14105913169300444,
+            "final": 0.14105913169300444,
+            "area": 0
+          },
+          {
+            "maxAbs": 0.16342346588998602,
+            "rms": 0.16342346588998602,
+            "final": 0.16342346588998602,
+            "area": 0
+          }
+        ]
+      },
+      "maximum_independent_metric_error": 0,
+      "csv_rows": 2,
+      "sample_indices": [
+        12
+      ],
+      "input": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "range": {
+        "start_sample": 0,
+        "end_sample": 12,
+        "start_time": 0,
+        "end_time": 1.2,
+        "samples": 13,
+        "metrics": [
+          {
+            "maxAbs": 0.143886448152571,
+            "rms": 0.09099046377794039,
+            "final": 0.14105913169300444,
+            "area": 0.08212780821360949
+          },
+          {
+            "maxAbs": 0.1896535108393047,
+            "rms": 0.11474558271251069,
+            "final": 0.16342346588998602,
+            "area": 0.10484498511719137
+          }
+        ]
+      },
+      "maximum_independent_metric_error": 2.7755575615628914e-17,
+      "csv_rows": 26,
+      "sample_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "input": [
+        [
+          1,
+          2
+        ],
+        [
+          0.25,
+          -1
+        ],
+        [
+          -2,
+          0.5
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0.25,
+          -1
+        ],
+        [
+          -2,
+          0.5
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0.25,
+          -1
+        ],
+        [
+          -2,
+          0.5
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          2
+        ]
+      ]
+    }
+  ],
+  "full_exports_and_source_unchanged": true,
+  "baseline_comparison": {
+    "method": "Prior committed Rust/WASM built offline in a separate archive directory; compare all parsed result fields and recorded values against current WASM",
+    "prior_commit": "21706c41c3e3c70a0f02ae82b4edae32d148a79e",
+    "samples": [
+      {
+        "name": "continuous-pid",
+        "points": 4001,
+        "all_fields_and_points_identical": true
+      },
+      {
+        "name": "mixed-pid",
+        "points": 4001,
+        "all_fields_and_points_identical": true
+      },
+      {
+        "name": "vector",
+        "points": 101,
+        "all_fields_and_points_identical": true
+      },
+      {
+        "name": "subsystem",
+        "points": 201,
+        "all_fields_and_points_identical": true
+      }
+    ]
+  },
+  "media_validation": {
+    "clips": 49,
+    "total_bytes": 15238212,
+    "range": {
+      "file": "matrix-range.gif",
+      "frames": 94,
+      "duration_seconds": 9.4,
+      "bytes": 317058,
+      "width": 960,
+      "height": 737
+    },
+    "all_frames_decoded": true,
+    "readme_references_match": true,
+    "readme_competitor_and_maturity_matches": 0
+  }
+}

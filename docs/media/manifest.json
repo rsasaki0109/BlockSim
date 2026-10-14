@@ -385,6 +385,14 @@
       "bytes": 218457,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "matrix-range.gif",
+      "frames": 94,
+      "duration_seconds": 9.4,
+      "bytes": 317058,
+      "width": 960,
+      "height": 737
     }
   ]
 }

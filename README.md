@@ -360,6 +360,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <a href="docs/matrix-cursor.md">比較サンプルを確認する</a>
 </p>
 
+<p align="center">
+  <a href="docs/media/matrix-range.gif"><img src="docs/media/matrix-range.gif" width="960" alt="カーソルで行列比較の区間を選び、全出力の最大差・RMS・終端差・絶対差積分を確認し、元の入力行と周期番号を保った区間JSONとCSVを保存する実WASM GUI"></a><br>
+  <b>区間を選び、差の大きさを確かめる。</b><br>
+  始点と終点をカーソルから指定。実取得値だけを集計して保存。<br>
+  <a href="docs/matrix-range.md">比較区間を評価する</a>
+</p>
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。
