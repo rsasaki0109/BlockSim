@@ -1,0 +1,470 @@
+{
+  "source": "Actual Chromium/WASM Worker; independent direct tolerance comparisons and bilinear recurrence",
+  "executed_plan": {
+    "format": "blocksim.matrix-comparison",
+    "version": 1,
+    "request": {
+      "a": [
+        [
+          -1,
+          0
+        ],
+        [
+          1,
+          -2
+        ]
+      ],
+      "b": [
+        [
+          1,
+          1
+        ],
+        [
+          0,
+          2
+        ]
+      ],
+      "c": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "d": [
+        [
+          0.25,
+          0
+        ],
+        [
+          0,
+          0.5
+        ]
+      ],
+      "initial": [
+        0,
+        0
+      ],
+      "sample_time": 0.1,
+      "method": "tustin",
+      "prewarp_omega": 3
+    },
+    "samples": 13,
+    "input": {
+      "kind": "sample_sequence",
+      "values": [
+        [
+          1,
+          2
+        ],
+        [
+          0.25,
+          -1
+        ],
+        [
+          -2,
+          0.5
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "repeat": true
+    }
+  },
+  "recorded_values": {
+    "times": [
+      0,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7000000000000001,
+      0.8,
+      0.9,
+      1,
+      1.1,
+      1.2
+    ],
+    "input": [
+      [
+        1,
+        2
+      ],
+      [
+        0.25,
+        -1
+      ],
+      [
+        -2,
+        0.5
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        0.25,
+        -1
+      ],
+      [
+        -2,
+        0.5
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        0.25,
+        -1
+      ],
+      [
+        -2,
+        0.5
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        2
+      ]
+    ],
+    "continuous": [
+      [
+        0.25,
+        1
+      ],
+      [
+        0.3479877458921136,
+        -0.12387763064695256
+      ],
+      [
+        -0.31305194159910166,
+        0.39786013259584413
+      ],
+      [
+        0.026413725524248362,
+        0.22099779724594854
+      ],
+      [
+        0.2739001272040715,
+        1.1832120907817885
+      ],
+      [
+        0.3696134752821767,
+        0.02818170265745057
+      ],
+      [
+        -0.2934841724546523,
+        0.5242179044997863
+      ],
+      [
+        0.04411937523363551,
+        0.3261357063358314
+      ],
+      [
+        0.28992086157176256,
+        1.2708163047153953
+      ],
+      [
+        0.3841096352024782,
+        0.1012854587107076
+      ],
+      [
+        -0.2803675045409304,
+        0.585318413731542
+      ],
+      [
+        0.0559878271619228,
+        0.377290004802014
+      ],
+      [
+        0.30065988097063795,
+        1.3137198548355538
+      ]
+    ],
+    "discrete": [
+      [
+        0.393886448152571,
+        1.1896535108393047
+      ],
+      [
+        0.3004990776256909,
+        -0.2360541214671445
+      ],
+      [
+        -0.3927456531175032,
+        0.435659940693525
+      ],
+      [
+        0.025022824791647198,
+        0.20349250041174974
+      ],
+      [
+        0.4165089760228754,
+        1.3580735830025668
+      ],
+      [
+        0.32095155537366826,
+        -0.09649500082312013
+      ],
+      [
+        -0.37425506495557653,
+        0.5514525269841797
+      ],
+      [
+        0.04173971625032617,
+        0.29969848340754895
+      ],
+      [
+        0.4316223113907935,
+        1.4381240809664413
+      ],
+      [
+        0.3346151546443674,
+        -0.029782171721375206
+      ],
+      [
+        -0.3619021368635713,
+        0.6071430551985889
+      ],
+      [
+        0.05290769837736954,
+        0.3462703270110178
+      ],
+      [
+        0.4417190126636424,
+        1.4771433207255398
+      ]
+    ]
+  },
+  "independent_discrete_max_error": 2.220446049250313e-16,
+  "checks": [
+    {
+      "tolerance": {
+        "absolute": 0.05,
+        "relative": 0.1
+      },
+      "assessment": {
+        "start_sample": 4,
+        "end_sample": 7,
+        "start_time": 0.4,
+        "end_time": 0.7000000000000001,
+        "samples": 4,
+        "passed": false,
+        "exceedances": 4,
+        "first_exceedance": {
+          "sample": 4,
+          "component": 0
+        },
+        "outputs": [
+          {
+            "component": 0,
+            "passed": false,
+            "exceedances": 2,
+            "first_exceedance": 4,
+            "last_exceedance": 6
+          },
+          {
+            "component": 1,
+            "passed": false,
+            "exceedances": 2,
+            "first_exceedance": 4,
+            "last_exceedance": 5
+          }
+        ]
+      }
+    },
+    {
+      "tolerance": {
+        "absolute": 0.2,
+        "relative": 0
+      },
+      "assessment": {
+        "start_sample": 4,
+        "end_sample": 7,
+        "start_time": 0.4,
+        "end_time": 0.7000000000000001,
+        "samples": 4,
+        "passed": true,
+        "exceedances": 0,
+        "first_exceedance": null,
+        "outputs": [
+          {
+            "component": 0,
+            "passed": true,
+            "exceedances": 0,
+            "first_exceedance": null,
+            "last_exceedance": null
+          },
+          {
+            "component": 1,
+            "passed": true,
+            "exceedances": 0,
+            "first_exceedance": null,
+            "last_exceedance": null
+          }
+        ]
+      }
+    },
+    {
+      "tolerance": {
+        "absolute": 0.05,
+        "relative": 0.1
+      },
+      "assessment": {
+        "start_sample": 6,
+        "end_sample": 7,
+        "start_time": 0.6,
+        "end_time": 0.7000000000000001,
+        "samples": 2,
+        "passed": false,
+        "exceedances": 1,
+        "first_exceedance": {
+          "sample": 6,
+          "component": 0
+        },
+        "outputs": [
+          {
+            "component": 0,
+            "passed": false,
+            "exceedances": 1,
+            "first_exceedance": 6,
+            "last_exceedance": 6
+          },
+          {
+            "component": 1,
+            "passed": true,
+            "exceedances": 0,
+            "first_exceedance": null,
+            "last_exceedance": null
+          }
+        ]
+      }
+    },
+    {
+      "tolerance": {
+        "absolute": 0.05,
+        "relative": 0.1
+      },
+      "assessment": {
+        "start_sample": 6,
+        "end_sample": 7,
+        "start_time": 0.6,
+        "end_time": 0.7000000000000001,
+        "samples": 2,
+        "passed": false,
+        "exceedances": 1,
+        "first_exceedance": {
+          "sample": 6,
+          "component": 0
+        },
+        "outputs": [
+          {
+            "component": 0,
+            "passed": false,
+            "exceedances": 1,
+            "first_exceedance": 6,
+            "last_exceedance": 6
+          },
+          {
+            "component": 1,
+            "passed": true,
+            "exceedances": 0,
+            "first_exceedance": null,
+            "last_exceedance": null
+          }
+        ]
+      }
+    }
+  ],
+  "selected_exceedance": {
+    "sample": 6,
+    "component": 0,
+    "time": 0.6,
+    "continuous": -0.2934841724546523,
+    "discrete": -0.37425506495557653,
+    "delta": -0.08077089250092423,
+    "bound": 0.07934841724546524
+  },
+  "settings_roundtrip_exact": true,
+  "invalid_version_refused_with_previous_policy_retained": true,
+  "full_exports_and_source_unchanged": true,
+  "media": {
+    "gif_count": 53,
+    "total_bytes": 16275448,
+    "new_clip": {
+      "file": "matrix-tolerance.gif",
+      "frames": 132,
+      "duration_seconds": 13.2,
+      "bytes": 287459,
+      "width": 960,
+      "height": 737
+    },
+    "all_frames_decoded": true,
+    "manifest_and_readme_refs_exact": true,
+    "all_loop_infinite": true,
+    "readme_competitor_and_maturity_matches": 0
+  },
+  "legacy_baselines": {
+    "prior_commit": "6d307f21f3d8eaf025935aea62a752c8bd62f096",
+    "method": "Prior HEAD Rust/WASM reconstructed by isolated archive, locked offline release build and wasm-bindgen; every parsed result field compared exactly",
+    "models": [
+      {
+        "model": "continuous-pid",
+        "recorded_points": 4001,
+        "all_fields_exact": true
+      },
+      {
+        "model": "mixed-pid",
+        "recorded_points": 4001,
+        "all_fields_exact": true
+      },
+      {
+        "model": "vector",
+        "recorded_points": 101,
+        "all_fields_exact": true
+      },
+      {
+        "model": "subsystem",
+        "recorded_points": 201,
+        "all_fields_exact": true
+      }
+    ]
+  },
+  "validation_scope": {
+    "full_check_before_keyboard_file_fix": {
+      "native": 237,
+      "vitest": 223,
+      "chromium": 248,
+      "total": 708,
+      "exit_code": 0
+    },
+    "after_keyboard_file_fix": {
+      "typescript_vite_build_exit_code": 0,
+      "related_chromium_tests": 8,
+      "exit_code": 0,
+      "overlap_with_full_check": 7,
+      "additional_keyboard_case": 1
+    },
+    "distinct_cases_across_runs": 709,
+    "single_final_full_709_run": false
+  }
+}

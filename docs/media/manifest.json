@@ -417,6 +417,14 @@
       "bytes": 266190,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "matrix-tolerance.gif",
+      "frames": 132,
+      "duration_seconds": 13.2,
+      "bytes": 287459,
+      "width": 960,
+      "height": 737
     }
   ]
 }
