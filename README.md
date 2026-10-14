@@ -374,6 +374,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <a href="docs/matrix-result-file.md">比較結果を読み戻す</a>
 </p>
 
+<p align="center">
+  <a href="docs/media/matrix-session.gif"><img src="docs/media/matrix-session.gif" width="960" alt="行列比較の全結果とカーソル位置・表示出力・評価区間を作業状態JSONへ保存し、WASMの再計算一致後に同じ取得点・範囲・区間指標を復元する実画面GUI"></a><br>
+  <b>同じ点、同じ区間から再開する。</b><br>
+  全結果と閲覧位置を保存。検証して、選んだ出力と区間まで復元。<br>
+  <a href="docs/matrix-session.md">比較の作業状態を保存する</a>
+</p>
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。

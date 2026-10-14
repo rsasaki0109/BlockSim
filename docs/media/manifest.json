@@ -401,6 +401,14 @@
       "bytes": 262066,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "matrix-session.gif",
+      "frames": 95,
+      "duration_seconds": 9.5,
+      "bytes": 221521,
+      "width": 960,
+      "height": 737
     }
   ]
 }
