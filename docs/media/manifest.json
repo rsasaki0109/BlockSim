@@ -393,6 +393,14 @@
       "bytes": 317058,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "matrix-result-file.gif",
+      "frames": 89,
+      "duration_seconds": 8.9,
+      "bytes": 262066,
+      "width": 960,
+      "height": 737
     }
   ]
 }

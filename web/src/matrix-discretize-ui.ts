@@ -27,7 +27,8 @@ export function mountMatrixDiscretize(host:HTMLElement,options:{model:()=>GraphM
  }catch(e){fail(e);}});
  get<HTMLFieldSetElement>('fields').disabled=options.busy();
  const comparisonHost=document.createElement('section');section.append(comparisonHost);
+ const validateRestore=(p:import('./matrix-comparison').MatrixPlan)=>{const q=matrixRequest(source(),p.request.sample_time,p.request.method,p.request.prewarp_omega);if(JSON.stringify(q)!==JSON.stringify(p.request))throw new Error('選択した行列または初期状態と比較設定が違います');return q;};
  return mountMatrixComparison(comparisonHost,{request:()=>matrixRequest(source(),Number(period.value),method.value as MatrixRequest['method'],method.value==='tustin'&&prewarp.value.trim()?Number(prewarp.value):undefined),restore:p=>{
-  const q=matrixRequest(source(),p.request.sample_time,p.request.method,p.request.prewarp_omega);if(JSON.stringify(q)!==JSON.stringify(p.request))throw new Error('選択した行列または初期状態と比較設定が違います');discretize_matrix(JSON.stringify(q));method.value=q.method;period.value=String(q.sample_time);prewarp.value=q.prewarp_omega===undefined?'':String(q.prewarp_omega);prewarp.disabled=q.method==='zoh';clear();
- },busy:options.busy,context:()=>JSON.stringify([options.model(),conditions()]),onBusy:options.onBusy,download:options.download});
+  const q=validateRestore(p);discretize_matrix(JSON.stringify(q));method.value=q.method;period.value=String(q.sample_time);prewarp.value=q.prewarp_omega===undefined?'':String(q.prewarp_omega);prewarp.disabled=q.method==='zoh';clear();
+ },validateRestore,busy:options.busy,context:()=>JSON.stringify([options.model(),conditions()]),onBusy:options.onBusy,download:options.download});
 }

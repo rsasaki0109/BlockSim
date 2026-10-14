@@ -367,6 +367,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <a href="docs/matrix-range.md">比較区間を評価する</a>
 </p>
 
+<p align="center">
+  <a href="docs/media/matrix-result-file.gif"><img src="docs/media/matrix-result-file.gif" width="960" alt="保存した行列比較結果を読み込み、現在のWASMで全取得点・変換行列・指標を照合し、改変ファイルを拒否して前回結果を保持し、条件と波形を復元する実画面GUI"></a><br>
+  <b>保存した比較を、確かめて再開する。</b><br>
+  全取得点を再計算して照合。入力・方式・指標・波形を復元。<br>
+  <a href="docs/matrix-result-file.md">比較結果を読み戻す</a>
+</p>
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。
