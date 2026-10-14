@@ -353,6 +353,13 @@ GIF をクリックすると大きく表示できます。すべて実際の GUI
   <a href="docs/matrix-sequence.md">入力系列で行列を比較する</a>
 </p>
 
+<p align="center">
+  <a href="docs/media/matrix-cursor.gif"><img src="docs/media/matrix-cursor.gif" width="960" alt="行列応答比較のグラフでサンプルを選び、実入力・連続値・離散値・差分と入力行・周期を確認し、出力切替や編集後も実行済み結果を保つ実WASM GUI"></a><br>
+  <b>波形の一点から、入力と差分を確かめる。</b><br>
+  クリック・番号・キーボードで移動。取得値と入力行を、同じサンプルで確認。<br>
+  <a href="docs/matrix-cursor.md">比較サンプルを確認する</a>
+</p>
+
 ## 開発環境
 
 必要なもの：Linux、Bash、C コンパイラ、curl、Node.js 24（`.node-version`）、npm、Rust 1.90.0、`wasm32-unknown-unknown`、wasm-bindgen CLI 0.2.100。ブラウザテストには Chromium が必要です。追加サービス・認証情報は不要です。

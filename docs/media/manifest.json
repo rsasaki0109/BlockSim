@@ -377,6 +377,14 @@
       "bytes": 416302,
       "width": 960,
       "height": 737
+    },
+    {
+      "file": "matrix-cursor.gif",
+      "frames": 89,
+      "duration_seconds": 8.9,
+      "bytes": 218457,
+      "width": 960,
+      "height": 737
     }
   ]
 }
